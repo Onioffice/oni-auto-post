@@ -1,14 +1,13 @@
-// SOẠN BÀI – chạy 7:45 sáng (giờ VN) mỗi ngày trên GitHub Actions.
+// SOẠN BÀI – hàm soanBai() dùng chung cho: lịch 7:45 sáng (khi chị bật công tắc) và việc chị giao (lenh.mjs).
 // Tìm tin → Claude viết bài cho ngày kia → vẽ hình đúng khung Oni → kiểm lỗi (máy + Claude xem hình)
 // → tải hình lên website → đưa vào kho bài: "Tự đăng" (tin tức, không giá) hoặc "Chờ duyệt" (có giá/ưu đãi).
 import fs from 'node:fs';
-import { homNay, thuTrongTuan, layBai, themBai, ghiLoi, claude, layJSON, kiemChu, wpTaiAnh, wpTimAnh } from './lib.mjs';
+import { homNay, thuTrongTuan, layBai, themBai, ghiLoi, claude, layJSON, kiemChu, wpTaiAnh, wpTimAnh, layCaiDat, ghiNhatKy } from './lib.mjs';
 import { khungFB, mauA, chuanBi, coLogo } from './khung.mjs';
 
 const THU = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const GIO = { Facebook: '11:30', Instagram: '12:00', Website: '09:00' };
-const ngay = process.env.NGAY_DANG || homNay(2);          // soạn trước 2 ngày, để chị kịp duyệt
-const kenhs = ['Facebook', 'Instagram'].concat([2, 5].includes(thuTrongTuan(ngay)) ? ['Website'] : []); // website T3, T6
+export const kenhMacDinh = ngay => ['Facebook', 'Instagram'].concat([2, 5].includes(thuTrongTuan(ngay)) ? ['Website'] : []); // website T3, T6
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 
 async function kiemHinh(png, kenh, mime = 'image/png', lan = 1) {
@@ -33,11 +32,11 @@ Trả lời đúng dạng: \`\`\`json\n{"dat": true|false, "loi": ["…"]}\n\`\`
   }
 }
 
-async function main() {
+// yeuCau: việc chị giao (có thì viết đúng yêu cầu, bài luôn vào Chờ duyệt). lenh: mã việc.
+export async function soanBai({ ngay, kenhs, yeuCau = '', lenh = '' }) {
   await chuanBi();
   if (!coLogo()) throw new Error('Không tải được logo Oni từ website – dừng, không làm hình thiếu logo');
   const cu = await layBai();
-  if (cu.some(x => x.at === ngay && kenhs.includes(x.kenh) && x.tt !== 'Hủy')) { console.log('Ngày', ngay, 'đã có bài – bỏ qua.'); return; }
   const ganDay = cu.slice(-40).map(x => `- ${x.at} ${x.kenh}: ${x.tieude}`).join('\n');
 
   // 1) Viết bài (có tìm tin trên mạng)
@@ -46,8 +45,11 @@ async function main() {
     system: QUY_TAC,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
     messages: [{ role: 'user', content: `Hôm nay ${homNay()}. Soạn bài đăng ngày ${ngay} (${THU[thuTrongTuan(ngay)]}) cho các kênh: ${kenhs.join(', ')}.
-Trước tiên tìm tin trên mạng trong 48 giờ qua (nguồn chính thống: chinhphu.vn, baochinhphu.vn, thuvienphapluat.vn, dangkykinhdoanh.gov.vn, gdt.gov.vn, VnExpress, Tuổi Trẻ, Thanh Niên…) về: đăng ký doanh nghiệp, thuế/hóa đơn cho doanh nghiệp nhỏ, FDI, thị trường văn phòng ảo / coworking TP.HCM. Chọn 1 chủ đề hợp trụ cột của ${THU[thuTrongTuan(ngay)]} và có ích cho khách Oni; nếu không có tin mới phù hợp thì viết bài kiến thức/mẹo theo trụ cột.
-Mỗi kênh một bài riêng, viết khác nhau, cùng chủ đề.
+${yeuCau ? `CHỊ GIÁM ĐỐC GIAO VIỆC – viết ĐÚNG theo yêu cầu dưới đây (ưu tiên hơn trụ cột trong tuần, vẫn giữ mọi luật bắt buộc):
+«${yeuCau}»
+Chỉ tìm tin trên mạng khi yêu cầu cần tin tức hoặc số liệu. Nếu yêu cầu nhắc giá hay ưu đãi thì đặt coGia true.
+` : `Trước tiên tìm tin trên mạng trong 48 giờ qua (nguồn chính thống: chinhphu.vn, baochinhphu.vn, thuvienphapluat.vn, dangkykinhdoanh.gov.vn, gdt.gov.vn, VnExpress, Tuổi Trẻ, Thanh Niên…) về: đăng ký doanh nghiệp, thuế/hóa đơn cho doanh nghiệp nhỏ, FDI, thị trường văn phòng ảo / coworking TP.HCM. Chọn 1 chủ đề hợp trụ cột của ${THU[thuTrongTuan(ngay)]} và có ích cho khách Oni; nếu không có tin mới phù hợp thì viết bài kiến thức/mẹo theo trụ cột.
+`}Mỗi kênh một bài riêng, viết khác nhau, cùng chủ đề.
 Các bài gần đây (không được trùng chủ đề/góc nhìn):
 ${ganDay || '(chưa có)'}
 
@@ -85,13 +87,26 @@ Trả lời DUY NHẤT một khối:
       const up = await wpTaiAnh(buf, ten, `${b.tieude} – Oni Office`, mime);
       const datHet = loi.length === 0;
       if (!datHet) await ghiLoi('Soạn bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', ngay);
-      ra.push({ kenh: b.kenh, at: ngay, gio: GIO[b.kenh], tieude: b.tieude, nd: b.kenh === 'Website' ? b.nd : (b.nd + (b.tag && !b.nd.includes(b.tag) ? '\n\n' + b.tag : '')),
+      ra.push({ lenh, kenh: b.kenh, at: ngay, gio: GIO[b.kenh], tieude: b.tieude, nd: b.kenh === 'Website' ? b.nd : (b.nd + (b.tag && !b.nd.includes(b.tag) ? '\n\n' + b.tag : '')),
         tag: b.tag || '', anh: up.url, anhId: up.id, coGia: !!b.coGia,
-        tt: !datHet ? 'Cần sửa' : (b.coGia ? 'Chờ duyệt' : 'Tự đăng'),
-        note: (datHet ? `Đã kiểm lỗi: Đạt – ${new Date().toISOString()}` : 'Lỗi kiểm: ' + loi.join('; ')) + (kq.nguon?.length ? ' | Nguồn: ' + kq.nguon.map(n => n.link).join(' ') : '') });
+        tt: !datHet ? 'Cần sửa' : (b.coGia || yeuCau ? 'Chờ duyệt' : 'Tự đăng'),
+        note: (yeuCau ? 'Việc chị giao. ' : '') + (datHet ? `Đã kiểm lỗi: Đạt – ${new Date().toISOString()}` : 'Lỗi kiểm: ' + loi.join('; ')) + (kq.nguon?.length ? ' | Nguồn: ' + kq.nguon.map(n => n.link).join(' ') : '') });
     } catch (e) { await ghiLoi('Soạn bài ' + b.kenh, '1. Chạy hỏng', e.message, 'Chưa', ngay); }
   }
-  if (ra.length) { const r = await themBai(ra); console.log('Đã đưa vào kho:', r.ma.join(', ')); }
+  let ma = [];
+  if (ra.length) { ma = (await themBai(ra)).ma; console.log('Đã đưa vào kho:', ma.join(', ')); }
   console.log(ra.map(x => `${x.kenh}: ${x.tt} – ${x.tieude}`).join('\n') || 'Không có bài nào.');
+  return { ma, ra, chuDe: kq.chuDe || '' };
 }
-main().catch(async e => { await ghiLoi('Soạn bài', '1. Chạy hỏng', e.message); process.exit(1); });
+
+// Chạy theo lịch 7:45 (hoặc bấm tay trên GitHub)
+async function main() {
+  if (process.env.SU_KIEN === 'schedule' && !(await layCaiDat()).soan) { console.log('Công tắc "Tự soạn bài mỗi sáng" đang tắt.'); return; }
+  const ngay = process.env.NGAY_DANG || homNay(2);          // soạn trước 2 ngày, để chị kịp duyệt
+  const cu = await layBai();
+  const kenhs = kenhMacDinh(ngay).filter(k => !cu.some(x => x.at === ngay && x.kenh === k && x.tt !== 'Hủy')); // kênh đã có bài (VD việc chị giao) thì thôi
+  if (!kenhs.length) { console.log('Ngày', ngay, 'đã đủ bài.'); await ghiNhatKy('Tự soạn', `Ngày ${ngay} đã đủ bài`); return; }
+  const r = await soanBai({ ngay, kenhs });
+  await ghiNhatKy('Tự soạn', `Ngày ${ngay}: ${r.ra.map(x => x.kenh + ' ' + x.tt).join(', ') || 'không có bài'}`);
+}
+if (import.meta.url === `file://${process.argv[1]}`) main().catch(async e => { await ghiLoi('Soạn bài', '1. Chạy hỏng', e.message); await ghiNhatKy('Tự soạn', 'Lỗi: ' + e.message); process.exit(1); });

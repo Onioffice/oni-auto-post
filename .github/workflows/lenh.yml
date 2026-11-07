@@ -1,0 +1,42 @@
+name: Nhận việc chị giao (mỗi giờ 7h–22h)
+on:
+  schedule:
+    - cron: '5 0-15 * * *'
+  workflow_dispatch:
+concurrency: { group: oni-lenh, cancel-in-progress: false }
+jobs:
+  chay:
+    # Mỗi giờ hỏi kho xem chị có giao việc mới không; không có thì dừng ngay (vài giây)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Có việc mới không?
+        id: co
+        run: |
+          n=$(curl -sf -H "authorization: Bearer $K" "${U%/}/api/lenh" | grep -o '"tt":"Chờ làm"' | wc -l || echo 0)
+          echo "Việc chờ làm: $n"; echo "n=$n" >> "$GITHUB_OUTPUT"
+        env: { U: '${{ secrets.ONI_API_URL }}', K: '${{ secrets.ONI_API_KEY }}' }
+      - if: steps.co.outputs.n != '0'
+        uses: actions/checkout@v4
+      - if: steps.co.outputs.n != '0'
+        uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - if: steps.co.outputs.n != '0'
+        uses: actions/cache@v4
+        with: { path: fonts, key: fonts-bevietnampro-v1 }
+      - if: steps.co.outputs.n != '0'
+        run: npm ci
+      - if: steps.co.outputs.n != '0'
+        run: node scripts/lenh.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ONI_API_URL: ${{ secrets.ONI_API_URL }}
+          ONI_API_KEY: ${{ secrets.ONI_API_KEY }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USERNAME: ${{ secrets.WP_USERNAME }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          ONI_MODEL: ${{ vars.ONI_MODEL }}
+          SU_KIEN: ${{ github.event_name }}

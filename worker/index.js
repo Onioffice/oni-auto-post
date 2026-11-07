@@ -58,7 +58,7 @@ export default {
       for (const x of (Array.isArray(b.posts) ? b.posts : [])) {
         const o = { ma: maBai(), tao: new Date().toISOString(), kenh: String(x.kenh || ''), at: String(x.at || ''), gio: String(x.gio || ''),
           tieude: String(x.tieude || ''), nd: String(x.nd || ''), tag: String(x.tag || ''), anh: String(x.anh || ''), anhId: x.anhId || null,
-          tt: TT.includes(x.tt) ? x.tt : 'Chờ duyệt', coGia: !!x.coGia, note: String(x.note || ''), link: '', lichSu: [] };
+          tt: TT.includes(x.tt) ? x.tt : 'Chờ duyệt', coGia: !!x.coGia, lenh: String(x.lenh || ''), note: String(x.note || ''), link: '', lichSu: [] };
         a.push(o); them.push(o.ma);
       }
       await ghiBai(env, a); return json({ ok: true, ma: them });
@@ -76,6 +76,42 @@ export default {
       }
       o.lichSu = (o.lichSu || []).concat([{ luc: new Date().toISOString(), ai, tt: o.tt, note: b.note || '' }]).slice(-20);
       await ghiBai(env, a); return json({ ok: true, post: o });
+    }
+
+    // ---- Giao việc (lệnh của chị) ----
+    if (p === '/api/lenh' && req.method === 'GET') return json({ lenh: JSON.parse((await env.DB.get('lenh')) || '[]') });
+    if (p === '/api/lenh' && req.method === 'POST') {
+      if (ai !== 'chi') return json({ loi: 'Chỉ chị được giao việc' }, 403);
+      const b = await req.json(), a = JSON.parse((await env.DB.get('lenh')) || '[]');
+      const KENH = ['Facebook', 'Instagram', 'Website'];
+      const o = { id: 'L' + Date.now().toString(36).toUpperCase(), tao: new Date().toISOString(), noiDung: String(b.noiDung || '').slice(0, 3000),
+        kenh: (Array.isArray(b.kenh) ? b.kenh : []).filter(k => KENH.includes(k)), ngay: /^\d{4}-\d{2}-\d{2}$/.test(b.ngay || '') ? b.ngay : '',
+        tt: 'Chờ làm', ketQua: '', maBai: [] };
+      if (!o.noiDung.trim() || !o.kenh.length) return json({ loi: 'Thiếu nội dung hoặc kênh' }, 400);
+      a.push(o); await env.DB.put('lenh', JSON.stringify(a.slice(-300))); return json({ ok: true, lenh: o });
+    }
+    const ml = p.match(/^\/api\/lenh\/([A-Z0-9]+)$/);
+    if (ml && req.method === 'PUT') {
+      const b = await req.json(), a = JSON.parse((await env.DB.get('lenh')) || '[]'), o = a.find(x => x.id === ml[1]);
+      if (!o) return json({ loi: 'Không thấy việc' }, 404);
+      if (ai === 'chi') { if (b.tt === 'Hủy' && o.tt === 'Chờ làm') o.tt = 'Hủy'; else if (b.tt === 'Chờ làm' && ['Lỗi', 'Hủy'].includes(o.tt)) { o.tt = 'Chờ làm'; o.ketQua = ''; } }
+      else { for (const k of ['tt', 'ketQua', 'maBai', 'ngayDang']) if (k in b) o[k] = b[k]; o.capNhat = new Date().toISOString(); }
+      await env.DB.put('lenh', JSON.stringify(a)); return json({ ok: true, lenh: o });
+    }
+    // ---- Công tắc tự động ----
+    if (p === '/api/caidat' && req.method === 'GET') return json({ caidat: JSON.parse((await env.DB.get('caidat')) || '{"soan":false,"dang":false}') });
+    if (p === '/api/caidat' && req.method === 'PUT') {
+      if (ai !== 'chi') return json({ loi: 'Chỉ chị được bật/tắt' }, 403);
+      const b = await req.json(), c = JSON.parse((await env.DB.get('caidat')) || '{"soan":false,"dang":false}');
+      for (const k of ['soan', 'dang']) if (k in b) c[k] = !!b[k];
+      c.luc = new Date().toISOString(); await env.DB.put('caidat', JSON.stringify(c)); return json({ ok: true, caidat: c });
+    }
+    // ---- Nhật ký máy chạy ----
+    if (p === '/api/nhatky' && req.method === 'GET') return json({ nhatky: JSON.parse((await env.DB.get('nhatky')) || '[]') });
+    if (p === '/api/nhatky' && req.method === 'POST' && ai === 'bot') {
+      const b = await req.json(), a = JSON.parse((await env.DB.get('nhatky')) || '[]');
+      a.push({ luc: new Date().toISOString(), viec: String(b.viec || ''), kq: String(b.kq || '').slice(0, 500) });
+      await env.DB.put('nhatky', JSON.stringify(a.slice(-200))); return json({ ok: true });
     }
 
     if (p === '/api/soloi' && req.method === 'POST' && ai === 'bot') {
@@ -102,6 +138,13 @@ const CSS = `*{box-sizing:border-box}body{margin:0;font-family:'Be Vietnam Pro',
 .nut{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.nut button{flex:1;min-width:90px;border:0;border-radius:10px;padding:10px;font:inherit;font-weight:700;cursor:pointer}
 .d{background:linear-gradient(90deg,#FFE38A,#E9B83A);color:#4A3220}.s{background:#F3E7D3;color:#6F4F31}.h{background:#eee;color:#555}
 .mo{color:#896441;font-size:13px}.rong{padding:30px;text-align:center;color:#896441}
+.dk{padding:0 14px 40px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.khoi{background:#fff;border-radius:14px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.06);min-width:0}
+.khoi h2{margin:0 0 10px;font-size:17px;color:#6F4F31}.khoi textarea,.khoi input[type=date]{width:100%;padding:10px;border:1px solid #d8c8b0;border-radius:10px;font:inherit}.khoi textarea{min-height:110px}
+.hang{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.chk{display:flex;gap:6px;align-items:center;background:#F7F3EC;border-radius:999px;padding:6px 12px;font-weight:600}
+.cong{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0e6d6}.cong:last-child{border:0}
+.sw{position:relative;width:52px;height:30px;flex:none}.sw input{opacity:0;width:0;height:0}.sw span{position:absolute;inset:0;background:#ccc;border-radius:30px;transition:.2s}.sw span:before{content:'';position:absolute;width:24px;height:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}.sw input:checked+span{background:#E9B83A}.sw input:checked+span:before{transform:translateX(22px)}
+.viec{border-top:1px solid #f0e6d6;padding:10px 0;display:flex;flex-direction:column;gap:4px}.viec:first-of-type{border:0}.ok{background:#E3F1E1;color:#2F6B2A}.loi{background:#FDE2DD;color:#B5523B}.cho{background:#FFF3C9;color:#7A5A12}
+.gui{width:100%;border:0;border-radius:10px;padding:12px;font:inherit;font-weight:700;background:linear-gradient(90deg,#FFE38A,#E9B83A);color:#4A3220;cursor:pointer}
 #to{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9;padding:10px}#to img{max-width:100%;max-height:100%}`;
 
 function trangDangNhap(loi) {
@@ -116,20 +159,45 @@ const TRANG = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta 
 <div class="top"><b>ONI OFFICE</b><span>Duyệt bài Marketing</span><a href="/dang-xuat">Đăng xuất</a><input class="tim" id="tim" placeholder="Tìm nhanh: tiêu đề, kênh, mã bài, ngày…"></div>
 <div class="tabs" id="tabs"></div><div class="ds" id="ds"></div><div id="to" onclick="this.style.display='none'"><img id="toi"></div>
 <script>
-const TAB=[['cho','Chờ duyệt'],['lich','Lịch đăng'],['da','Đã đăng'],['sua','Cần sửa / Hủy'],['loi','Sổ lỗi']];
-let P=[],L=[],tab='cho';const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const TAB=[['dk','Bảng điều khiển'],['cho','Chờ duyệt'],['lich','Lịch đăng'],['da','Đã đăng'],['sua','Cần sửa / Hủy'],['loi','Sổ lỗi']];
+let P=[],L=[],LE=[],CD={},NK=[],tab='dk';const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const homNay=()=>new Date(Date.now()+7*3600e3).toISOString().slice(0,10);const dmy=s=>s?s.split('-').reverse().join('/'):'';
-async function tai(){const r=await fetch('/api/posts');if(r.status===401){location.reload();return}P=(await r.json()).posts||[];try{L=(await (await fetch('/api/soloi')).json()).soloi||[]}catch(e){}ve()}
+async function tai(){const r=await fetch('/api/posts');if(r.status===401){location.reload();return}P=(await r.json()).posts||[];try{L=(await (await fetch('/api/soloi')).json()).soloi||[]}catch(e){}try{LE=(await (await fetch('/api/lenh')).json()).lenh||[];CD=(await (await fetch('/api/caidat')).json()).caidat||{};NK=(await (await fetch('/api/nhatky')).json()).nhatky||[]}catch(e){}if(!(tab==='dk'&&document.activeElement&&/TEXTAREA|INPUT/.test(document.activeElement.tagName)))ve()}
 function loc(){const q=document.getElementById('tim').value.trim().toLowerCase();let a=P.slice();
  if(tab==='cho')a=a.filter(x=>x.tt==='Chờ duyệt');else if(tab==='lich')a=a.filter(x=>(x.tt==='Đã duyệt'||x.tt==='Tự đăng')&&!x.link);else if(tab==='da')a=a.filter(x=>x.tt==='Đã đăng'||x.link);else if(tab==='sua')a=a.filter(x=>x.tt==='Cần sửa'||x.tt==='Hủy'||x.tt==='Lỗi');
  if(q)a=a.filter(x=>[x.ma,x.kenh,x.tieude,x.nd,x.at,dmy(x.at)].join(' ').toLowerCase().includes(q));
  return a.sort((x,y)=>(tab==='da'?-1:1)*((x.at+x.gio)<(y.at+y.gio)?-1:1))}
 function ve(){document.getElementById('tabs').innerHTML=TAB.map(([k,t])=>{const n=k==='cho'?P.filter(x=>x.tt==='Chờ duyệt').length:'';return '<button class="'+(tab===k?'on':'')+'" onclick="tab=\\''+k+'\\';ve()">'+t+(n?' ('+n+')':'')+'</button>'}).join('');
- const ds=document.getElementById('ds');
+ const ds=document.getElementById('ds');ds.className='ds';
+ if(tab==='dk'){veDK();return}
  if(tab==='loi'){ds.innerHTML=L.length?L.slice().reverse().slice(0,100).map(x=>'<div class="the"><div class="nd"><div><span class="nhan">'+E(x.loai)+'</span><span class="mo">'+E(new Date(x.luc).toLocaleString('vi-VN'))+'</span></div><b>'+E(x.viec)+'</b><div>'+E(x.loi)+'</div><div class="mo">'+E(x.sua)+' '+E(x.ma)+'</div></div></div>').join(''):'<div class="rong">Chưa có lỗi nào.</div>';return}
  const a=loc();ds.innerHTML=a.length?a.map(x=>'<div class="the">'+(x.anh?'<img loading="lazy" src="'+E(x.anh)+'" onclick="phong(this.src)">':'')+'<div class="nd"><div><span class="nhan">'+E(x.kenh)+'</span><span class="nhan">'+E(dmy(x.at))+' '+E(x.gio)+'</span>'+(x.coGia?'<span class="nhan gia">Có giá/ưu đãi</span>':'')+'<span class="nhan">'+E(x.tt)+'</span></div><h3>'+E(x.tieude)+'</h3><pre>'+E(x.nd)+'</pre>'+(x.note?'<div class="mo">Ghi chú: '+E(x.note)+'</div>':'')+(x.link?'<a class="mo" target="_blank" href="'+E(x.link)+'">Xem bài đã đăng ↗</a>':'')+'<div class="mo">Mã '+E(x.ma)+'</div>'+
  (x.tt==='Chờ duyệt'||x.tt==='Tự đăng'?'<div class="nut"><button class="d" onclick="dat(\\''+x.ma+'\\',\\'Đã duyệt\\')">✔ Duyệt</button><button class="s" onclick="sua(\\''+x.ma+'\\')">✎ Cần sửa</button><button class="h" onclick="dat(\\''+x.ma+'\\',\\'Hủy\\')">✕ Hủy</button></div>':'')+
  (x.tt==='Cần sửa'||x.tt==='Hủy'?'<div class="nut"><button class="s" onclick="dat(\\''+x.ma+'\\',\\'Chờ duyệt\\')">↺ Đưa lại Chờ duyệt</button></div>':'')+'</div></div>').join(''):'<div class="rong">Không có bài nào ở mục này.</div>'}
+function nhanTT(t){return '<span class="nhan '+(t==='Xong'?'ok':t==='Lỗi'?'loi':t==='Hủy'?'h':'cho')+'">'+E(t)+'</span>'}
+function veDK(){const q=document.getElementById('tim').value.trim().toLowerCase();
+ const lan=NK.length?NK[NK.length-1]:null;
+ const ds=LE.slice().reverse().filter(x=>!q||[x.id,x.noiDung,x.kenh.join(' '),x.ngay,x.tt].join(' ').toLowerCase().includes(q)).slice(0,60);
+ document.getElementById('ds').className='dk';
+ document.getElementById('ds').innerHTML=
+ '<div class="khoi"><h2>📝 Giao việc soạn bài</h2><div class="mo">Chị ghi chủ đề hoặc yêu cầu (VD: "Bài giới thiệu phòng họp Gò Vấp cho nhóm 10 người, nhấn mạnh có máy chiếu"). Máy soạn bài + hình, kiểm lỗi rồi đưa vào <b>Chờ duyệt</b> cho chị.</div>'+
+ '<textarea id="lnd" placeholder="Chủ đề / nội dung chị muốn đăng…"></textarea>'+
+ '<div class="hang">'+['Facebook','Instagram','Website'].map(k=>'<label class="chk"><input type="checkbox" class="lk" value="'+k+'"'+(k!=='Website'?' checked':'')+'> '+k+'</label>').join('')+'</div>'+
+ '<div class="hang" style="flex-wrap:nowrap"><span style="white-space:nowrap">Ngày đăng</span><input type="date" id="lng" min="'+homNay()+'"></div><div class="mo">Để trống = ngày gần nhất còn trống.</div>'+
+ '<div class="hang"><button class="gui" onclick="giao()">Giao việc</button></div><div class="mo">Máy nhận việc mỗi giờ từ 7:00 đến 22:00, soạn xong khoảng 5 phút.</div></div>'+
+ '<div class="khoi"><h2>⚙️ Công tắc tự động</h2>'+
+ '<div class="cong"><div><b>Tự soạn bài mỗi sáng</b><div class="mo">7:45 – soạn bài cho ngày kia theo trụ cột tuần</div></div><label class="sw"><input type="checkbox" '+(CD.soan?'checked':'')+' onchange="bat(\\'soan\\',this.checked)"><span></span></label></div>'+
+ '<div class="cong"><div><b>Tự đăng bài</b><div class="mo">10:55 – đăng bài chị đã Duyệt và bài tin tức "Tự đăng"</div></div><label class="sw"><input type="checkbox" '+(CD.dang?'checked':'')+' onchange="bat(\\'dang\\',this.checked)"><span></span></label></div>'+
+ '<div class="mo" style="margin-top:8px">Máy chạy lần cuối: '+(lan?E(new Date(lan.luc).toLocaleString('vi-VN'))+' – '+E(lan.viec)+': '+E(lan.kq):'chưa có')+'</div>'+
+ '<div class="hang"><span class="nhan cho">Chờ duyệt: '+P.filter(x=>x.tt==='Chờ duyệt').length+'</span><span class="nhan">Chờ đăng: '+P.filter(x=>(x.tt==='Đã duyệt'||x.tt==='Tự đăng')&&!x.link).length+'</span><span class="nhan loi">Cần sửa: '+P.filter(x=>x.tt==='Cần sửa'||x.tt==='Lỗi').length+'</span></div></div>'+
+ '<div class="khoi" style="grid-column:1/-1"><h2>📋 Việc đã giao</h2>'+(ds.length?ds.map(x=>'<div class="viec"><div>'+nhanTT(x.tt)+'<span class="nhan">'+E(x.kenh.join(', '))+'</span><span class="nhan">'+(x.ngayDang||x.ngay?E(dmy(x.ngayDang||x.ngay)):'Ngày gần nhất')+'</span><span class="mo">'+E(new Date(x.tao).toLocaleString('vi-VN'))+'</span></div><div>'+E(x.noiDung)+'</div>'+(x.ketQua?'<div class="mo">'+E(x.ketQua)+'</div>':'')+
+ (x.tt==='Chờ làm'?'<div class="nut"><button class="h" onclick="lenh(\\''+x.id+'\\',\\'Hủy\\')">✕ Hủy việc</button></div>':'')+((x.tt==='Lỗi'||x.tt==='Hủy')?'<div class="nut"><button class="s" onclick="lenh(\\''+x.id+'\\',\\'Chờ làm\\')">↺ Giao lại</button></div>':'')+((x.maBai||[]).length?'<div class="nut"><button class="d" onclick="tab=\\'cho\\';document.getElementById(\\'tim\\').value=\\'\\';ve()">Xem bài trong Chờ duyệt</button></div>':'')+'</div>').join(''):'<div class="rong">Chưa giao việc nào.</div>')+'</div>'}
+async function giao(){const nd=document.getElementById('lnd').value.trim(),kenh=[...document.querySelectorAll('.lk:checked')].map(x=>x.value),ngay=document.getElementById('lng').value;
+ if(!nd){alert('Chị ghi nội dung cần soạn nha.');return}if(!kenh.length){alert('Chị chọn ít nhất 1 kênh.');return}
+ const r=await fetch('/api/lenh',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({noiDung:nd,kenh,ngay})});if(!r.ok){alert('Lưu không được, chị thử lại.');return}
+ document.getElementById('lnd').value='';tai()}
+async function lenh(id,tt){if(tt==='Hủy'&&!confirm('Hủy việc này?'))return;await fetch('/api/lenh/'+id,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({tt})});tai()}
+async function bat(k,v){const r=await fetch('/api/caidat',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({[k]:v})});if(!r.ok)alert('Lưu không được, chị thử lại.');tai()}
 function phong(s){document.getElementById('toi').src=s;document.getElementById('to').style.display='flex'}
 async function dat(ma,tt,note){if(tt==='Hủy'&&!confirm('Hủy bài '+ma+'?'))return;const r=await fetch('/api/posts/'+ma,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(note!=null?{tt,note}:{tt})});if(!r.ok){alert('Lưu không được, chị thử lại.');return}tai()}
 function sua(ma){const n=prompt('Chị muốn sửa gì ở bài '+ma+'?');if(n)dat(ma,'Cần sửa',n)}

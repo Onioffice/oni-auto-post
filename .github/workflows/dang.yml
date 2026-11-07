@@ -11,8 +11,7 @@ on:
 concurrency: { group: oni-dang, cancel-in-progress: false }
 jobs:
   chay:
-    # Lịch tự chạy chỉ bật khi biến BAT_TU_DONG = true (Settings → Secrets and variables → Actions → Variables)
-    if: github.event_name == 'workflow_dispatch' || vars.BAT_TU_DONG == 'true'
+    # Lịch chạy mỗi ngày, nhưng chỉ làm khi chị bật công tắc trên Bảng điều khiển (trang duyệt bài)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -34,4 +33,5 @@ jobs:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           ONI_MODEL: ${{ vars.ONI_MODEL }}
+          SU_KIEN: ${{ github.event_name }}
           THU_NGHIEM: ${{ github.event_name == 'workflow_dispatch' && inputs.thu_nghiem || '0' }}
