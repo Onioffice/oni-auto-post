@@ -182,7 +182,7 @@ function veDK(){const q=document.getElementById('tim').value.trim().toLowerCase(
  document.getElementById('ds').innerHTML=
  '<div class="khoi"><h2>📝 Giao việc soạn bài</h2><div class="mo">Chị ghi chủ đề hoặc yêu cầu (VD: "Bài giới thiệu phòng họp Gò Vấp cho nhóm 10 người, nhấn mạnh có máy chiếu"). Máy soạn bài + hình, kiểm lỗi rồi đưa vào <b>Chờ duyệt</b> cho chị.</div>'+
  '<textarea id="lnd" placeholder="Chủ đề / nội dung chị muốn đăng…"></textarea>'+
- '<div class="hang">'+['Facebook','Instagram','Website'].map(k=>'<label class="chk"><input type="checkbox" class="lk" value="'+k+'"'+(k!=='Website'?' checked':'')+'> '+k+'</label>').join('')+'</div>'+
+ '<div class="hang">'+['Facebook','Website'].map(k=>'<label class="chk"><input type="checkbox" class="lk" value="'+k+'"'+(k==='Facebook'?' checked':'')+'> '+k+'</label>').join('')+'<span class="mo">Instagram: đang làm mẫu mới</span>'+'</div>'+
  '<div class="hang" style="flex-wrap:nowrap"><span style="white-space:nowrap">Ngày đăng</span><input type="date" id="lng" min="'+homNay()+'"></div><div class="mo">Để trống = ngày gần nhất còn trống.</div>'+
  '<div class="hang"><button class="gui" onclick="giao()">Giao việc</button></div><div class="mo">Máy nhận việc mỗi giờ từ 7:00 đến 22:00, soạn xong khoảng 5 phút.</div></div>'+
  '<div class="khoi"><h2>⚙️ Công tắc tự động</h2>'+

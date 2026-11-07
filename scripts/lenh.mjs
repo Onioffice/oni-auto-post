@@ -1,7 +1,7 @@
 // NHẬN VIỆC CHỊ GIAO – chạy mỗi giờ (7:00–22:00 giờ VN) trên GitHub Actions.
 // Đọc việc "Chờ làm" ở Bảng điều khiển → soạn bài + hình theo đúng yêu cầu → kiểm lỗi → đưa vào Chờ duyệt.
 import { homNay, layBai, layLenh, suaLenh, ghiLoi, ghiNhatKy } from './lib.mjs';
-import { soanBai } from './soan.mjs';
+import { soanBai, KENH_DANG_LAM } from './soan.mjs';
 
 // Ngày gần nhất (từ ngày mai) mà các kênh được chọn đều còn trống
 function ngayTrong(cu, kenhs) {
@@ -16,6 +16,9 @@ async function main() {
   const viec = (await layLenh()).filter(x => x.tt === 'Chờ làm');
   if (!viec.length) { console.log('Không có việc mới.'); return; }
   for (const v of viec.slice(0, 3)) {                        // mỗi lần tối đa 3 việc
+    const kenh = v.kenh.filter(k => KENH_DANG_LAM.includes(k));
+    if (!kenh.length) { await suaLenh(v.id, { tt: 'Lỗi', ketQua: 'Kênh này máy chưa làm được (Instagram đang làm mẫu mới).' }); continue; }
+    v.kenh = kenh;
     const cu = await layBai();
     const ngay = v.ngay && v.ngay >= homNay() ? v.ngay : ngayTrong(cu, v.kenh);
     await suaLenh(v.id, { tt: 'Đang làm', ngayDang: ngay, ketQua: 'Máy đang soạn…' });

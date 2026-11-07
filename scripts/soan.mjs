@@ -7,7 +7,9 @@ import { khungFB, mauA, chuanBi, coLogo } from './khung.mjs';
 
 const THU = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const GIO = { Facebook: '11:30', Instagram: '12:00', Website: '09:00' };
-export const kenhMacDinh = ngay => ['Facebook', 'Instagram'].concat([2, 5].includes(thuTrongTuan(ngay)) ? ['Website'] : []); // website T3, T6
+// Instagram tạm ngưng tới khi có mẫu carousel nền trắng riêng (quy tắc chị chốt 07/11)
+export const KENH_DANG_LAM = ['Facebook', 'Website'];
+export const kenhMacDinh = ngay => ['Facebook'].concat([2, 5].includes(thuTrongTuan(ngay)) ? ['Website'] : []); // website T3, T6
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 
 async function kiemHinh(png, kenh, mime = 'image/png', lan = 1) {
@@ -18,10 +20,11 @@ async function kiemHinh(png, kenh, mime = 'image/png', lan = 1) {
       { type: 'image', source: { type: 'base64', media_type: mime, data: png.toString('base64') } },
       { type: 'text', text: `Hình cho kênh ${kenh}. Kiểm từng điểm, nhìn kỹ từng chữ:
 1) Chính tả tiếng Việt và dấu trong mọi chữ trên hình.
-2) Chữ không dính, không chồng lên nhau, không tràn ra ngoài khung hay thẻ; giãn dòng đủ.
+2) Xem như trên màn hình điện thoại: chữ đọc rõ, thoáng; giãn dòng tối thiểu 1,2; dấu tiếng Việt không chạm dòng trên/dưới; không chồng chữ, không tràn ra ngoài khung hay thẻ.
+7) Không có chữ "Hình ảnh minh họa"; ảnh thật (nếu có) rõ nét, không méo, không đổi màu lạ; logo và chữ trên tường trong ảnh vẫn nhìn rõ.
 3) ${kenh === 'Website' ? 'Chân ảnh có ONI OFFICE, Hotline/Zalo 0932 668 642, www.onioffice.vn, sales@onioffice.vn.' : 'Góc trên trái có logo tòa nhà vàng ĐỦ 4 KHỐI (thấp – cao nhất – cao vừa – thanh mảnh bên phải) cạnh chữ ONI OFFICE; chân ảnh có 0932 668 642, www.onioffice.vn, sales@onioffice.vn.'}
 4) Không có từ tuyệt đối (nhất, số 1, 100%, hàng đầu) và không có "tư vấn pháp lý/thuế/kế toán".
-5) Nếu có giá thì phải ghi cả "chưa VAT" và "gồm VAT".
+5) ${kenh === 'Website' ? 'Nếu có giá thì phải ghi cả "chưa VAT" và "gồm VAT".' : 'KHÔNG được có giá tiền trên hình.'}
 6) Cân đối, dễ đọc trên điện thoại.
 Trả lời đúng dạng: \`\`\`json\n{"dat": true|false, "loi": ["…"]}\n\`\`\`` }
     ] }]

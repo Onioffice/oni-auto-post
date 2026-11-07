@@ -95,7 +95,7 @@ export async function igDangAnh(anhUrl, caption) {
 }
 
 // ---------- Kiểm lỗi chữ (phần máy kiểm được) ----------
-const CAM = [/tư vấn\s+(pháp lý|luật|thuế|kế toán)/i, /dịch vụ tư vấn thành lập/i, /\bsố\s*1\b/i, /100\s*%/, /đắc địa/i, /\bxịn\b/i, /rẻ nhất/i, /tốt nhất/i, /hàng đầu/i, /uy tín nhất/i, /cam kết tuyệt đối/i];
+const CAM = [/tư vấn\s+(pháp lý|luật|thuế|kế toán)/i, /dịch vụ tư vấn thành lập/i, /\bsố\s*1\b/i, /100\s*%/, /đắc địa/i, /\bxịn\b/i, /rẻ nhất/i, /tốt nhất/i, /hàng đầu/i, /uy tín nhất/i, /cam kết tuyệt đối/i, /tư vấn\s+pháp luật/i, /dịch vụ pháp lý/i, /hình ảnh minh họa/i, /(?<!(ít|thống|duy|hợp|đồng|thứ|chuyên)\s)\bnhất\b(?!\s*(là|định|quán|thiết|trí))/i, /đảm bảo\s+(được\s+)?(cấp|duyệt|thành công)/i];
 const NOI_BO = [/NHÁP/, /chờ chị duyệt/i, /====/, /File nguồn/i, /\bBot\b/];
 export function kiemChu(bai) {
   const loi = [], all = [bai.tieude, bai.nd, JSON.stringify(bai.hinh || {})].join('\n');
@@ -103,6 +103,13 @@ export function kiemChu(bai) {
   for (const r of NOI_BO) if (r.test(bai.nd || '')) loi.push('Còn chữ nội bộ: ' + r.source);
   if (/\d[\d.,]*\s*(đồng|đ(?![\p{L}])|vnđ|vnd|k(?![\p{L}])|nghìn|ngàn|triệu|usd|\$)/iu.test(bai.nd || '')) loi.push('Caption có ghi giá (giá chỉ được để trên hình)');
   if (/Oni\s*\n\s*Office/.test(bai.nd || '')) loi.push('"Oni Office" bị tách dòng');
+  const GIA = /\d[\d.,]*\s*(đồng|đ(?![\p{L}])|vnđ|vnd|k(?![\p{L}])|nghìn|ngàn|triệu|usd|\$)|chưa VAT|gồm VAT/iu;
+  if (['Facebook', 'Instagram'].includes(bai.kenh) && GIA.test(JSON.stringify(bai.hinh || {}) + JSON.stringify(bai.trang || []))) loi.push('Ảnh Facebook/Instagram không được ghi giá');
+  const soTag = ((bai.nd || '') + ' ' + (bai.tag || '')).match(/#[\p{L}\p{N}_]+/gu)?.filter((v, i, a) => a.indexOf(v) === i).length || 0;
+  if (bai.kenh === 'Facebook' && (soTag < 3 || soTag > 5)) loi.push(`Facebook cần 3–5 hashtag (đang ${soTag})`);
+  if (bai.kenh === 'Instagram' && (soTag < 6 || soTag > 8)) loi.push(`Instagram cần 6–8 hashtag (đang ${soTag})`);
+  if (bai.kenh === 'Facebook' && !/Oni Office/.test((bai.nd || '').split('\n').slice(-6).join('\n'))) loi.push('Facebook thiếu chữ ký công ty cuối bài');
+  if (/[\u{1D400}-\u{1D7FF}]/u.test(all)) loi.push('Có chữ đậm/nghiêng kiểu Unicode (gây mất dấu, lệch phông) – dùng chữ thường');
   const h = bai.hinh;
   if (h && h.cards) {
     if (h.cards.length !== 4) loi.push('Hình phải đúng 4 thẻ');

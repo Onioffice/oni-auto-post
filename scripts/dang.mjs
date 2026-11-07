@@ -21,13 +21,22 @@ async function main() {
     if (b.tt === 'Tự đăng' && b.coGia) loi.push('Bài có giá/ưu đãi phải chờ chị duyệt');
     if (!b.anh) loi.push('Thiếu hình');
     if (loi.length) { await suaBai(b.ma, { tt: 'Cần sửa', note: (b.note || '') + ' | Kiểm lần 2: ' + loi.join('; ') }); await ghiLoi('Đăng bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', b.ma); continue; }
+    // Bài Facebook giới thiệu bài web: thay {LINK_WEB} bằng link bài website cùng ngày
+    let nd = b.nd;
+    if (nd.includes('{LINK_WEB}')) {
+      const web = tat.find(x => x.kenh === 'Website' && x.at === b.at && x.tt !== 'Hủy');
+      if (web && web.link) nd = nd.replaceAll('{LINK_WEB}', web.link);
+      else if (web) { console.log(`Chờ ${b.ma}: bài website cùng ngày (${web.ma}) chưa đăng`); continue; }
+      else nd = nd.split('\n').filter(d => !d.includes('{LINK_WEB}')).join('\n');
+    }
     if (THU_NGHIEM) { console.log('[Thử] Sẽ đăng', b.ma, b.kenh, b.tieude); continue; }
     try {
       let link;
-      if (b.kenh === 'Facebook') link = await fbDangAnh(b.anh, b.nd);
-      else if (b.kenh === 'Instagram') link = await igDangAnh(b.anh, b.nd);
+      if (b.kenh === 'Facebook') link = await fbDangAnh(b.anh, nd);
+      else if (b.kenh === 'Instagram') link = await igDangAnh(b.anh, nd);
       else if (b.kenh === 'Website') link = await wpDangBai({ tieude: b.tieude, html: b.nd, anhId: b.anhId });
       else { console.log('Kênh chưa hỗ trợ:', b.kenh); continue; }
+      b.link = link;
       await suaBai(b.ma, { tt: 'Đã đăng', link, dangLuc: new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 16).replace('T', ' ') });
       daDangHomNay.add(b.kenh); daLam.push(b.kenh + ' đã đăng');
       console.log(`Đã đăng ${b.ma} ${b.kenh}: ${link}`);
