@@ -2,7 +2,7 @@
 // Tìm tin → Claude viết bài cho ngày kia → vẽ hình đúng khung Oni → kiểm lỗi (máy + Claude xem hình)
 // → tải hình lên website → đưa vào kho bài: "Tự đăng" (tin tức, không giá) hoặc "Chờ duyệt" (có giá/ưu đãi).
 import fs from 'node:fs';
-import { homNay, thuTrongTuan, layBai, themBai, ghiLoi, claude, layJSON, kiemChu, wpTaiAnh, wpTimAnh, layCaiDat, ghiNhatKy } from './lib.mjs';
+import { homNay, thuTrongTuan, layBai, themBai, ghiLoi, claude, layJSON, kiemChu, wpTaiAnh, wpTimAnh, layCaiDat, ghiNhatKy, CHU_KY_FB } from './lib.mjs';
 import { khungFB, mauA, chuanBi, coLogo } from './khung.mjs';
 
 const THU = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
@@ -71,6 +71,13 @@ Trả lời DUY NHẤT một khối:
   const ra = [];
   for (const b of (kq.bai || []).filter(b => kenhs.includes(b.kenh))) {
     try {
+      // Gắn hashtag + chữ ký công ty (Facebook) theo đúng mẫu chị chốt
+      if (b.kenh !== 'Website') {
+        let nd = (b.nd || '').replace(/\n*—{3,}[\s\S]*$/, '').trimEnd();
+        if (b.tag && !nd.includes(b.tag)) nd += '\n\n' + b.tag;
+        if (b.kenh === 'Facebook') nd += '\n\n' + CHU_KY_FB;
+        b.nd = nd;
+      }
       // 2) Kiểm lỗi chữ bằng máy
       let loi = kiemChu(b);
       // 3) Vẽ hình
@@ -90,7 +97,7 @@ Trả lời DUY NHẤT một khối:
       const up = await wpTaiAnh(buf, ten, `${b.tieude} – Oni Office`, mime);
       const datHet = loi.length === 0;
       if (!datHet) await ghiLoi('Soạn bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', ngay);
-      ra.push({ lenh, kenh: b.kenh, at: ngay, gio: GIO[b.kenh], tieude: b.tieude, nd: b.kenh === 'Website' ? b.nd : (b.nd + (b.tag && !b.nd.includes(b.tag) ? '\n\n' + b.tag : '')),
+      ra.push({ lenh, kenh: b.kenh, at: ngay, gio: GIO[b.kenh], tieude: b.tieude, nd: b.nd,
         tag: b.tag || '', anh: up.url, anhId: up.id, coGia: !!b.coGia,
         tt: !datHet ? 'Cần sửa' : (b.coGia || yeuCau ? 'Chờ duyệt' : 'Tự đăng'),
         note: (yeuCau ? 'Việc chị giao. ' : '') + (datHet ? `Đã kiểm lỗi: Đạt – ${new Date().toISOString()}` : 'Lỗi kiểm: ' + loi.join('; ')) + (kq.nguon?.length ? ' | Nguồn: ' + kq.nguon.map(n => n.link).join(' ') : '') });

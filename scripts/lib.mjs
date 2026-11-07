@@ -5,6 +5,17 @@ const env = (k, batBuoc = true) => { const v = process.env[k]; if (batBuoc && !v
 export const homNay = (them = 0) => new Date(Date.now() + 7 * 3600e3 + them * 86400e3).toISOString().slice(0, 10);
 export const thuTrongTuan = ymd => new Date(ymd + 'T00:00:00Z').getUTCDay(); // 0 = CN
 
+// Chữ ký công ty cuối bài Facebook (chị chốt 07/11/2026) – máy tự gắn, Claude không tự viết
+export const CHU_KY_FB = `———————-
+ONI OFFICE
+Optimal – Network – Innovation
+Giải pháp tối ưu chi phí cho doanh nghiệp hiện đại.
+📍 CS1: 01 Nguyễn Văn Nguyễn, P. Tân Định, TP.HCM
+📍 CS2: 70 Đường số 8, KDC CityLand Park Hills, P. Gò Vấp, TP.HCM
+🌐 onioffice.vn
+📧 sales@onioffice.vn
+📞 Hotline & Zalo: 0932 668 642`;
+
 // ---------- Kho bài (Cloudflare Worker) ----------
 async function kho(duong, opt = {}) {
   const r = await fetch(env('ONI_API_URL').replace(/\/$/, '') + duong, { ...opt, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env('ONI_API_KEY'), ...(opt.headers || {}) } });
@@ -108,7 +119,7 @@ export function kiemChu(bai) {
   const soTag = ((bai.nd || '') + ' ' + (bai.tag || '')).match(/#[\p{L}\p{N}_]+/gu)?.filter((v, i, a) => a.indexOf(v) === i).length || 0;
   if (bai.kenh === 'Facebook' && (soTag < 3 || soTag > 5)) loi.push(`Facebook cần 3–5 hashtag (đang ${soTag})`);
   if (bai.kenh === 'Instagram' && (soTag < 6 || soTag > 8)) loi.push(`Instagram cần 6–8 hashtag (đang ${soTag})`);
-  if (bai.kenh === 'Facebook' && !/Oni Office/.test((bai.nd || '').split('\n').slice(-6).join('\n'))) loi.push('Facebook thiếu chữ ký công ty cuối bài');
+  if (bai.kenh === 'Facebook' && !(bai.nd || '').trimEnd().endsWith(CHU_KY_FB)) loi.push('Facebook thiếu chữ ký công ty cuối bài');
   if (/[\u{1D400}-\u{1D7FF}]/u.test(all)) loi.push('Có chữ đậm/nghiêng kiểu Unicode (gây mất dấu, lệch phông) – dùng chữ thường');
   const h = bai.hinh;
   if (h && h.cards) {
