@@ -26,6 +26,9 @@ async function kho(duong, opt = {}) {
 export const layBai = async () => (await kho('/api/posts')).posts || [];
 export const themBai = posts => kho('/api/posts', { method: 'POST', body: JSON.stringify({ posts }) });
 export const suaBai = (ma, o) => kho('/api/posts/' + ma, { method: 'PUT', body: JSON.stringify(o) });
+// Dữ liệu Marketing của app (giống hệt app Oni Hub): bài ở MK.posts, việc chị giao ở MK.ai.lenh
+export const layMK = async () => (await kho('/api/mk')).mk || { posts: [], ai: {} };
+export const opMK = async (...ops) => (await kho('/api/mk/op', { method: 'POST', body: JSON.stringify({ ops }) })).kq || [];
 export const layLenh = async () => (await kho('/api/lenh')).lenh || [];
 export const suaLenh = (id, o) => kho('/api/lenh/' + id, { method: 'PUT', body: JSON.stringify(o) });
 export const layCaiDat = async () => (await kho('/api/caidat')).caidat || {};

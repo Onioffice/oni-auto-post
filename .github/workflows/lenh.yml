@@ -13,7 +13,7 @@ jobs:
       - name: Có việc mới không?
         id: co
         run: |
-          n=$(curl -sf -H "authorization: Bearer $K" "${U%/}/api/lenh" | grep -o '"tt":"Chờ làm"' | wc -l || echo 0)
+          n=$(curl -sf -H "authorization: Bearer $K" "${U%/}/api/mk" | grep -o '"tt":"Chờ AI"' | wc -l || echo 0)
           echo "Việc chờ làm: $n"; echo "n=$n" >> "$GITHUB_OUTPUT"
         env: { U: '${{ secrets.ONI_API_URL }}', K: '${{ secrets.ONI_API_KEY }}' }
       - if: steps.co.outputs.n != '0'

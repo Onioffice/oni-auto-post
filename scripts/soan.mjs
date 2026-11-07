@@ -2,7 +2,7 @@
 // Tìm tin → Claude viết bài cho ngày kia → vẽ hình đúng khung Oni → kiểm lỗi (máy + Claude xem hình)
 // → tải hình lên website → đưa vào kho bài: "Tự đăng" (tin tức, không giá) hoặc "Chờ duyệt" (có giá/ưu đãi).
 import fs from 'node:fs';
-import { homNay, thuTrongTuan, layBai, themBai, ghiLoi, claude, layJSON, kiemChu, wpTaiAnh, wpTimAnh, layCaiDat, ghiNhatKy, CHU_KY_FB } from './lib.mjs';
+import { homNay, thuTrongTuan, layMK, opMK, ghiLoi, claude, layJSON, kiemChu, wpTaiAnh, wpTimAnh, layCaiDat, ghiNhatKy, CHU_KY_FB } from './lib.mjs';
 import { khungFB, mauA, chuanBi, coLogo } from './khung.mjs';
 
 const THU = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
@@ -39,8 +39,8 @@ Trả lời đúng dạng: \`\`\`json\n{"dat": true|false, "loi": ["…"]}\n\`\`
 export async function soanBai({ ngay, kenhs, yeuCau = '', lenh = '' }) {
   await chuanBi();
   if (!coLogo()) throw new Error('Không tải được logo Oni từ website – dừng, không làm hình thiếu logo');
-  const cu = await layBai();
-  const ganDay = cu.slice(-40).map(x => `- ${x.at} ${x.kenh}: ${x.tieude}`).join('\n');
+  const cu = ((await layMK()).posts || []).filter(x => x.tt !== 'Hủy');
+  const ganDay = cu.slice().sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 40).map(x => `- ${x.at} ${x.kenh}: ${x.tieude}`).join('\n');
 
   // 1) Viết bài (có tìm tin trên mạng)
   const t = await claude({
@@ -99,12 +99,13 @@ Trả lời DUY NHẤT một khối:
       if (!datHet) await ghiLoi('Soạn bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', ngay);
       ra.push({ lenh, kenh: b.kenh, at: ngay, gio: GIO[b.kenh], tieude: b.tieude, nd: b.nd,
         tag: b.tag || '', anh: up.url, anhId: up.id, coGia: !!b.coGia,
-        tt: !datHet ? 'Cần sửa' : (b.coGia || yeuCau ? 'Chờ duyệt' : 'Tự đăng'),
+        tt: !datHet ? 'Cần sửa' : (b.coGia || yeuCau ? 'Chờ duyệt' : 'Đã duyệt'),   // tin tức không giá: tự đăng (chị chốt 07/11)
+        lienKetWeb: b.kenh === 'Facebook' && kenhs.includes('Website'), loai: 'AI soạn',
         note: (yeuCau ? 'Việc chị giao. ' : '') + (datHet ? `Đã kiểm lỗi: Đạt – ${new Date().toISOString()}` : 'Lỗi kiểm: ' + loi.join('; ')) + (kq.nguon?.length ? ' | Nguồn: ' + kq.nguon.map(n => n.link).join(' ') : '') });
     } catch (e) { await ghiLoi('Soạn bài ' + b.kenh, '1. Chạy hỏng', e.message, 'Chưa', ngay); }
   }
   let ma = [];
-  if (ra.length) { ma = (await themBai(ra)).ma; console.log('Đã đưa vào kho:', ma.join(', ')); }
+  if (ra.length) { ma = (await opMK(...ra.map(bai => ({ op: 'taoBai', bai })))).map(k => k.ma).filter(Boolean); console.log('Đã đưa vào app:', ma.join(', ')); }
   console.log(ra.map(x => `${x.kenh}: ${x.tt} – ${x.tieude}`).join('\n') || 'Không có bài nào.');
   return { ma, ra, chuDe: kq.chuDe || '' };
 }
@@ -113,10 +114,12 @@ Trả lời DUY NHẤT một khối:
 async function main() {
   if (process.env.SU_KIEN === 'schedule' && !(await layCaiDat()).soan) { console.log('Công tắc "Tự soạn bài mỗi sáng" đang tắt.'); return; }
   const ngay = process.env.NGAY_DANG || homNay(2);          // soạn trước 2 ngày, để chị kịp duyệt
-  const cu = await layBai();
+  await opMK({ op: 'batDau' });
+  const cu = ((await layMK()).posts || []).filter(x => !['Hủy', 'Cần sửa'].includes(x.tt));
   const kenhs = kenhMacDinh(ngay).filter(k => !cu.some(x => x.at === ngay && x.kenh === k && x.tt !== 'Hủy')); // kênh đã có bài (VD việc chị giao) thì thôi
   if (!kenhs.length) { console.log('Ngày', ngay, 'đã đủ bài.'); await ghiNhatKy('Tự soạn', `Ngày ${ngay} đã đủ bài`); return; }
   const r = await soanBai({ ngay, kenhs });
-  await ghiNhatKy('Tự soạn', `Ngày ${ngay}: ${r.ra.map(x => x.kenh + ' ' + x.tt).join(', ') || 'không có bài'}`);
+  const kq = `Ngày ${ngay}: ${r.ra.map(x => x.kenh + ' ' + x.tt).join(', ') || 'không có bài'}`;
+  await ghiNhatKy('Tự soạn', kq); await opMK({ op: 'nhatKy', viec: 'Tự soạn bài buổi sáng', ct: kq });
 }
 if (import.meta.url === `file://${process.argv[1]}`) main().catch(async e => { await ghiLoi('Soạn bài', '1. Chạy hỏng', e.message); await ghiNhatKy('Tự soạn', 'Lỗi: ' + e.message); process.exit(1); });

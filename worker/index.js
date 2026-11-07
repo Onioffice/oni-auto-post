@@ -28,6 +28,53 @@ async function docBai(env) { return JSON.parse((await env.DB.get('posts')) || '[
 async function ghiBai(env, a) { await env.DB.put('posts', JSON.stringify(a.slice(-1500))); }
 const maBai = () => 'B' + new Date(Date.now() + 7 * 3600e3).toISOString().slice(2, 10).replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
 
+// ---------- Dữ liệu Marketing của app (oni_mkt) – máy (GitHub) làm việc trực tiếp trên đây ----------
+const gioVN = () => { const t = new Date(Date.now() + 7 * 3600e3).toISOString(); return t.slice(0, 10) + ' ' + t.slice(11, 16); };
+async function docMK(env) { try { return JSON.parse((await env.DB.get('app:oni_mkt')) || 'null') || { posts: [], ideas: [], ai: {} }; } catch (e) { return { posts: [], ideas: [], ai: {} }; } }
+async function ghiMK(env, M) { await env.DB.put('app:oni_mkt', JSON.stringify(M)); }
+const khoaLog = x => (x.at || '') + '|' + (x.viec || '');
+// Gộp bản app gửi lên với bản trên kho: không làm mất việc máy vừa làm sau lúc app tải dữ liệu (base)
+function gopMK(den, kho, base) {
+  if (!kho || typeof kho !== 'object') return den;
+  const moiHon = x => x && x.botAt && x.botAt > base;
+  const gop = (A = [], B = [], key = x => x.id) => {
+    const out = A.map(a => { const b = B.find(y => key(y) === key(a)); return b && moiHon(b) && (b.botAt > (a.botAt || '')) ? b : a; });
+    const co = new Set(A.map(key));
+    const them = B.filter(b => !co.has(key(b)) && moiHon(b));
+    return them.concat(out);
+  };
+  den.posts = gop(den.posts, kho.posts);
+  den.ai = den.ai || {}; const ka = kho.ai || {};
+  den.ai.lenh = gop(den.ai.lenh, ka.lenh);
+  den.ai.log = gop(den.ai.log, ka.log, khoaLog).slice(0, 300);
+  if ((ka.lastRun || '') > (den.ai.lastRun || '')) den.ai.lastRun = ka.lastRun;
+  return den;
+}
+const maMoi = (M, at) => { const ym = String(at || gioVN()).slice(0, 7).replace('-', ''); const n = Math.max(0, ...(M.posts || []).map(p => p.ma || '').filter(m => m.startsWith('MKT-' + ym + '-')).map(m => +m.split('-')[2] || 0)); return 'MKT-' + ym + '-' + String(n + 1).padStart(3, '0'); };
+function lamOp(M, o) {
+  M.posts = M.posts || []; M.ai = M.ai || {}; M.ai.lenh = M.ai.lenh || []; M.ai.log = M.ai.log || [];
+  const now = gioVN(), botAt = new Date().toISOString(), AI = 'AI Marketing';
+  const LOG = (viec, ct) => M.ai.log.unshift({ at: now, viec: String(viec || ''), ct: String(ct || '').slice(0, 500), botAt });
+  const timBai = ma => M.posts.find(x => x.ma === ma);
+  switch (o.op) {
+    case 'batDau': M.ai.lastRun = now; return { ok: true };
+    case 'nhatKy': LOG(o.viec, o.ct); return { ok: true };
+    case 'nhanViec': { const l = M.ai.lenh.find(x => x.id === o.id); if (!l || ['Hủy', 'Xong'].includes(l.tt)) return { ok: false }; l.tt = 'AI đang làm'; l.nhan = now; l.botAt = botAt; LOG('Nhận việc', l.nd); return { ok: true }; }
+    case 'xongViec': { const l = M.ai.lenh.find(x => x.id === o.id); if (!l || l.tt === 'Hủy') return { ok: false }; l.tt = o.loi ? 'Chờ AI' : 'Xong'; l.xong = now; l.kq = String(o.kq || ''); l.botAt = botAt; LOG((o.loi ? 'Lỗi việc: ' : 'Xong việc: ') + l.nd, o.kq); return { ok: true }; }
+    case 'taoBai': {
+      const b = o.bai || {}; if (!b.kenh || !b.tieude) return { ok: false, err: 'thiếu kênh/tiêu đề' };
+      const tt = ['Chờ duyệt', 'Cần sửa', 'Đã duyệt'].includes(b.tt) ? b.tt : 'Chờ duyệt';
+      const p = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), ma: maMoi(M, b.at), at: b.at || '', gio: b.gio || '', kenh: b.kenh, tieude: b.tieude, nd: b.nd || '', tag: b.tag || '', anh: b.anh || '', anhId: b.anhId || null, loai: b.loai || '', cd: b.cd || '', mt: b.mt || '', note: b.note || '', ph: AI, by: AI, ai: 1, tt, coGia: !!b.coGia, lenh: b.lenh || '', lienKetWeb: !!b.lienKetWeb,
+        hist: [{ at: now, by: AI, t: tt === 'Đã duyệt' ? '🤖 AI soạn – tin tức không giá, tự đăng theo quy định chị chốt 07/11' : tt === 'Cần sửa' ? '🤖 AI soạn – máy kiểm lỗi chưa đạt: ' + (b.note || '') : '🤖 AI soạn & gửi duyệt' + (b.lenh ? ' (việc ' + b.lenh + ')' : '') }], botAt };
+      M.posts.unshift(p); LOG('Soạn bài ' + p.ma + ' – ' + p.kenh, p.tieude); return { ok: true, ma: p.ma };
+    }
+    case 'daDang': { const p = timBai(o.ma); if (!p) return { ok: false }; p.tt = 'Đã đăng'; p.dang = o.dang || now.slice(0, 10); p.link = o.link || ''; p.hen = p.hen || { by: AI, at: now }; (p.hist = p.hist || []).push({ at: now, by: AI, t: '🤖 Đã đăng lên ' + p.kenh }); p.botAt = botAt; LOG('Đăng bài ' + p.ma + ' – ' + p.kenh, o.link || ''); return { ok: true }; }
+    case 'canSua': { const p = timBai(o.ma); if (!p) return { ok: false }; p.tt = 'Cần sửa'; p.note = ((p.note || '') + ' | ' + (o.ly || '')).slice(0, 1000); (p.hist = p.hist || []).push({ at: now, by: AI, t: '🤖 ' + (o.ly || 'Cần sửa') }); p.botAt = botAt; LOG('Chuyển Cần sửa ' + p.ma, o.ly); return { ok: true }; }
+    case 'suaBai': { const p = timBai(o.ma); if (!p || !p.ai) return { ok: false }; ['tieude', 'nd', 'tag', 'anh', 'anhId', 'note'].forEach(k => { if (o.bai && o.bai[k] != null) p[k] = o.bai[k]; }); p.tt = 'Chờ duyệt'; (p.hist = p.hist || []).push({ at: now, by: AI, t: '🤖 Sửa theo yêu cầu & gửi duyệt lại' }); p.botAt = botAt; LOG('Sửa bài ' + p.ma, ''); return { ok: true }; }
+  }
+  return { ok: false, err: 'không có lệnh ' + o.op };
+}
+
 export default {
   async fetch(req, env) {
     const u = new URL(req.url), p = u.pathname;
@@ -43,9 +90,10 @@ export default {
     if (p === '/dang-xuat') return new Response('', { status: 303, headers: { location: '/', 'set-cookie': 'oni_mk=; Path=/; Max-Age=0' } });
 
     const ai = await quyen(req, env);
-    if (p === '/' || p === '/index.html') {
+    if (p === '/' || p === '/index.html' || p === '/duyet') {
       if (ai !== 'chi') return new Response(trangDangNhap(''), { headers: { 'content-type': 'text/html; charset=utf-8' } });
-      return new Response(TRANG, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+      const html = (p === '/duyet' || typeof APP_HTML === 'undefined') ? TRANG : APP_HTML;   // "/" = Marketing giống app; "/duyet" = trang duyệt nhanh
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
     }
     if (!p.startsWith('/api/')) return new Response('Không có trang này', { status: 404 });
     if (!ai) return json({ loi: 'Chưa đăng nhập' }, 401);
@@ -76,6 +124,39 @@ export default {
       }
       o.lichSu = (o.lichSu || []).concat([{ luc: new Date().toISOString(), ai, tt: o.tt, note: b.note || '' }]).slice(-20);
       await ghiBai(env, a); return json({ ok: true, post: o });
+    }
+
+    // ---- Dữ liệu Marketing của app (chuyển từ Oni Hub): chỉ các khóa Marketing, không nhận khóa khác ----
+    const KHOA_APP = ['oni_mkt', 'oni_mks', 'oni_nk', 'oni_mkluu_last'];
+    if (p === '/api/app/keys' && req.method === 'GET') {
+      const keys = {}; for (const k of KHOA_APP) { const v = await env.DB.get('app:' + k); if (v != null) keys[k] = v; }
+      return json({ ok: true, keys });
+    }
+    if ((p === '/api/app/keys' && req.method === 'PUT') || (p === '/api/app/keys-beacon' && req.method === 'POST')) {
+      if (ai !== 'chi') return json({ loi: 'Không có quyền' }, 403);
+      const b = await req.json(); let n = 0, gop = false;
+      for (let [k, v] of Object.entries(b.keys || {})) if (KHOA_APP.includes(k) && typeof v === 'string' && v.length < 20e6) {
+        const cu = await env.DB.get('app:' + k);
+        if (k === 'oni_mkt' && cu && b.base) { try { const g = JSON.stringify(gopMK(JSON.parse(v), JSON.parse(cu), b.base)); if (g !== v) { v = g; gop = true; } } catch (e) {} }
+        if (cu != null && cu !== v) await env.DB.put('app_bak:' + k, cu, { expirationTtl: 30 * 86400 }); // giữ bản trước 30 ngày
+        await env.DB.put('app:' + k, v); n++;
+      }
+      return json({ ok: true, n, gop });
+    }
+    // Máy (GitHub) đọc / làm việc trên dữ liệu Marketing của app
+    if (p === '/api/mk' && req.method === 'GET') { const M = await docMK(env); return json({ ok: true, mk: M }); }
+    if (p === '/api/mk/op' && req.method === 'POST') {
+      if (ai !== 'bot') return json({ loi: 'Chỉ máy được dùng' }, 403);
+      const b = await req.json(), M = await docMK(env), kq = [];
+      for (const o of (Array.isArray(b.ops) ? b.ops : [b])) kq.push(lamOp(M, o));
+      await ghiMK(env, M); return json({ ok: true, kq });
+    }
+    if (p === '/api/app/drv' && req.method === 'POST') {
+      const b = await req.json();
+      if (b.action === 'gsc_get' || b.action === 'gsc_now') { const g = await env.DB.get('app:gsc'); return json(g ? Object.assign({ ok: true }, JSON.parse(g)) : { ok: false, err: 'Chưa có số liệu các kênh trên web (máy chủ chưa gửi sang)' }); }
+      if (b.action === 'gsc_put') { await env.DB.put('app:gsc', JSON.stringify(b.data || {})); return json({ ok: true }); }
+      if (b.action === 'mk_luutru') { const a = JSON.parse((await env.DB.get('app:luutru')) || '[]'); a.push({ luc: new Date().toISOString(), d: b }); await env.DB.put('app:luutru', JSON.stringify(a.slice(-50))); return json({ ok: true, n: (b.bai || b.posts || []).length || 0 }); }
+      return json({ ok: false, err: 'Chức năng này chưa có trên bản web' });
     }
 
     // ---- Giao việc (lệnh của chị) ----

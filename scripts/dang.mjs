@@ -1,29 +1,27 @@
-// ĐĂNG BÀI – chạy 10:55 sáng (giờ VN) mỗi ngày trên GitHub Actions.
-// Chỉ đăng bài có ngày đăng là hôm nay (hoặc trễ tối đa 2 ngày) và trạng thái "Đã duyệt" hoặc "Tự đăng".
-// Bài "Chờ duyệt", "Cần sửa", "Hủy" KHÔNG bao giờ được đăng. Mỗi kênh tối đa 1 bài/ngày.
-import { homNay, layBai, suaBai, ghiLoi, kiemChu, fbDangAnh, igDangAnh, wpDangBai, layCaiDat, ghiNhatKy } from './lib.mjs';
+// ĐĂNG BÀI – chạy 10:55 sáng (giờ VN) mỗi ngày trên GitHub Actions, khi công tắc "Tự đăng bài" đang bật.
+// Chỉ đăng bài trong app có trạng thái "Đã duyệt", ngày đăng là hôm nay (hoặc trễ tối đa 2 ngày), kênh máy làm được.
+// "Chờ duyệt", "Cần sửa", "Hủy", "Nháp" KHÔNG bao giờ được đăng. Mỗi kênh tối đa 1 bài/ngày.
+import { homNay, layMK, opMK, ghiLoi, kiemChu, fbDangAnh, igDangAnh, wpDangBai, layCaiDat, ghiNhatKy } from './lib.mjs';
 
 const THU_NGHIEM = process.env.THU_NGHIEM === '1';   // chạy thử: chỉ in ra, không đăng
 const nay = homNay(), som = homNay(-2);
+const MAY_DANG = ['Facebook', 'Website'];             // Instagram chờ mẫu carousel; kênh khác đăng tay
 
 async function main() {
   if (process.env.SU_KIEN === 'schedule' && !(await layCaiDat()).dang) { console.log('Công tắc "Tự đăng bài" đang tắt.'); return; }
-  const daLam = [];
-  const tat = await layBai();
-  const daDangHomNay = new Set(tat.filter(x => x.tt === 'Đã đăng' && (x.dangLuc || '').startsWith(nay)).map(x => x.kenh));
-  const can = tat.filter(x => ['Đã duyệt', 'Tự đăng'].includes(x.tt) && !x.link && x.at >= som && x.at <= nay)
-    .sort((a, b) => (a.at !== b.at ? (a.at < b.at ? -1 : 1) : (!!b.lenh - !!a.lenh) || (a.gio < b.gio ? -1 : 1))); // cùng ngày: bài chị giao đăng trước
-  if (!can.length) { console.log('Hôm nay không có bài cần đăng.'); if (!THU_NGHIEM) await ghiNhatKy('Tự đăng', 'Hôm nay không có bài cần đăng'); return; }
+  const M = await layMK(), tat = M.posts || [], daLam = [];
+  const daDangHomNay = new Set(tat.filter(x => x.tt === 'Đã đăng' && (x.dang || '').startsWith(nay)).map(x => x.kenh));
+  const can = tat.filter(x => x.tt === 'Đã duyệt' && !x.link && MAY_DANG.includes(x.kenh) && x.at >= som && x.at <= nay)
+    .sort((a, b) => (a.at !== b.at ? (a.at < b.at ? -1 : 1) : (a.kenh === 'Website' ? -1 : b.kenh === 'Website' ? 1 : 0) || (!!b.lenh - !!a.lenh) || ((a.gio || '') < (b.gio || '') ? -1 : 1)));
+  if (!can.length) { console.log('Hôm nay không có bài cần đăng.'); if (!THU_NGHIEM) await ghiNhatKy('Tự đăng', 'Không có bài cần đăng'); return; }
+  if (!THU_NGHIEM) await opMK({ op: 'batDau' });
   for (const b of can) {
     if (daDangHomNay.has(b.kenh)) { console.log(`Bỏ ${b.ma}: kênh ${b.kenh} đã có bài hôm nay`); continue; }
-    // Kiểm lỗi lần 2 ngay trước khi đăng
-    const loi = kiemChu(b);
-    if (b.tt === 'Tự đăng' && b.coGia) loi.push('Bài có giá/ưu đãi phải chờ chị duyệt');
+    const loi = kiemChu(b);                                        // kiểm lỗi lần 2 ngay trước khi đăng
     if (!b.anh) loi.push('Thiếu hình');
-    if (loi.length) { await suaBai(b.ma, { tt: 'Cần sửa', note: (b.note || '') + ' | Kiểm lần 2: ' + loi.join('; ') }); await ghiLoi('Đăng bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', b.ma); continue; }
-    // Bài Facebook giới thiệu bài web: thay {LINK_WEB} bằng link bài website cùng ngày
-    let nd = b.nd;
-    if (nd.includes('{LINK_WEB}')) {
+    if (loi.length) { if (!THU_NGHIEM) { await opMK({ op: 'canSua', ma: b.ma, ly: 'Kiểm lần 2 trước khi đăng: ' + loi.join('; ') }); await ghiLoi('Đăng bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', b.ma); } else console.log('[Thử] Lỗi', b.ma, loi); continue; }
+    let nd = b.nd || '';
+    if (nd.includes('{LINK_WEB}')) {                               // bài Facebook giới thiệu bài web cùng ngày
       const web = tat.find(x => x.kenh === 'Website' && x.at === b.at && x.tt !== 'Hủy');
       if (web && web.link) nd = nd.replaceAll('{LINK_WEB}', web.link);
       else if (web) { console.log(`Chờ ${b.ma}: bài website cùng ngày (${web.ma}) chưa đăng`); continue; }
@@ -34,17 +32,16 @@ async function main() {
       let link;
       if (b.kenh === 'Facebook') link = await fbDangAnh(b.anh, nd);
       else if (b.kenh === 'Instagram') link = await igDangAnh(b.anh, nd);
-      else if (b.kenh === 'Website') link = await wpDangBai({ tieude: b.tieude, html: b.nd, anhId: b.anhId });
-      else { console.log('Kênh chưa hỗ trợ:', b.kenh); continue; }
+      else if (b.kenh === 'Website') link = await wpDangBai({ tieude: b.tieude, html: nd, anhId: b.anhId });
       b.link = link;
-      await suaBai(b.ma, { tt: 'Đã đăng', link, dangLuc: new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 16).replace('T', ' ') });
+      await opMK({ op: 'daDang', ma: b.ma, link, dang: nay });
       daDangHomNay.add(b.kenh); daLam.push(b.kenh + ' đã đăng');
       console.log(`Đã đăng ${b.ma} ${b.kenh}: ${link}`);
     } catch (e) {
-      await suaBai(b.ma, { tt: 'Lỗi', loi: e.message });
+      await opMK({ op: 'canSua', ma: b.ma, ly: 'Đăng lỗi: ' + e.message.slice(0, 200) });
       await ghiLoi('Đăng bài ' + b.kenh, '1. Chạy hỏng', e.message, 'Chưa', b.ma); daLam.push(b.kenh + ' lỗi');
     }
   }
-  if (!THU_NGHIEM) await ghiNhatKy('Tự đăng', daLam.join(', ') || 'Không đăng bài nào');
+  if (!THU_NGHIEM) { const kq = daLam.join(', ') || 'Không đăng bài nào'; await ghiNhatKy('Tự đăng', kq); await opMK({ op: 'nhatKy', viec: 'Tự đăng bài', ct: kq }); }
 }
 main().catch(async e => { await ghiLoi('Đăng bài', '1. Chạy hỏng', e.message); process.exit(1); });
