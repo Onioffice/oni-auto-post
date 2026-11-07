@@ -15,6 +15,10 @@ async function kho(duong, opt = {}) {
 export const layBai = async () => (await kho('/api/posts')).posts || [];
 export const themBai = posts => kho('/api/posts', { method: 'POST', body: JSON.stringify({ posts }) });
 export const suaBai = (ma, o) => kho('/api/posts/' + ma, { method: 'PUT', body: JSON.stringify(o) });
+export const layLenh = async () => (await kho('/api/lenh')).lenh || [];
+export const suaLenh = (id, o) => kho('/api/lenh/' + id, { method: 'PUT', body: JSON.stringify(o) });
+export const layCaiDat = async () => (await kho('/api/caidat')).caidat || {};
+export async function ghiNhatKy(viec, kq) { try { await kho('/api/nhatky', { method: 'POST', body: JSON.stringify({ viec, kq }) }); } catch (e) { console.error('Không ghi được nhật ký:', e.message); } }
 export async function ghiLoi(viec, loai, loi, sua = 'Chưa', ma = '') {
   console.error(`[Sổ lỗi] ${viec} | ${loai} | ${loi}`);
   try { await kho('/api/soloi', { method: 'POST', body: JSON.stringify({ viec, loai, loi, sua, ma }) }); } catch (e) { console.error('Không ghi được Sổ lỗi:', e.message); }
