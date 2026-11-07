@@ -63,9 +63,9 @@ function phong(u,t){let o=d.getElementById('oniTo');if(!o){o=d.createElement('di
 window.__oniPhong=phong;
 function loai(p){if(p.tt==='Chờ duyệt')return 'cho';if(p.tt==='Đã duyệt'&&!p.link)return 'lich';if(p.tt==='Cần sửa')return 'sua';return ''}
 function ve(){const M=MK();const R=d.getElementById('m5Root');if(!M||!R||!R.parentNode)return;let g=R.parentNode.querySelector(':scope>.oniGal');
- const P=(M.posts||[]).filter(p=>!p.del&&loai(p));const dem={cho:0,lich:0,sua:0};P.forEach(p=>dem[loai(p)]++);
  const tuNay=new Date(Date.now()-86400e3*3).toISOString().slice(0,10);
- const ds=P.filter(p=>loai(p)===loc&&(loc!=='lich'||!p.at||p.at>=tuNay)).sort((a,b)=>((a.at||'9')+(a.gio||'')).localeCompare((b.at||'9')+(b.gio||'')));
+ const P=(M.posts||[]).filter(p=>!p.del&&loai(p)&&(loai(p)!=='lich'||!p.at||p.at>=tuNay));const dem={cho:0,lich:0,sua:0};P.forEach(p=>dem[loai(p)]++);
+ const ds=P.filter(p=>loai(p)===loc).sort((a,b)=>((a.at||'9')+(a.gio||'')).localeCompare((b.at||'9')+(b.gio||'')));
  const tag={cho:['Chờ duyệt','cho'],lich:['Đã duyệt – chờ đăng','ok'],sua:['Cần sửa','sua']};
  const h='<h3>🖼 Xem bài trước khi đăng</h3><div class="ghi">Mỗi bài hiện hình lớn và đủ nội dung. Bấm vào hình để phóng to toàn màn hình.</div>'+
  '<div class="tab">'+[['cho','Chờ duyệt'],['lich','Đã duyệt – chờ đăng'],['sua','Cần sửa']].map(([k,t])=>'<button data-loc="'+k+'" class="'+(loc===k?'on':'')+'">'+t+' ('+dem[k]+')</button>').join('')+'</div>'+
