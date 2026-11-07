@@ -114,7 +114,7 @@ export async function mauA(o, photoBuf) {
   x.fillStyle = GOLD; x.textBaseline = 'middle'; x.fillText(tag, L + 15, 71); x.letterSpacing = '0px';
   const lines = o.lines.map(s => s.toUpperCase()); let size = 48; x.font = F(800, size);
   while (lines.some(s => x.measureText(s).width > 560) && size > 34) { size -= 2; x.font = F(800, size); }
-  const lh = Math.round(size * 1.13); let y = 138;
+  const lh = Math.round(size * 1.32); let y = 132;   // giãn dòng đủ cho dấu tiếng Việt chữ in hoa (Ể, Ầ, Ế…)
   lines.forEach((s, i) => { x.fillStyle = i === lines.length - 1 ? GOLD : '#FFFFFF'; x.fillText(s, L, y); y += lh; });
   y += 10; x.font = F(500, 22); x.fillStyle = '#FFFFFF'; (o.sub || []).forEach(s => { x.fillText(s, L, y); y += 33; });
   const PX = 742, PY = 64, PW = 400, PH = 400;

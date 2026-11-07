@@ -11,7 +11,7 @@ const ngay = process.env.NGAY_DANG || homNay(2);          // soạn trước 2 n
 const kenhs = ['Facebook', 'Instagram'].concat([2, 5].includes(thuTrongTuan(ngay)) ? ['Website'] : []); // website T3, T6
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 
-async function kiemHinh(png, kenh, mime = 'image/png') {
+async function kiemHinh(png, kenh, mime = 'image/png', lan = 1) {
   const t = await claude({
     max_tokens: 1200,
     system: 'Bạn là người kiểm lỗi hình bài đăng của Oni Office. Rất khắt khe. Chỉ trả lời DUY NHẤT một đối tượng JSON, không viết gì khác.',
@@ -27,7 +27,10 @@ async function kiemHinh(png, kenh, mime = 'image/png') {
 Trả lời đúng dạng: \`\`\`json\n{"dat": true|false, "loi": ["…"]}\n\`\`\`` }
     ] }]
   });
-  try { return layJSON(t); } catch (e) { return { dat: false, loi: ['Không đọc được kết quả kiểm hình: ' + e.message.slice(0, 200)] }; }
+  try { return layJSON(t); } catch (e) {
+    if (lan < 3) return kiemHinh(png, kenh, mime, lan + 1);   // Claude trả lời trống → hỏi lại
+    return { dat: false, loi: ['Không đọc được kết quả kiểm hình: ' + e.message.slice(0, 200)] };
+  }
 }
 
 async function main() {
