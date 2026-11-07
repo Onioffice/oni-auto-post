@@ -14,7 +14,7 @@ const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url
 async function kiemHinh(png, kenh, mime = 'image/png') {
   const t = await claude({
     max_tokens: 1200,
-    system: 'Bạn là người kiểm lỗi hình bài đăng của Oni Office. Rất khắt khe. Chỉ trả lời JSON.',
+    system: 'Bạn là người kiểm lỗi hình bài đăng của Oni Office. Rất khắt khe. Chỉ trả lời DUY NHẤT một đối tượng JSON, không viết gì khác.',
     messages: [{ role: 'user', content: [
       { type: 'image', source: { type: 'base64', media_type: mime, data: png.toString('base64') } },
       { type: 'text', text: `Hình cho kênh ${kenh}. Kiểm từng điểm, nhìn kỹ từng chữ:
@@ -27,7 +27,7 @@ async function kiemHinh(png, kenh, mime = 'image/png') {
 Trả lời đúng dạng: \`\`\`json\n{"dat": true|false, "loi": ["…"]}\n\`\`\`` }
     ] }]
   });
-  return layJSON(t);
+  try { return layJSON(t); } catch (e) { return { dat: false, loi: ['Không đọc được kết quả kiểm hình: ' + e.message.slice(0, 200)] }; }
 }
 
 async function main() {

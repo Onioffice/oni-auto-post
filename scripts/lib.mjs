@@ -36,9 +36,11 @@ export async function claude({ system, messages, max_tokens = 8000, tools }) {
   }
 }
 export function layJSON(text) {
-  const m = text.match(/```json\s*([\s\S]*?)```/) || text.match(/(\{[\s\S]*\})\s*$/);
-  if (!m) throw new Error('Claude không trả về JSON');
-  return JSON.parse(m[1]);
+  const thu = [];
+  const f = text.match(/```(?:json)?\s*([\s\S]*?)```/); if (f) thu.push(f[1]);
+  const i = text.indexOf('{'), j = text.lastIndexOf('}'); if (i >= 0 && j > i) thu.push(text.slice(i, j + 1));
+  for (const t of thu) { try { return JSON.parse(t); } catch (e) {} }
+  throw new Error('Claude không trả về JSON: ' + text.replace(/\s+/g, ' ').slice(0, 300));
 }
 
 // ---------- WordPress (onioffice.vn) ----------
