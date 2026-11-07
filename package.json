@@ -1,0 +1,15 @@
+{
+  "name": "oni-auto-post",
+  "private": true,
+  "type": "module",
+  "description": "Oni Office – Marketing tự động: soạn bài (Claude API), vẽ hình theo khung Oni, kiểm lỗi, chờ duyệt, đăng Facebook/Instagram/website",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "soan": "node scripts/soan.mjs",
+    "dang": "node scripts/dang.mjs",
+    "thu-hinh": "node scripts/thu-hinh.mjs"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.65"
+  }
+}

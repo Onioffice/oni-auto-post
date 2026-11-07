@@ -1,0 +1,37 @@
+name: Đăng bài (10:55 sáng giờ VN)
+on:
+  schedule:
+    - cron: '55 3 * * *'
+  workflow_dispatch:
+    inputs:
+      thu_nghiem:
+        description: "Chạy thử, không đăng thật (1 = thử)"
+        required: false
+        default: "1"
+concurrency: { group: oni-dang, cancel-in-progress: false }
+jobs:
+  chay:
+    # Lịch tự chạy chỉ bật khi biến BAT_TU_DONG = true (Settings → Secrets and variables → Actions → Variables)
+    if: github.event_name == 'workflow_dispatch' || vars.BAT_TU_DONG == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - uses: actions/cache@v4
+        with: { path: fonts, key: fonts-bevietnampro-v1 }
+      - run: npm ci
+      - run: node scripts/dang.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ONI_API_URL: ${{ secrets.ONI_API_URL }}
+          ONI_API_KEY: ${{ secrets.ONI_API_KEY }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USERNAME: ${{ secrets.WP_USERNAME }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          ONI_MODEL: ${{ vars.ONI_MODEL }}
+          THU_NGHIEM: ${{ github.event_name == 'workflow_dispatch' && inputs.thu_nghiem || '0' }}
