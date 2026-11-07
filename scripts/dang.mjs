@@ -11,7 +11,8 @@ async function main() {
   if (process.env.SU_KIEN === 'schedule' && !(await layCaiDat()).dang) { console.log('Công tắc "Tự đăng bài" đang tắt.'); return; }
   const M = await layMK(), tat = M.posts || [], daLam = [];
   const daDangHomNay = new Set(tat.filter(x => x.tt === 'Đã đăng' && (x.dang || '').startsWith(nay)).map(x => x.kenh));
-  const can = tat.filter(x => x.tt === 'Đã duyệt' && !x.link && MAY_DANG.includes(x.kenh) && x.at >= som && x.at <= nay)
+  // chỉ đăng bài do máy GitHub soạn (có botAt) và chưa hẹn giờ tay trên trang – tránh đăng trùng bài cũ của lịch trên máy Mac
+  const can = tat.filter(x => x.tt === 'Đã duyệt' && !x.link && x.botAt && !x.hen && MAY_DANG.includes(x.kenh) && x.at >= som && x.at <= nay)
     .sort((a, b) => (a.at !== b.at ? (a.at < b.at ? -1 : 1) : (a.kenh === 'Website' ? -1 : b.kenh === 'Website' ? 1 : 0) || (!!b.lenh - !!a.lenh) || ((a.gio || '') < (b.gio || '') ? -1 : 1)));
   if (!can.length) { console.log('Hôm nay không có bài cần đăng.'); if (!THU_NGHIEM) await ghiNhatKy('Tự đăng', 'Không có bài cần đăng'); return; }
   if (!THU_NGHIEM) await opMK({ op: 'batDau' });
