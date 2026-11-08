@@ -98,6 +98,14 @@ export default {
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
     }
     if (!p.startsWith('/api/')) return new Response('Không có trang này', { status: 404 });
+    // Máy chủ Apps Script xin kết nối (không cần đăng nhập): chỉ ghi "đang chờ", chị phải bấm Cho phép trên Bảng điều khiển
+    if (p === '/api/thuso/xin' && req.method === 'POST') {
+      const b = await req.json().catch(() => ({}));
+      if (!/^oni_ts_[0-9a-f]{48}$/.test(b.khoa || '') || !/^[A-Z0-9]{4}$/.test(b.ma || '')) return json({ loi: 'Sai dạng' }, 400);
+      const k = await env.DB.get('khoa_thuso'); if (k && eqTime(b.khoa, k)) return json({ ok: true, daDuyet: true });
+      await env.DB.put('khoa_cho', JSON.stringify({ khoa: b.khoa, ma: b.ma, luc: new Date().toISOString() }), { expirationTtl: 86400 });
+      return json({ ok: true, cho: true });
+    }
     if (!ai) return json({ loi: 'Chưa đăng nhập' }, 401);
     if (ai === 'thuso') {   // máy chủ Apps Script chỉ được gửi số các kênh
       if (p === '/api/thuso' && req.method === 'POST') { const b = await req.json(), cd = JSON.parse((await env.DB.get('caidat')) || '{}'); if (cd.thuso === false) return json({ ok: false, tat: true, loi: 'Chị đang tắt máy Thu số' }); await env.DB.put('app:gsc', JSON.stringify(b.data || {})); await ghiNK(env, 'Thu số', String(b.kq || 'Đã cập nhật số các kênh')); return json({ ok: true }); }
@@ -214,6 +222,11 @@ export default {
       await env.DB.put('baocao', JSON.stringify(a.slice(-26))); return json({ ok: true });
     }
     // ---- Khóa riêng cho máy chủ Apps Script gửi số kênh (chị lấy khóa trên Bảng điều khiển) ----
+    if (p === '/api/thuso/cho' && req.method === 'GET' && ai === 'chi') { const c = JSON.parse((await env.DB.get('khoa_cho')) || 'null'); return json({ ok: true, cho: c ? { ma: c.ma, luc: c.luc } : null, coKhoa: !!(await env.DB.get('khoa_thuso')) }); }
+    if (p === '/api/thuso/duyet' && req.method === 'POST' && ai === 'chi') {
+      const c = JSON.parse((await env.DB.get('khoa_cho')) || 'null'); if (!c) return json({ loi: 'Không có máy chủ nào đang xin' }, 404);
+      await env.DB.put('khoa_thuso', c.khoa); await env.DB.delete('khoa_cho'); await ghiNK(env, 'Thu số', 'Chị cho phép máy chủ Apps Script gửi số (mã ' + c.ma + ')'); return json({ ok: true });
+    }
     if (p === '/api/thuso/khoa' && req.method === 'POST' && ai === 'chi') {
       let k = await env.DB.get('khoa_thuso'); const b = await req.json().catch(() => ({}));
       if (!k || b.moi) { const r = new Uint8Array(24); crypto.getRandomValues(r); k = 'oni_ts_' + [...r].map(x => x.toString(16).padStart(2, '0')).join(''); await env.DB.put('khoa_thuso', k); }

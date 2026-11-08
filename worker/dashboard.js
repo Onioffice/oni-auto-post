@@ -48,8 +48,8 @@ const KENH={
 };
 const WEB={ten:'Website – onioffice.vn',kenh:'Website',tim:['Bài kiến thức 2 bài/tuần theo từ khóa khách đang tìm (Search Console)','Mỗi bài có lời mời đặt phòng họp / xem văn phòng và nút Zalo','Thêm liên kết nội bộ giữa bài kiến thức và trang dịch vụ']};
 
-let CD={},NK=[],SL=[],BC=[];
-async function napServer(){try{const [a,b,c,e]=await Promise.all(['/api/caidat','/api/nhatky','/api/soloi','/api/baocao'].map(u=>fetch(u).then(r=>r.ok?r.json():{}).catch(()=>({}))));CD=a.caidat||{};NK=b.nhatky||[];SL=c.soloi||[];BC=e.baocao||[]}catch(e){}}
+let CD={},NK=[],SL=[],BC=[],TS={};
+async function napServer(){try{const [a,b,c,e]=await Promise.all(['/api/caidat','/api/nhatky','/api/soloi','/api/baocao'].map(u=>fetch(u).then(r=>r.ok?r.json():{}).catch(()=>({}))));CD=a.caidat||{};NK=b.nhatky||[];SL=c.soloi||[];BC=e.baocao||[];TS=await fetch('/api/thuso/cho').then(r=>r.ok?r.json():{}).catch(()=>({}))}catch(e){}}
 const bat=k=>['nhan','thuso','baocao'].includes(k)?CD[k]!==false:!!CD[k];
 
 function trangMay(){const M=LS('oni_mkt')||{},mks=LS('oni_mks')||{};
@@ -58,7 +58,7 @@ function trangMay(){const M=LS('oni_mkt')||{},mks=LS('oni_mks')||{};
   if(m.k==='nhan'&&!lan&&M.ai&&M.ai.lastRun)lan={luc:String(M.ai.lastRun).replace(' ','T')+':00',kq:'AI chạy lần cuối'};
   const tre=lan?Math.round((Date.now()-new Date(lan.luc))/36e5):null;
   const tt=!bat(m.k)?['Đang tắt','xam']:!lan?['Chưa chạy lần nào','vang']:(m.k==='nhan'&&tre>26)||(m.k!=='nhan'&&m.k!=='baocao'&&tre>30)?['Quá hạn chưa chạy','do']:/^Lỗi/i.test(lan.kq||'')?['Có lỗi','do']:['Đang chạy tốt','ok'];
-  return `<div class="may"><div><b>${Es(m.ten)}</b><small>${Es(m.mo)}</small></div><div class="an"><small>${Es(m.lich)}</small></div><div><span class="ch ${tt[1]}">${tt[0]}</span>${lan?'<br><small>'+Es(new Date(lan.luc).toLocaleString('vi-VN'))+'</small>':''}</div><div class="an"><small>${Es((lan&&lan.kq)||'—')}</small>${m.k==='thuso'?'<br><button class="btn" data-khoa style="margin-top:6px;font-size:12px">🔑 Lấy khóa cho máy chủ</button>':''}</div><label class="sw" title="Bật/tắt"><input type="checkbox" data-may="${m.k}" ${bat(m.k)?'checked':''}><span></span></label></div>`}).join('')}
+  return `<div class="may"><div><b>${Es(m.ten)}</b><small>${Es(m.mo)}</small></div><div class="an"><small>${Es(m.lich)}</small></div><div><span class="ch ${tt[1]}">${tt[0]}</span>${lan?'<br><small>'+Es(new Date(lan.luc).toLocaleString('vi-VN'))+'</small>':''}</div><div class="an"><small>${Es((lan&&lan.kq)||'—')}</small>${m.k==='thuso'?'<div id="tsCho"></div>':''}</div><label class="sw" title="Bật/tắt"><input type="checkbox" data-may="${m.k}" ${bat(m.k)?'checked':''}><span></span></label></div>`}).join('')}
 
 function viecCho(){const M=LS('oni_mkt')||{},mks=LS('oni_mks')||{},P=(M.posts||[]).filter(p=>!p.del),hn=homNay();
  const cho=P.filter(p=>p.tt==='Chờ duyệt').length,sua=P.filter(p=>p.tt==='Cần sửa').length,lenh=((M.ai||{}).lenh||[]).filter(l=>l.tt==='Chờ AI'||l.tt==='AI đang làm').length;
@@ -105,14 +105,7 @@ function ve(){const R=d.getElementById('dk');if(!R)return;const b=BC[BC.length-1
  <div class="k"><h3>📣 Các kênh – tình trạng, vướng mắc, cách tìm khách</h3><div class="g">Số liệu lần cập nhật gần nhất. Kênh thiếu bài so với mục tiêu không bao giờ hiện "Ổn".</div><div class="kenh">${theKenh()}</div></div>
  <div class="k"><h3>🗒 Báo cáo tuần gần nhất</h3>${b?`<div class="g">${Es(new Date(b.luc).toLocaleString('vi-VN'))}</div><div class="bc">${Es(b.nd)}</div>`:'<div class="g">Chưa có – máy báo cáo chạy sáng thứ Hai.</div>'}</div>`;
  R.querySelectorAll('[data-may]').forEach(i=>i.onchange=async()=>{const r=await fetch('/api/caidat',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({[i.dataset.may]:i.checked})});if(r.ok){CD[i.dataset.may]=i.checked;try{pqToast(i.checked?'Đã bật máy':'Đã tắt máy')}catch(e){}ve()}else{i.checked=!i.checked;try{pqToast('Chưa lưu được, chị thử lại')}catch(e){}}});
- R.querySelectorAll('[data-khoa]').forEach(b=>b.onclick=async()=>{b.disabled=true;b.textContent='Đang lấy khóa…';let j={};try{const r=await fetch('/api/thuso/khoa',{method:'POST',headers:{'content-type':'application/json'},body:'{}'});j=await r.json()}catch(e){}
-  b.disabled=false;b.textContent='🔑 Lấy khóa cho máy chủ';
-  let o=d.getElementById('khoaHop');if(!o){o=d.createElement('div');o.id='khoaHop';o.style.cssText='position:fixed;inset:0;background:rgba(30,20,10,.45);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px';d.body.appendChild(o)}
-  if(!j.khoa){o.innerHTML='<div style="background:#fff;border-radius:16px;padding:20px;max-width:520px;width:100%">Chưa lấy được khóa, chị bấm lại giúp em. <br><br><button class="btn" id="khoaDong">Đóng</button></div>'}
-  else{o.innerHTML='<div style="background:#fff;border-radius:16px;padding:20px;max-width:560px;width:100%;font-size:15px;line-height:1.5"><b style="font-size:17px;color:#6F4F31">🔑 Khóa cho máy chủ</b><p style="margin:8px 0">Chị bấm nút <b>Chép khóa</b>, rồi qua Apps Script → Cài đặt dự án → Thuộc tính tập lệnh: tên <b>ONI_WEB_KEY</b>, giá trị dán khóa này → bấm <b>Lưu</b>.</p><input id="khoaO" readonly style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #E5DCC8;border-radius:10px;font:13px monospace" value="'+Es(j.khoa)+'"><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" id="khoaChep" style="background:#896441;color:#fff">📋 Chép khóa</button><button class="btn" id="khoaDong">Đóng</button><span id="khoaTB" style="align-self:center;color:#2F6B2A;font-weight:700"></span></div></div>';
-   const i=d.getElementById('khoaO');i.onclick=()=>i.select();
-   d.getElementById('khoaChep').onclick=async()=>{i.select();let ok=false;try{await navigator.clipboard.writeText(j.khoa);ok=true}catch(e){try{ok=d.execCommand('copy')}catch(e2){}}d.getElementById('khoaTB').textContent=ok?'✓ Đã chép – chị qua Apps Script dán vào nhé':'Chị bấm vào ô khóa, Cmd+A rồi Cmd+C'}}
-  d.getElementById('khoaDong').onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()}});
+ const tc=d.getElementById('tsCho');if(tc){if(TS.cho){tc.innerHTML='<div style="margin-top:8px;background:#FFF3C9;border-radius:10px;padding:8px 10px;font-size:13px">Máy chủ Apps Script xin gửi số (mã <b>'+Es(TS.cho.ma)+'</b>, lúc '+Es(new Date(TS.cho.luc).toLocaleTimeString('vi-VN'))+')<br><button class="btn" id="tsOK" style="margin-top:6px;background:#896441;color:#fff">✓ Cho phép</button></div>';d.getElementById('tsOK').onclick=async()=>{const r=await fetch('/api/thuso/duyet',{method:'POST'});try{pqToast(r.ok?'Đã cho phép máy chủ gửi số':'Chưa được, chị bấm lại')}catch(e){}await napServer();ve()}}else if(TS.coKhoa===false){tc.innerHTML='<small>Chưa kết nối máy chủ</small>'}else if(TS.coKhoa){tc.innerHTML='<small style="color:#2F6B2A">✓ Máy chủ đã kết nối</small>'}}
  R.querySelectorAll('[data-go]').forEach(o=>o.onclick=()=>{const g=o.dataset.go;if(g==='loi')window.open('/duyet','_blank');else go(g)})}
 window.pages=window.pages||{};
 pages.mdk=function(){setTimeout(async()=>{ve();await napServer();ve()},0);return '<div id="dk"><div class="k">Đang tải bảng điều khiển…</div></div>'};
