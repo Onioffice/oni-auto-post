@@ -2,7 +2,7 @@
 // Tìm tin → Claude viết bài cho ngày kia → vẽ hình đúng khung Oni → kiểm lỗi (máy + Claude xem hình)
 // → tải hình lên website → đưa vào kho bài: "Tự đăng" (tin tức, không giá) hoặc "Chờ duyệt" (có giá/ưu đãi).
 import fs from 'node:fs';
-import { homNay, thuTrongTuan, layMK, opMK, ghiLoi, claude, layJSON, kiemChu, wpTaiAnh, wpTimAnh, layCaiDat, ghiNhatKy, CHU_KY_FB } from './lib.mjs';
+import { homNay, thuTrongTuan, layMK, opMK, ghiLoi, claude, MODEL_KIEM, layJSON, kiemChu, wpTaiAnh, wpTimAnh, layCaiDat, ghiNhatKy, CHU_KY_FB } from './lib.mjs';
 import { khungFB, mauA, chuanBi, coLogo, infoWeb } from './khung.mjs';
 
 const THU = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
@@ -13,19 +13,7 @@ export const kenhMacDinh = ngay => ['Facebook'].concat([2, 5].includes(thuTrongT
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 
 // Kho ảnh thật cơ sở Oni trên thư viện website (ảnh ngang): mã → [tên tệp trên web, mô tả]
-const KHO_ANH = {
-  'td-hop-a': ['oni-td-hop-a-ngang', 'Phòng họp 6–10 khách – CS1 Tân Định'],
-  'td-hop-b': ['oni-td-hop-b-ngang', 'Phòng họp có tivi trình chiếu – CS1 Tân Định'],
-  'td-hop-d': ['oni-td-hop-d-ngang', 'Bàn họp – CS1 Tân Định'],
-  'td-letan': ['oni-td-letan-a', 'Quầy lễ tân – CS1 Tân Định'],
-  'td-phong-rieng': ['oni-td-gp02-b', 'Phòng làm việc riêng G.P02 – CS1 Tân Định'],
-  'td-lam-viec-chung': ['oni-workspace', 'Không gian làm việc chung – CS1 Tân Định'],
-  'gv-le-tan': ['oni-gv-reception', 'Khu lễ tân – CS2 Gò Vấp'],
-  'gv-van-phong-1': ['oni-gv-office1', 'Văn phòng riêng – CS2 Gò Vấp'],
-  'gv-van-phong-2': ['oni-gv-office2', 'Văn phòng riêng – CS2 Gò Vấp'],
-  'gv-hop': ['oni-gv-meeting', 'Phòng họp – CS2 Gò Vấp'],
-  'toa-nha': ['oni-building-hero', 'Tòa nhà Oni Office'],
-};
+const KHO_ANH = JSON.parse(fs.readFileSync(new URL('../prompts/kho-anh.json', import.meta.url), 'utf8'));
 async function anhTheoMa(ma) {
   const k = KHO_ANH[ma]; if (!k) return '';
   const ds = await wpTimAnh(k[0]); return ds.find(u => new RegExp('/' + k[0] + '(-\\d+x\\d+)?\\.(jpe?g|png|webp)$', 'i').test(u)) || ds[0] || '';
@@ -69,8 +57,9 @@ async function themAnhTrongBai(html) {
   return out;
 }
 
-async function kiemHinh(png, kenh, mime = 'image/png', lan = 1) {
+async function kiemHinh(png, kenh, mime = 'image/png', lan = 1, model) {
   const t = await claude({
+    model,
     max_tokens: 3000,
     system: 'Bạn là người kiểm lỗi hình bài đăng của Oni Office. Rất khắt khe. Chỉ trả lời DUY NHẤT một đối tượng JSON, không viết gì khác.',
     messages: [{ role: 'user', content: [
@@ -87,7 +76,7 @@ Trả lời đúng dạng: \`\`\`json\n{"dat": true|false, "loi": ["…"]}\n\`\`
     ] }]
   });
   try { return layJSON(t); } catch (e) {
-    if (lan < 3) return kiemHinh(png, kenh, mime, lan + 1);   // Claude trả lời trống → hỏi lại
+    if (lan < 3) return kiemHinh(png, kenh, mime, lan + 1, model);   // Claude trả lời trống → hỏi lại
     return { dat: false, loi: ['Không đọc được kết quả kiểm hình: ' + e.message.slice(0, 200)] };
   }
 }
@@ -139,6 +128,14 @@ ${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
 \`\`\`` }]
   });
   const kq = layJSON(t);
+  return xuLyBai({ kq, ngay, kenhs, gio, yeuCau, lenh, yTuong, timTin });
+}
+
+// Bước 2–7 dùng chung: gắn chữ ký → kiểm chữ → vẽ hình → kiểm hình → tải hình → đưa vào app.
+// tuNgoai = 'Grok Bot' khi bài do bot bên ngoài viết và nộp qua cổng (luôn vào Chờ duyệt).
+export async function xuLyBai({ kq, ngay, kenhs, gio = '', yeuCau = '', lenh = '', yTuong = '', timTin = false, tuNgoai = '' }) {
+  await chuanBi();
+  if (!coLogo()) throw new Error('Không tải được logo Oni từ website – dừng, không làm hình thiếu logo');
   const ra = [];
   for (const b of (kq.bai || []).filter(b => kenhs.includes(b.kenh))) {
     try {
@@ -163,12 +160,12 @@ ${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
       } else if (['Facebook', 'Instagram', 'Zalo'].includes(b.kenh)) {
         buf = await khungFB({ ...b.hinh, theme: b.kenh === 'Instagram' ? 'kem' : 'navy' }); ten = `${({ Instagram: 'ig', Zalo: 'zl' })[b.kenh] || 'fb'}_${ngay}_oni.png`;
       }
-      const vong = { tim: timTin || yTuong ? 'ok' : '—', yt: 'ok', kb: 'ok', kc: loi.length ? 'loi' : 'ok', tk: '—', kh: '—', ll: 'ok' };
+      const vong = { tim: timTin || yTuong || tuNgoai ? 'ok' : '—', yt: 'ok', kb: 'ok', kc: loi.length ? 'loi' : 'ok', tk: '—', kh: '—', ll: 'ok' };
       let up = { url: '', id: null };
       if (buf) {
         vong.tk = 'ok';
         // 4) Claude xem hình kiểm lỗi
-        const kh = await kiemHinh(buf, b.kenh, mime);
+        const kh = await kiemHinh(buf, b.kenh, mime, 1, tuNgoai ? MODEL_KIEM : undefined);
         vong.kh = kh.dat ? 'ok' : 'loi';
         if (!kh.dat) loi = loi.concat(kh.loi || ['Hình chưa đạt']);
         // 5) Tải hình lên website để có link công khai
@@ -181,9 +178,9 @@ ${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
       if (!datHet) await ghiLoi('Soạn bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', ngay);
       ra.push({ lenh, kenh: b.kenh, at: ngay, gio: gio || GIO[b.kenh], tieude: b.tieude, nd: b.nd, vong,
         tag: b.tag || '', anh: up.url, anhId: up.id, coGia: !!b.coGia,
-        tt: !datHet ? 'Cần sửa' : (b.coGia || yeuCau || yTuong ? 'Chờ duyệt' : 'Đã duyệt'),   // bài vòng lặp: luôn chờ chị duyệt (duyệt hàng loạt) – chị chốt 09/11
-        lienKetWeb: b.kenh === 'Facebook' && kenhs.includes('Website'), loai: yTuong ? 'Vòng lặp' : 'AI soạn',
-        note: (yeuCau ? 'Việc chị giao. ' : '') + (datHet ? `Đã kiểm lỗi: Đạt – ${new Date().toISOString()}` : 'Lỗi kiểm: ' + loi.join('; ')) + (kq.nguon?.length ? ' | Nguồn: ' + kq.nguon.map(n => n.link).join(' ') : '') });
+        tt: !datHet ? 'Cần sửa' : (b.coGia || yeuCau || yTuong || tuNgoai ? 'Chờ duyệt' : 'Đã duyệt'),   // bài vòng lặp: luôn chờ chị duyệt (duyệt hàng loạt) – chị chốt 09/11
+        lienKetWeb: b.kenh === 'Facebook' && kenhs.includes('Website'), loai: tuNgoai || (yTuong ? 'Vòng lặp' : 'AI soạn'),
+        note: (tuNgoai ? tuNgoai + ' viết. ' : '') + (yeuCau ? 'Việc chị giao. ' : '') + (datHet ? `Đã kiểm lỗi: Đạt – ${new Date().toISOString()}` : 'Lỗi kiểm: ' + loi.join('; ')) + (kq.nguon?.length ? ' | Nguồn: ' + kq.nguon.map(n => n.link).join(' ') : '') });
     } catch (e) { await ghiLoi('Soạn bài ' + b.kenh, '1. Chạy hỏng', e.message, 'Chưa', ngay); }
   }
   let ma = [];

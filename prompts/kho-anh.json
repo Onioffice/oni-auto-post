@@ -1,0 +1,46 @@
+{
+ "td-hop-a": [
+  "oni-td-hop-a-ngang",
+  "Phòng họp 6–10 khách – CS1 Tân Định"
+ ],
+ "td-hop-b": [
+  "oni-td-hop-b-ngang",
+  "Phòng họp có tivi trình chiếu – CS1 Tân Định"
+ ],
+ "td-hop-d": [
+  "oni-td-hop-d-ngang",
+  "Bàn họp – CS1 Tân Định"
+ ],
+ "td-letan": [
+  "oni-td-letan-a",
+  "Quầy lễ tân – CS1 Tân Định"
+ ],
+ "td-phong-rieng": [
+  "oni-td-gp02-b",
+  "Phòng làm việc riêng G.P02 – CS1 Tân Định"
+ ],
+ "td-lam-viec-chung": [
+  "oni-workspace",
+  "Không gian làm việc chung – CS1 Tân Định"
+ ],
+ "gv-le-tan": [
+  "oni-gv-reception",
+  "Khu lễ tân – CS2 Gò Vấp"
+ ],
+ "gv-van-phong-1": [
+  "oni-gv-office1",
+  "Văn phòng riêng – CS2 Gò Vấp"
+ ],
+ "gv-van-phong-2": [
+  "oni-gv-office2",
+  "Văn phòng riêng – CS2 Gò Vấp"
+ ],
+ "gv-hop": [
+  "oni-gv-meeting",
+  "Phòng họp – CS2 Gò Vấp"
+ ],
+ "toa-nha": [
+  "oni-building-hero",
+  "Tòa nhà Oni Office"
+ ]
+}

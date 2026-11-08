@@ -3,7 +3,7 @@
 // Mỗi lần chạy: tìm khung trống → 1) tìm tin & xu hướng → 2) lên ý tưởng → 3) viết kịch bản → 4) kiểm lỗi chữ
 // → 5) thiết kế hình → 6) kiểm lỗi hình → 7) xếp lịch → bài vào "Chờ duyệt" để chị duyệt (có nút duyệt hàng loạt).
 // `node scripts/vonglap.mjs --kiem` chỉ đếm khung trống (không cần cài gói) để GitHub quyết định có chạy tiếp không.
-import { homNay, layMK, opMK, ghiLoi, layCaiDat, ghiNhatKy } from './lib.mjs';
+import { homNay, layMK, opMK, ghiLoi, layCaiDat, ghiNhatKy, layHangGrok } from './lib.mjs';
 
 // Mỗi kênh mạng xã hội 3 bài/ngày, 3 chủ đề khác nhau (chị chốt 09/11/2026 03:01)
 const MXH = [['08:00', 'Threads'], ['13:00', 'Threads'], ['18:00', 'Threads'],
@@ -20,9 +20,10 @@ const gioVN = () => new Date(Date.now() + 7 * 3600e3);
 // Zalo OA gói tiêu chuẩn giới hạn số bài/kỳ → Zalo chỉ ngày lẻ, ngày chẵn khung 13:00 là Threads
 const kenhKhung = (ngay, gio, kenh) => kenh;
 
-export function khungTrong(posts) {
-  const now = gioVN(), tu = new Date(now.getTime() + 2 * 3600e3), den = new Date(now.getTime() + 30 * 3600e3), ra = [];
-  const song = posts.filter(p => !p.del && p.tt !== 'Hủy');
+// hang = bài Grok Bot đã nộp, đang chờ kiểm (giữ chỗ, không viết trùng); han = chỉ lấy khung trong bao nhiêu giờ tới
+export function khungTrong(posts, hang = [], han = 30) {
+  const now = gioVN(), tu = new Date(now.getTime() + 2 * 3600e3), den = new Date(now.getTime() + han * 3600e3), ra = [];
+  const song = posts.filter(p => !p.del && p.tt !== 'Hủy').concat(hang.map(h => ({ at: h.ngay, kenh: h.kenh })));
   for (let d = 0; d <= 2; d++) {
     const ngay = homNay(d), dem = {};
     for (const [gio, k] of LICH) {
@@ -38,9 +39,10 @@ export function khungTrong(posts) {
 }
 
 async function main() {
-  const M = await layMK(), trong = khungTrong(M.posts || []);
+  const [M, cd, hang] = await Promise.all([layMK(), layCaiDat(), layHangGrok().catch(() => [])]);
+  // Bật cổng Grok Bot: Grok viết chính (mỗi tối lấp 7 ngày tới); Claude chỉ viết BÙ khung còn trống trong 8 giờ tới
+  const trong = khungTrong(M.posts || [], hang, cd.grok === true ? 8 : 30);
   if (process.argv.includes('--kiem')) { console.log(trong.length); return; }
-  const cd = await layCaiDat();
   if (cd.vonglap === false) { console.log('Chị đang tắt vòng lặp.'); return; }
   if (!trong.length) { console.log('24 giờ tới đã đủ bài.'); return; }
   const ID = { Website: 'web', Facebook: 'fb', Instagram: 'ig', LinkedIn: 'li', Threads: 'th', Zalo: 'zl', TikTok: 'tt', Email: 'em' };

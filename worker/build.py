@@ -16,5 +16,9 @@ bad = re.findall(r'ONI0\d\d|C[ôo]ng [Tt]y (?:TNHH|C[ổo] [Pp]hần) (?!ONI HUB
 if bad: sys.exit('DỪNG – nghi có dữ liệu khách: ' + str(set(bad))[:300])
 open(os.path.join(D, 'app.html'), 'w', encoding='utf-8').write(html)
 w = open(os.path.join(D, 'index.js'), encoding='utf-8').read()
+R = os.path.join(D, '..', 'prompts')
+qt = open(os.path.join(R, 'quy-tac.md'), encoding='utf-8').read() + '\n\n' + open(os.path.join(R, 'grok-bot.md'), encoding='utf-8').read()
+ka = json.load(open(os.path.join(R, 'kho-anh.json'), encoding='utf-8'))
+w += '\nconst QUY_TAC_G = ' + json.dumps(qt, ensure_ascii=False) + ';\nconst KHO_ANH_G = ' + json.dumps({k: v[1] for k, v in ka.items()}, ensure_ascii=False) + ';\n'
 open(os.path.join(D, 'dist.js'), 'w', encoding='utf-8').write(w + '\nconst APP_HTML = ' + json.dumps(html, ensure_ascii=False) + ';\n')
 print('dist.js', os.path.getsize(os.path.join(D, 'dist.js')))

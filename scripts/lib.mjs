@@ -31,6 +31,9 @@ export const layMK = async () => (await kho('/api/mk')).mk || { posts: [], ai: {
 export const opMK = async (...ops) => (await kho('/api/mk/op', { method: 'POST', body: JSON.stringify({ ops }) })).kq || [];
 export const layLenh = async () => (await kho('/api/lenh')).lenh || [];
 export const suaLenh = (id, o) => kho('/api/lenh/' + id, { method: 'PUT', body: JSON.stringify(o) });
+// Cổng Grok Bot: hàng bài bot ngoài đã nộp, chờ máy kiểm lỗi + làm hình
+export const layHangGrok = async () => (await kho('/api/grok/hang')).hang || [];
+export const xongGrok = ids => kho('/api/grok/xong', { method: 'POST', body: JSON.stringify({ ids }) });
 export const layCaiDat = async () => (await kho('/api/caidat')).caidat || {};
 export async function ghiNhatKy(viec, kq) { try { await kho('/api/nhatky', { method: 'POST', body: JSON.stringify({ viec, kq }) }); } catch (e) { console.error('Không ghi được nhật ký:', e.message); } }
 export async function ghiLoi(viec, loai, loi, sua = 'Chưa', ma = '') {
@@ -40,12 +43,21 @@ export async function ghiLoi(viec, loai, loi, sua = 'Chưa', ma = '') {
 
 // ---------- Claude API ----------
 export const MODEL = process.env.ONI_MODEL || 'claude-sonnet-5-5';
-export async function claude({ system, messages, max_tokens = 8000, tools }) {
+// Kiểm lỗi bài bot ngoài (Grok Bot) nộp: dùng Haiku cho rẻ; Haiku lỗi thì tự quay về MODEL
+export const MODEL_KIEM = process.env.ONI_MODEL_KIEM || 'claude-haiku-5-5';
+export async function claude({ system, messages, max_tokens = 8000, tools, model }) {
+  if (model && model !== MODEL) {
+    try { return await claude1({ system, messages, max_tokens, tools, model }); }
+    catch (e) { console.error(`Mô hình ${model} lỗi (${e.message.slice(0, 120)}) – dùng ${MODEL}`); }
+  }
+  return claude1({ system, messages, max_tokens, tools, model: MODEL });
+}
+async function claude1({ system, messages, max_tokens, tools, model }) {
   for (let lan = 1; lan <= 3; lan++) {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': env('ANTHROPIC_API_KEY'), 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, max_tokens, system, messages, ...(tools ? { tools } : {}) })
+      body: JSON.stringify({ model, max_tokens, system, messages, ...(tools ? { tools } : {}) })
     });
     const j = await r.json();
     if (r.ok) {

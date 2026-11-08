@@ -11,7 +11,7 @@ concurrency: { group: oni-vonglap, cancel-in-progress: false }
 jobs:
   chay:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       ONI_API_URL: ${{ secrets.ONI_API_URL }}
@@ -32,15 +32,20 @@ jobs:
       # Công nhân đăng bài: tới giờ thì đăng (không cần cài gói, chạy vài giây)
       - name: Đăng bài tới giờ
         run: node scripts/dang.mjs || true
-      # Đếm khung trống trong 24 giờ tới; không trống thì dừng ngay
-      - name: Đếm khung trống
+      # Đếm bài Grok Bot nộp đang chờ kiểm + khung trống; không có việc thì dừng ngay
+      - name: Đếm việc
         id: dem
-        run: echo "n=$(node scripts/vonglap.mjs --kiem | tail -1)" >> "$GITHUB_OUTPUT"
-      - if: steps.dem.outputs.n != '0'
+        run: |
+          echo "g=$(node scripts/kiemgrok.mjs --dem | tail -1)" >> "$GITHUB_OUTPUT"
+          echo "n=$(node scripts/vonglap.mjs --kiem | tail -1)" >> "$GITHUB_OUTPUT"
+      - if: steps.dem.outputs.n != '0' || steps.dem.outputs.g != '0'
         uses: actions/cache@v4
         with: { path: fonts, key: fonts-bevietnampro-v1 }
-      - if: steps.dem.outputs.n != '0'
+      - if: steps.dem.outputs.n != '0' || steps.dem.outputs.g != '0'
         run: npm ci
+      - if: steps.dem.outputs.g != '0'
+        name: Kiểm bài Grok Bot nộp → làm hình → Chờ duyệt
+        run: node scripts/kiemgrok.mjs || true
       - if: steps.dem.outputs.n != '0'
-        name: Tìm tin → ý tưởng → viết → kiểm → thiết kế → kiểm hình → xếp lịch
+        name: Viết bù khung còn trống – Tìm tin → ý tưởng → viết → kiểm → thiết kế → kiểm hình → xếp lịch
         run: node scripts/vonglap.mjs

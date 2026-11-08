@@ -21,6 +21,7 @@ const cookie = (req, k) => { const m = (req.headers.get('cookie') || '').match(n
 async function quyen(req, env) {
   const auth = req.headers.get('authorization') || '';
   if (env.API_KEY && auth.startsWith('Bearer ') && eqTime(auth.slice(7), env.API_KEY)) return 'bot';
+  if (auth.startsWith('Bearer oni_gb_')) { const k = await env.DB.get('khoa_grok'); if (k && eqTime(auth.slice(7), k)) return 'grok'; }
   if (auth.startsWith('Bearer oni_ts_')) { const k = await env.DB.get('khoa_thuso'); if (k && eqTime(auth.slice(7), k)) return 'thuso'; }
   if (env.ADMIN_PASSWORD && eqTime(cookie(req, 'oni_mk'), await sha('oni-mkt|' + env.ADMIN_PASSWORD))) return 'chi';
   return '';
@@ -83,6 +84,83 @@ function lamOp(M, o) {
   return { ok: false, err: 'không có lệnh ' + o.op };
 }
 
+
+// ---------- CỔNG GROK BOT (bot bên ngoài viết bài, chị chốt 09/11/2026) ----------
+// Grok Bot chỉ được: xem việc (chủ đề chị giao + giờ trống 7 ngày tới) và nộp bài. Không duyệt / đăng / xóa được.
+// Bài nộp vào hàng "grok_cho" → máy GitHub kiểm lỗi, làm hình đúng khung Oni → "Chờ duyệt".
+// LICH giống scripts/vonglap.mjs (sửa lịch thì sửa cả 2 chỗ)
+const LICH_G = [...Array.from({ length: 16 }, (_, i) => [String(7 + i).padStart(2, '0') + ':00', 'Website']),
+  ['08:00', 'Threads'], ['13:00', 'Threads'], ['18:00', 'Threads'], ['09:00', 'LinkedIn'], ['12:00', 'LinkedIn'], ['17:00', 'LinkedIn'],
+  ['10:00', 'Facebook'], ['15:00', 'Facebook'], ['20:00', 'Facebook'], ['11:00', 'Instagram'], ['14:00', 'Instagram'], ['19:00', 'Instagram'],
+  ['08:00', 'Zalo'], ['16:00', 'Zalo'], ['21:00', 'Zalo']].sort((x, y) => x[0].localeCompare(y[0]));
+const KENH_G = ['Website', 'Facebook', 'Instagram', 'LinkedIn', 'Threads', 'Zalo'];
+const ngayVN = (d = 0) => new Date(Date.now() + 7 * 3600e3 + d * 864e5).toISOString().slice(0, 10);
+const CAM_G = /tư vấn (pháp lý|luật|pháp luật|thuế|kế toán)|dịch vụ pháp lý|\b(số 1|số một|hàng đầu|tốt nhất|rẻ nhất|100%)/i;
+const ID_G = { Website: 'web', Facebook: 'fb', Instagram: 'ig', LinkedIn: 'li', Threads: 'th', Zalo: 'zl' };
+function gioTrongG(posts, hang, cd) {
+  const song = (posts || []).filter(p => !p.del && p.tt !== 'Hủy'), now = new Date(Date.now() + 7 * 3600e3 + 3 * 3600e3), ra = [];
+  for (let d = 0; d <= 7; d++) {
+    const ngay = ngayVN(d), dem = {};
+    for (const [gio, kenh] of LICH_G) {
+      const thu = dem[kenh] = (dem[kenh] || 0) + 1;
+      if (new Date(ngay + 'T' + gio + ':00Z') < now || cd['bot_' + ID_G[kenh]] === false) continue;
+      const co = song.filter(p => p.at === ngay && p.kenh === kenh).length + hang.filter(h => h.ngay === ngay && h.kenh === kenh).length;
+      if (co < thu && !hang.some(h => h.ngay === ngay && h.gio === gio && h.kenh === kenh)) ra.push({ ngay, gio, kenh });
+    }
+  }
+  return ra;
+}
+function kiemNopG(b, kho) {
+  const ly = [];
+  if (!KENH_G.includes(b.kenh)) ly.push('kenh phải là một trong: ' + KENH_G.join(', '));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(b.ngay || '') || b.ngay < ngayVN(0) || b.ngay > ngayVN(7)) ly.push('ngay phải dạng YYYY-MM-DD trong 7 ngày tới');
+  if (!/^\d{2}:00$/.test(b.gio || '')) ly.push('gio phải dạng HH:00 lấy đúng giờ trống');
+  const td = String(b.tieude || ''), nd = String(b.nd || '');
+  if (td.length < 5 || td.length > 200) ly.push('tieude 5–200 ký tự');
+  if (nd.length < (b.kenh === 'Website' ? 3000 : b.kenh === 'Threads' ? 80 : 300) || nd.length > 60000) ly.push('nd quá ngắn hoặc quá dài');
+  if (CAM_G.test(td + ' ' + nd)) ly.push('có từ cấm (tư vấn pháp lý/luật/thuế/kế toán, số 1, hàng đầu, tốt nhất, 100%…)');
+  if (b.kenh !== 'Website' && /\d[\d.,]*\s*(đồng|vnđ|vnd|đ)(?!\p{L})|\d[\d.,]*\s*(triệu|tr|k)\s*\/\s*(tháng|giờ|ngày|năm)/iu.test(nd)) ly.push('bài mạng xã hội không được ghi giá');
+  if (['Facebook', 'Instagram', 'Zalo'].includes(b.kenh)) { const h = b.hinh || {}; if (!h.t1 || !Array.isArray(h.cards) || h.cards.length < 3) ly.push('thiếu "hinh" (cần t1, t2, pill, eyebrow, boxTop, boxTitle, cards 4 thẻ, loc, cta)'); }
+  if (b.kenh === 'Website') { if (!/<h2/i.test(nd)) ly.push('bài Website phải là HTML có các mục <h2>'); if (!b.hinhWeb || !Array.isArray(b.hinhWeb.lines)) ly.push('thiếu "hinhWeb" (tag, lines 3 dòng, sub 2 dòng, anhThat)'); }
+  if (b.kenh === 'LinkedIn' && b.anhThat && !kho.includes(b.anhThat)) ly.push('anhThat phải là mã trong khoAnh');
+  return ly;
+}
+async function congGrok(req, env, p) {
+  const cd = JSON.parse((await env.DB.get('caidat')) || '{}');
+  if (cd.grok === false) return json({ ok: false, tat: true, loi: 'Chị đang tắt cổng Grok Bot' }, 403);
+  const M = await docMK(env), hang = JSON.parse((await env.DB.get('grok_cho')) || '[]');
+  const kho = typeof KHO_ANH_G !== 'undefined' ? Object.keys(KHO_ANH_G) : [];
+  if (p === '/api/grok/viec' && req.method === 'GET') {
+    const trong = gioTrongG(M.posts, hang, cd);
+    const chuDe = ((M.ai || {}).lenh || []).filter(l => ['Chờ AI', 'AI đang làm'].includes(l.tt)).map(l => ({ id: l.id, nd: l.nd, kenh: l.kenh, han: l.han }));
+    const ganDay = (M.posts || []).filter(x => x.tt !== 'Hủy').sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 120).map(x => x.at + ' ' + x.kenh + ': ' + x.tieude);
+    await env.DB.put('grok_tinh', JSON.stringify(Object.assign(JSON.parse((await env.DB.get('grok_tinh')) || '{}'), { xem: new Date().toISOString() })));
+    return json({ ok: true, homNay: ngayVN(0), gioTrong: trong, soGioTrong: trong.length, dangCho: hang.length, chuDeChiGiao: chuDe, baiGanDay: ganDay,
+      khoAnh: typeof KHO_ANH_G !== 'undefined' ? KHO_ANH_G : {}, quyTac: typeof QUY_TAC_G !== 'undefined' ? QUY_TAC_G : '',
+      cachNop: 'POST /api/grok/nop với {"bai":[...]} tối đa 40 bài mỗi lần. Mỗi bài: ngay, gio, kenh (lấy đúng từ gioTrong), tieude, nd, tag, chuDe, nguon[]; Facebook/Instagram/Zalo thêm "hinh"; Website thêm "hinhWeb" + "anhTrongBai"; LinkedIn thêm "anhThat".' });
+  }
+  if (p === '/api/grok/nop' && req.method === 'POST') {
+    const b = await req.json().catch(() => ({})), ds = Array.isArray(b.bai) ? b.bai.slice(0, 40) : [];
+    if (!ds.length) return json({ ok: false, loi: 'Không có bài (cần {"bai":[...]})' }, 400);
+    if (hang.length >= 300) return json({ ok: false, loi: 'Hàng chờ đã đầy 300 bài, đợi máy kiểm xong rồi nộp tiếp' }, 429);
+    const trong = gioTrongG(M.posts, hang, cd), nhan = [], tra = [];
+    ds.forEach((x, i) => {
+      const ly = kiemNopG(x, kho);
+      if (!ly.length && !trong.some(t => t.ngay === x.ngay && t.gio === x.gio && t.kenh === x.kenh)) ly.push('giờ này không còn trống (đã có bài hoặc đã qua) – lấy lại gioTrong');
+      if (ly.length) { tra.push({ i, kenh: x.kenh, gio: x.gio, ngay: x.ngay, ly }); return; }
+      const o = { id: 'g' + Date.now().toString(36) + i + Math.random().toString(36).slice(2, 5), luc: new Date().toISOString(),
+        ngay: x.ngay, gio: x.gio, kenh: x.kenh, tieude: String(x.tieude), nd: String(x.nd), tag: String(x.tag || '').slice(0, 300), chuDe: String(x.chuDe || '').slice(0, 200),
+        nguon: (Array.isArray(x.nguon) ? x.nguon : []).slice(0, 5), hinh: x.hinh || null, hinhWeb: x.hinhWeb || null, anhTrongBai: Array.isArray(x.anhTrongBai) ? x.anhTrongBai.slice(0, 3) : [], anhThat: String(x.anhThat || ''), coGia: false };
+      hang.push(o); nhan.push({ i, id: o.id }); trong.splice(trong.findIndex(t => t.ngay === x.ngay && t.gio === x.gio && t.kenh === x.kenh), 1);
+    });
+    await env.DB.put('grok_cho', JSON.stringify(hang));
+    const t = JSON.parse((await env.DB.get('grok_tinh')) || '{}'); t.nop = new Date().toISOString(); t.nhan = (t.nhan || 0) + nhan.length; t.tra = (t.tra || 0) + tra.length; await env.DB.put('grok_tinh', JSON.stringify(t));
+    if (nhan.length || tra.length) await ghiNK(env, 'Grok Bot', `Nộp ${ds.length} bài: nhận ${nhan.length}, trả lại ${tra.length}`);
+    return json({ ok: true, nhan: nhan.length, traLai: tra, conTrong: trong.length, ghiChu: tra.length ? 'Sửa các bài bị trả lại theo "ly" rồi nộp lại' : 'Đã nhận, máy sẽ kiểm lỗi và làm hình' });
+  }
+  return json({ loi: 'Khóa Grok Bot chỉ dùng để xem việc và nộp bài' }, 403);
+}
+
 export default {
   async fetch(req, env) {
     const u = new URL(req.url), p = u.pathname;
@@ -113,6 +191,7 @@ export default {
       return json({ ok: true, cho: true });
     }
     if (!ai) return json({ loi: 'Chưa đăng nhập' }, 401);
+    if (ai === 'grok') return congGrok(req, env, p);
     if (ai === 'thuso') {   // máy chủ Apps Script chỉ được gửi số các kênh
       if (p === '/api/thuso' && req.method === 'POST') { const b = await req.json(), cd = JSON.parse((await env.DB.get('caidat')) || '{}'); if (cd.thuso === false) return json({ ok: false, tat: true, loi: 'Chị đang tắt máy Thu số' }); await env.DB.put('app:gsc', JSON.stringify(b.data || {})); await ghiNK(env, 'Thu số', String(b.kq || 'Đã cập nhật số các kênh')); return json({ ok: true }); }
       return json({ loi: 'Khóa này chỉ dùng để gửi số kênh' }, 403);
@@ -204,7 +283,7 @@ export default {
     if (p === '/api/caidat' && req.method === 'PUT') {
       if (ai !== 'chi') return json({ loi: 'Chỉ chị được bật/tắt' }, 403);
       const b = await req.json(), c = JSON.parse((await env.DB.get('caidat')) || '{"soan":false,"dang":false}');
-      for (const k of Object.keys(b)) if (['soan', 'dang', 'nhan', 'thuso', 'baocao', 'vonglap', 'bantin'].includes(k) || /^bot_[a-z]{2,4}$/.test(k)) c[k] = !!b[k];
+      for (const k of Object.keys(b)) if (['soan', 'dang', 'nhan', 'thuso', 'baocao', 'vonglap', 'bantin', 'grok'].includes(k) || /^bot_[a-z]{2,4}$/.test(k)) c[k] = !!b[k];
       c.luc = new Date().toISOString(); await env.DB.put('caidat', JSON.stringify(c)); return json({ ok: true, caidat: c });
     }
     // ---- Nhật ký máy chạy ----
@@ -245,6 +324,14 @@ export default {
       let k = await env.DB.get('khoa_thuso'); const b = await req.json().catch(() => ({}));
       if (!k || b.moi) { const r = new Uint8Array(24); crypto.getRandomValues(r); k = 'oni_ts_' + [...r].map(x => x.toString(16).padStart(2, '0')).join(''); await env.DB.put('khoa_thuso', k); }
       return json({ ok: true, khoa: k });
+    }
+    // ---- Cổng Grok Bot: máy lấy hàng chờ / chị tạo khóa & xem tình trạng ----
+    if (p === '/api/grok/hang' && req.method === 'GET' && ai === 'bot') return json({ ok: true, hang: JSON.parse((await env.DB.get('grok_cho')) || '[]') });
+    if (p === '/api/grok/xong' && req.method === 'POST' && ai === 'bot') { const b = await req.json(), ids = new Set(b.ids || []); const h = JSON.parse((await env.DB.get('grok_cho')) || '[]').filter(x => !ids.has(x.id)); await env.DB.put('grok_cho', JSON.stringify(h)); return json({ ok: true, con: h.length }); }
+    if (p === '/api/grok/tinh' && req.method === 'GET' && ai === 'chi') return json({ ok: true, coKhoa: !!(await env.DB.get('khoa_grok')), cho: JSON.parse((await env.DB.get('grok_cho')) || '[]').length, tinh: JSON.parse((await env.DB.get('grok_tinh')) || '{}') });
+    if (p === '/api/grok/khoa' && req.method === 'POST' && ai === 'chi') {
+      const r = new Uint8Array(24); crypto.getRandomValues(r); const k = 'oni_gb_' + [...r].map(x => x.toString(16).padStart(2, '0')).join('');
+      await env.DB.put('khoa_grok', k); await ghiNK(env, 'Grok Bot', 'Chị tạo khóa mới cho Grok Bot (khóa cũ hết dùng)'); return json({ ok: true, khoa: k });
     }
     if (p === '/api/soloi' && req.method === 'GET') return json({ soloi: JSON.parse((await env.DB.get('soloi')) || '[]') });
     return json({ loi: 'Không hỗ trợ' }, 404);
