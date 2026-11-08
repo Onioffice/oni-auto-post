@@ -220,6 +220,14 @@ export default {
       a.push({ luc: new Date().toISOString(), viec: String(b.viec || ''), loai: String(b.loai || ''), loi: String(b.loi || ''), sua: String(b.sua || ''), ma: String(b.ma || '') });
       await env.DB.put('soloi', JSON.stringify(a.slice(-500))); return json({ ok: true });
     }
+    // ---- Yêu cầu chạy quảng cáo (chị duyệt ngân sách) ----
+    if (p === '/api/qc' && req.method === 'GET') return json({ qc: JSON.parse((await env.DB.get('qc')) || '[]') });
+    if (p === '/api/qc' && req.method === 'POST' && ai === 'chi') {
+      const b = await req.json(), a = JSON.parse((await env.DB.get('qc')) || '[]'), ns = Math.round(Number(b.nganSach) || 0);
+      if (ns < 20000 || ns > 50000000) return json({ loi: 'Ngân sách/ngày phải từ 20.000 đ đến 50.000.000 đ' }, 400);
+      const o = { id: 'qc' + Date.now().toString(36), luc: new Date().toISOString(), ma: String(b.ma || ''), tieude: String(b.tieude || '').slice(0, 200), link: String(b.link || ''), kenh: String(b.kenh || 'Facebook Ads'), nganSach: ns, tt: 'Chờ kết nối Facebook Ads' };
+      a.unshift(o); await env.DB.put('qc', JSON.stringify(a.slice(0, 200))); await ghiNK(env, 'Quảng cáo', 'Chị duyệt chạy QC ' + o.ma + ' – ' + ns.toLocaleString('vi-VN') + ' đ/ngày'); return json({ ok: true, qc: o });
+    }
     // ---- Báo cáo tuần ----
     if (p === '/api/baocao' && req.method === 'GET') return json({ baocao: JSON.parse((await env.DB.get('baocao')) || '[]') });
     if (p === '/api/baocao' && req.method === 'POST' && ai === 'bot') {
