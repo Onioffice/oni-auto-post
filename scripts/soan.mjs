@@ -71,7 +71,7 @@ async function themAnhTrongBai(html) {
 
 async function kiemHinh(png, kenh, mime = 'image/png', lan = 1) {
   const t = await claude({
-    max_tokens: 1200,
+    max_tokens: 3000,
     system: 'Bạn là người kiểm lỗi hình bài đăng của Oni Office. Rất khắt khe. Chỉ trả lời DUY NHẤT một đối tượng JSON, không viết gì khác.',
     messages: [{ role: 'user', content: [
       { type: 'image', source: { type: 'base64', media_type: mime, data: png.toString('base64') } },

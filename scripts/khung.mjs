@@ -114,7 +114,7 @@ export async function mauA(o, photoBuf) {
   x.fillStyle = GOLD; x.textBaseline = 'middle'; x.fillText(tag, L + 15, 71); x.letterSpacing = '0px';
   const lines = o.lines.map(s => s.toUpperCase()); let size = 48; x.font = F(800, size);
   while (lines.some(s => x.measureText(s).width > 560) && size > 34) { size -= 2; x.font = F(800, size); }
-  const lh = Math.round(size * 1.32); let y = 132;   // giãn dòng đủ cho dấu tiếng Việt chữ in hoa (Ể, Ầ, Ế…)
+  const lh = Math.round(size * 1.4); let y = 128;   // giãn dòng đủ cho dấu tiếng Việt chữ in hoa (Ể, Ầ, Ế…)
   lines.forEach((s, i) => { x.fillStyle = i === lines.length - 1 ? GOLD : '#FFFFFF'; x.fillText(s, L, y); y += lh; });
   y += 10; x.font = F(500, 22); x.fillStyle = '#FFFFFF'; (o.sub || []).forEach(s => { x.fillText(s, L, y); y += 33; });
   const PX = 742, PY = 64, PW = 400, PH = 400;
@@ -153,14 +153,15 @@ export async function infoWeb(o) {
   let dong = tach(td, W - 2 * L); while (dong.length > 2 && size > 28) { size -= 2; x.font = F(800, size); dong = tach(td, W - 2 * L); }
   let y = 116; dong.slice(0, 2).forEach((s, i, a) => { x.fillStyle = i === a.length - 1 ? GOLD : '#FFFFFF'; x.fillText(s, L, y); y += Math.round(size * 1.32); });
   // các ý: 2 cột
-  const Y = Math.max(y + 14, 200), items = (o.cacY || []).slice(0, 6), cot = items.length > 3 ? 2 : 1;
-  const gap = 18, cw = (W - 2 * L - gap * (cot - 1)) / cot, hang = Math.ceil(items.length / cot), ch = Math.min(108, (H - 96 - Y - gap * (hang - 1)) / hang);
+  const top = Math.max(y + 14, 200), items = (o.cacY || []).slice(0, 6), cot = items.length > 3 ? 2 : 1;
+  const gap = 20, cw = (W - 2 * L - gap * (cot - 1)) / cot, hang = Math.ceil(items.length / cot), vung = H - 100 - top, ch = Math.min(128, (vung - gap * (hang - 1)) / hang);
+  const Y = top + Math.max(0, (vung - (ch * hang + gap * (hang - 1))) / 2);   // canh giữa khối ý trong vùng trống
   items.forEach((it, i) => {
     const cX = L + (i % cot) * (cw + gap), cY = Y + Math.floor(i / cot) * (ch + gap);
     rr(cX, cY, cw, ch, 12); x.fillStyle = '#FFFFFF'; x.fill();
     x.beginPath(); x.arc(cX + 36, cY + ch / 2, 20, 0, Math.PI * 2); x.fillStyle = GOLD; x.fill();
     x.font = F(800, 20); x.fillStyle = '#14203C'; x.textAlign = 'center'; x.fillText(String(i + 1), cX + 36, cY + ch / 2 + 1); x.textAlign = 'left';
-    let fs = 20; x.font = F(600, fs); let ln = tach(String(it), cw - 90);
+    let fs = 22; x.font = F(600, fs); let ln = tach(String(it), cw - 90);
     while (ln.length > 2 && fs > 15) { fs -= 1; x.font = F(600, fs); ln = tach(String(it), cw - 90); }
     const lh = Math.round(fs * 1.35), y0 = cY + ch / 2 - (Math.min(ln.length, 3) - 1) * lh / 2;
     x.fillStyle = '#1E2A44'; ln.slice(0, 3).forEach((s, k) => x.fillText(s, cX + 70, y0 + k * lh));
