@@ -133,3 +133,42 @@ export async function mauA(o, photoBuf) {
   x.font = F(500, 18); x.fillStyle = '#FFFFFF'; x.fillText('www.onioffice.vn · sales@onioffice.vn', W - L, 589); x.textAlign = 'left';
   return c.toBuffer('image/jpeg', 90);
 }
+
+// Hình minh họa trong thân bài website (infographic theo nội dung mục): khung ngang 1200×675 (xuất 2400×1350),
+// cùng nhận diện mẫu A: nền navy lưới mờ, nhãn viền vàng, tiêu đề trắng + vàng, các ý đánh số trong thẻ trắng.
+export async function infoWeb(o) {
+  await chuanBi();
+  const S = 2, W = 1200, H = 675, c = createCanvas(W * S, H * S), x = c.getContext('2d'); x.scale(S, S);
+  const F = (w, s) => `${w} ${s}px "Be Vietnam Pro"`, GOLD = '#C5A86D', rr = (...a) => rrect(x, ...a);
+  x.fillStyle = '#14203C'; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(255,255,255,0.035)'; x.lineWidth = 1;
+  for (let i = 0; i <= W; i += 40) { x.beginPath(); x.moveTo(i + .5, 0); x.lineTo(i + .5, H); x.stroke(); }
+  for (let j = 0; j <= H; j += 40) { x.beginPath(); x.moveTo(0, j + .5); x.lineTo(W, j + .5); x.stroke(); }
+  const L = 64; x.textBaseline = 'middle';
+  if (o.nhan) { x.font = F(700, 15); x.letterSpacing = '2.5px'; const tag = String(o.nhan).toUpperCase(), tw = x.measureText(tag).width + 28;
+    rr(L, 40, tw, 34, 4); x.strokeStyle = '#BCA885'; x.lineWidth = 1.5; x.stroke(); x.fillStyle = GOLD; x.fillText(tag, L + 14, 57); x.letterSpacing = '0px'; }
+  // tiêu đề 1–2 dòng, chữ cuối vàng
+  let size = 38; x.font = F(800, size); const td = String(o.tieuDe || '').toUpperCase();
+  const tach = (s, max) => { const w = s.split(/\s+/), out = []; let l = ''; for (const t of w) { const n = l ? l + ' ' + t : t; if (x.measureText(n).width > max && l) { out.push(l); l = t; } else l = n; } if (l) out.push(l); return out; };
+  let dong = tach(td, W - 2 * L); while (dong.length > 2 && size > 28) { size -= 2; x.font = F(800, size); dong = tach(td, W - 2 * L); }
+  let y = 116; dong.slice(0, 2).forEach((s, i, a) => { x.fillStyle = i === a.length - 1 ? GOLD : '#FFFFFF'; x.fillText(s, L, y); y += Math.round(size * 1.32); });
+  // các ý: 2 cột
+  const Y = Math.max(y + 14, 200), items = (o.cacY || []).slice(0, 6), cot = items.length > 3 ? 2 : 1;
+  const gap = 18, cw = (W - 2 * L - gap * (cot - 1)) / cot, hang = Math.ceil(items.length / cot), ch = Math.min(108, (H - 96 - Y - gap * (hang - 1)) / hang);
+  items.forEach((it, i) => {
+    const cX = L + (i % cot) * (cw + gap), cY = Y + Math.floor(i / cot) * (ch + gap);
+    rr(cX, cY, cw, ch, 12); x.fillStyle = '#FFFFFF'; x.fill();
+    x.beginPath(); x.arc(cX + 36, cY + ch / 2, 20, 0, Math.PI * 2); x.fillStyle = GOLD; x.fill();
+    x.font = F(800, 20); x.fillStyle = '#14203C'; x.textAlign = 'center'; x.fillText(String(i + 1), cX + 36, cY + ch / 2 + 1); x.textAlign = 'left';
+    let fs = 20; x.font = F(600, fs); let ln = tach(String(it), cw - 90);
+    while (ln.length > 2 && fs > 15) { fs -= 1; x.font = F(600, fs); ln = tach(String(it), cw - 90); }
+    const lh = Math.round(fs * 1.35), y0 = cY + ch / 2 - (Math.min(ln.length, 3) - 1) * lh / 2;
+    x.fillStyle = '#1E2A44'; ln.slice(0, 3).forEach((s, k) => x.fillText(s, cX + 70, y0 + k * lh));
+  });
+  // chân ảnh
+  x.strokeStyle = '#555955'; x.lineWidth = 1; x.beginPath(); x.moveTo(L, H - 70.5); x.lineTo(W - L, H - 70.5); x.stroke();
+  x.textBaseline = 'alphabetic'; x.font = F(800, 20); x.letterSpacing = '5px'; x.fillStyle = GOLD; x.fillText('ONI OFFICE', L, H - 34); x.letterSpacing = '0px';
+  x.textAlign = 'right'; x.font = F(700, 18); x.fillStyle = GOLD; const num = '0932 668 642'; x.fillText(num, W - L, H - 34);
+  const nw = x.measureText(num).width; x.font = F(500, 18); x.fillStyle = '#FFFFFF'; x.fillText('Hotline/Zalo ', W - L - nw, H - 34); x.textAlign = 'left';
+  return c.toBuffer('image/jpeg', 90);
+}

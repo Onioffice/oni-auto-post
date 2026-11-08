@@ -3,7 +3,7 @@
 // → tải hình lên website → đưa vào kho bài: "Tự đăng" (tin tức, không giá) hoặc "Chờ duyệt" (có giá/ưu đãi).
 import fs from 'node:fs';
 import { homNay, thuTrongTuan, layMK, opMK, ghiLoi, claude, layJSON, kiemChu, wpTaiAnh, wpTimAnh, layCaiDat, ghiNhatKy, CHU_KY_FB } from './lib.mjs';
-import { khungFB, mauA, chuanBi, coLogo } from './khung.mjs';
+import { khungFB, mauA, chuanBi, coLogo, infoWeb } from './khung.mjs';
 
 const THU = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const GIO = { Facebook: '11:30', Instagram: '12:00', Website: '09:00' };
@@ -11,6 +11,47 @@ const GIO = { Facebook: '11:30', Instagram: '12:00', Website: '09:00' };
 export const KENH_DANG_LAM = ['Facebook', 'Website'];
 export const kenhMacDinh = ngay => ['Facebook'].concat([2, 5].includes(thuTrongTuan(ngay)) ? ['Website'] : []); // website T3, T6
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
+
+// Kho ảnh thật cơ sở Oni trên thư viện website (ảnh ngang): mã → [tên tệp trên web, mô tả]
+const KHO_ANH = {
+  'td-hop-a': ['oni-td-hop-a-ngang', 'Phòng họp 6–10 khách – CS1 Tân Định'],
+  'td-hop-b': ['oni-td-hop-b-ngang', 'Phòng họp có tivi trình chiếu – CS1 Tân Định'],
+  'td-hop-d': ['oni-td-hop-d-ngang', 'Bàn họp – CS1 Tân Định'],
+  'td-letan': ['oni-td-letan-a', 'Quầy lễ tân – CS1 Tân Định'],
+  'td-phong-rieng': ['oni-td-gp02-b', 'Phòng làm việc riêng G.P02 – CS1 Tân Định'],
+  'td-lam-viec-chung': ['oni-workspace', 'Không gian làm việc chung – CS1 Tân Định'],
+  'gv-le-tan': ['oni-gv-reception', 'Khu lễ tân – CS2 Gò Vấp'],
+  'gv-van-phong-1': ['oni-gv-office1', 'Văn phòng riêng – CS2 Gò Vấp'],
+  'gv-van-phong-2': ['oni-gv-office2', 'Văn phòng riêng – CS2 Gò Vấp'],
+  'gv-hop': ['oni-gv-meeting', 'Phòng họp – CS2 Gò Vấp'],
+  'toa-nha': ['oni-building-hero', 'Tòa nhà Oni Office'],
+};
+async function anhTheoMa(ma) {
+  const k = KHO_ANH[ma]; if (!k) return '';
+  const ds = await wpTimAnh(k[0]); return ds.find(u => new RegExp('/' + k[0] + '(-\\d+x\\d+)?\\.(jpe?g|png|webp)$', 'i').test(u)) || ds[0] || '';
+}
+// Chèn hình đã chọn vào ngay cuối mục H2 thứ n (trước H2 kế tiếp)
+async function chenHinhTheoMuc(html, ds, ngay, tieude) {
+  if (!Array.isArray(ds) || !ds.length) return html;
+  const h2 = [...html.matchAll(/<h2[\s>]/gi)].map(m => m.index);
+  const viec = [];
+  for (const h of ds.slice(0, 3)) {
+    const n = +h.sauMuc; if (!(n >= 1 && n < h2.length)) continue;
+    let url = '', alt = String(h.chuThich || tieude).replace(/"/g, '');
+    try {
+      if (h.loai === 'anh') url = await anhTheoMa(h.ma);
+      else if (h.loai === 'infographic' && Array.isArray(h.cacY) && h.cacY.length >= 3) {
+        const loiY = h.cacY.filter(y => String(y).split(/\s+/).length > 14);
+        if (loiY.length) continue;
+        const buf = await infoWeb({ nhan: h.nhan, tieuDe: h.tieuDe, cacY: h.cacY });
+        url = (await wpTaiAnh(buf, `web_${ngay}_hinh-trong-bai-${n}.jpg`, alt, 'image/jpeg')).url;
+      }
+    } catch (e) { console.error('Hình trong bài lỗi:', e.message); }
+    if (url) viec.push({ at: h2[n], fig: `<figure class="wp-block-image size-large"><img src="${url}" alt="${alt}"/><figcaption class="wp-element-caption">${alt}</figcaption></figure>\n\n\n\n` });
+  }
+  viec.sort((a, b) => b.at - a.at).forEach(v => { html = html.slice(0, v.at) + v.fig + html.slice(v.at); });
+  return html;
+}
 
 // Bài website: trình bày GIỐNG các bài đã đăng trên onioffice.vn (khối Gutenberg, không chèn ảnh trong thân bài,
 // cuối bài là khối "Liên hệ ngay" nền navy #13203a đúng mẫu bài 1625)
@@ -73,13 +114,21 @@ Các bài gần đây (không được trùng chủ đề/góc nhìn):
 ${ganDay || '(chưa có)'}
 
 Trả lời DUY NHẤT một khối:
+HÌNH TRONG THÂN BÀI WEBSITE ("anhTrongBai", 0–3 hình) – chọn THEO NỘI DUNG từng mục, không chèn cho có:
+- Mục nói về không gian/dịch vụ có thật ở Oni → "loai":"anh" và "ma" lấy ĐÚNG một mã trong kho ảnh thật dưới đây (đúng cơ sở CS1/CS2, đúng loại phòng):
+${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
+- Mục là các bước, mốc thời gian, danh sách giấy tờ, so sánh → "loai":"infographic": "tieuDe" ngắn (≤ 8 chữ), "cacY" 3–6 ý, mỗi ý ≤ 12 chữ, lấy đúng ý trong mục đó; "nhan" kiểu "THỦ TỤC · 2026".
+- "sauMuc": số thứ tự mục H2 mà hình đặt ngay dưới (1 = sau mục "1. …"). Không đặt 2 hình liền nhau. Mục nào không có hình phù hợp thì thôi.
+- "chuThich": 1 câu ngắn mô tả đúng hình.
+
 \`\`\`json
 {"chuDe":"…","nguon":[{"tieuDe":"…","link":"https://…"}],
  "bai":[
   {"kenh":"Facebook","tieude":"…","nd":"caption đầy đủ","tag":"#OniOffice …","coGia":false,
    "hinh":{"pill":"…","eyebrow":"…","t1":"…","t2":"…","boxTop":"…","boxTitle":"…","cards":[{"icon":"doc","t":"…","s":"…"},{"icon":"…","t":"…","s":"…"},{"icon":"…","t":"…","s":"…"},{"icon":"…","t":"…","s":"…"}],"loc":"…","cta":"…"}},
   {"kenh":"Instagram", … cùng dạng Facebook …},
-  {"kenh":"Website","tieude":"…","nd":"<p>…bài HTML đầy đủ…</p>","coGia":false,"hinhWeb":{"tag":"…","lines":["…","…","…"],"sub":["…","…"],"anhThat":"oni-td-hop"}}
+  {"kenh":"Website","tieude":"…","nd":"<p>…bài HTML đầy đủ…</p>","coGia":false,"hinhWeb":{"tag":"…","lines":["…","…","…"],"sub":["…","…"],"anhThat":"oni-td-hop"},
+   "anhTrongBai":[{"sauMuc":2,"loai":"anh","ma":"td-hop-a","chuThich":"…"},{"sauMuc":4,"loai":"infographic","nhan":"…","tieuDe":"…","cacY":["…","…","…"],"chuThich":"…"}]}
  ]}
 \`\`\`` }]
   });
@@ -104,6 +153,7 @@ Trả lời DUY NHẤT một khối:
         const photo = Buffer.from(await (await fetch(anh)).arrayBuffer());
         buf = await mauA(b.hinhWeb, photo); mime = 'image/jpeg'; ten = `web_${ngay}_oni_1200x628@2x.jpg`;
         b.nd = await themAnhTrongBai(b.nd);   // trình bày đúng mẫu bài website đã đăng
+        b.nd = await chenHinhTheoMuc(b.nd, b.anhTrongBai, ngay, b.tieude);   // hình trong bài theo nội dung từng mục
       } else {
         buf = await khungFB({ ...b.hinh, theme: b.kenh === 'Instagram' ? 'kem' : 'navy' }); ten = `${b.kenh === 'Instagram' ? 'ig' : 'fb'}_${ngay}_oni.png`;
       }
