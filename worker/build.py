@@ -3,7 +3,7 @@
 import json, re, os, sys
 D = os.path.dirname(os.path.abspath(__file__))
 html = open(os.path.join(D, 'app.html'), encoding='utf-8').read()
-extra = open(os.path.join(D, 'web_extra.js'), encoding='utf-8').read().replace('</script', '<\\/script')
+extra = (open(os.path.join(D, 'dashboard.js'), encoding='utf-8').read() + '\n' + open(os.path.join(D, 'web_extra.js'), encoding='utf-8').read()).replace('</script', '<\\/script')
 hubA = open(os.path.join(D, 'hub_a.css'), encoding='utf-8').read()
 hubB = open(os.path.join(D, 'hub_b.css'), encoding='utf-8').read()
 # CSS lấy từ app thật (hub) để giao diện giống y: phần A đặt ngay sau CSS gốc, phần B nạp sau mã Marketing

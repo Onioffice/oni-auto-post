@@ -1,7 +1,7 @@
 // NHẬN VIỆC CHỊ GIAO – chạy mỗi giờ (7:00–22:00 giờ VN) trên GitHub Actions.
 // Việc chị giao nằm ngay trong trang Marketing (Bảng việc → "🤖 Giao việc cho AI Marketing").
 // Máy nhận việc "Chờ AI" → soạn bài + hình theo đúng yêu cầu → kiểm lỗi → bài vào "Chờ duyệt" trong app.
-import { homNay, layMK, opMK, ghiLoi, ghiNhatKy } from './lib.mjs';
+import { homNay, layMK, opMK, ghiLoi, ghiNhatKy, layCaiDat } from './lib.mjs';
 import { soanBai, KENH_DANG_LAM } from './soan.mjs';
 
 const ngayTrong = (cu, kenhs) => {               // ngày gần nhất (từ mai) các kênh được chọn còn trống
@@ -10,6 +10,7 @@ const ngayTrong = (cu, kenhs) => {               // ngày gần nhất (từ mai
 };
 
 async function main() {
+  if ((await layCaiDat()).nhan === false) { console.log('Chị đang tắt máy "Nhận việc chị giao".'); return; }
   const M = await layMK();
   const viec = ((M.ai || {}).lenh || []).filter(l => l.tt === 'Chờ AI').reverse();   // việc cũ trước
   if (!viec.length) { console.log('Không có việc mới.'); return; }

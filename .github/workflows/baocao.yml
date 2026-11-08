@@ -1,0 +1,19 @@
+name: Báo cáo tuần (thứ Hai 8:05 giờ VN)
+on:
+  schedule:
+    - cron: '5 1 * * 1'
+  workflow_dispatch:
+concurrency: { group: oni-baocao, cancel-in-progress: false }
+jobs:
+  chay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/baocao.mjs
+        env:
+          ONI_API_URL: ${{ secrets.ONI_API_URL }}
+          ONI_API_KEY: ${{ secrets.ONI_API_KEY }}
+          SU_KIEN: ${{ github.event_name }}

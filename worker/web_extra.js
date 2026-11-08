@@ -1,13 +1,13 @@
 /* ===== Phần riêng của bản web: chỉ giữ khu Marketing + công tắc máy tự động ===== */
 (function(){try{
-const GIU=['zmk','mkh','mkd','mkw','mkv','mcd','mkt','mks','mkc','mqc','mkr','btin','mkb'];
+const GIU=['mdk','zmk','mkh','mkd','mkw','mkv','mcd','mkt','mks','mkc','mqc','mkr','btin','mkb'];
 const st=document.createElement('style');st.textContent='aside a[data-p]'+GIU.map(p=>':not([data-p="'+p+'"])').join('')+'{display:none!important}'+
  '.oniCT{background:#fff;border:1px solid #EEE5D6;border-radius:14px;padding:12px 14px;margin:0 0 14px}.oniCT h4{margin:0 0 6px;font-size:15px;color:#6F4F31}.oniCT .r{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #F3EBDD}.oniCT .r:first-of-type{border:0}.oniCT small{color:#896441}'+
  '.oniSw{position:relative;width:48px;height:28px;flex:none}.oniSw input{opacity:0;width:0;height:0}.oniSw span{position:absolute;inset:0;background:#ccc;border-radius:28px;transition:.2s;cursor:pointer}.oniSw span:before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}.oniSw input:checked+span{background:#E9B83A}.oniSw input:checked+span:before{transform:translateX(20px)}';
 document.head.appendChild(st);
 function don(){document.querySelectorAll('aside a[data-p]').forEach(a=>{if(!GIU.includes(a.dataset.p))a.remove()})}
 don();new MutationObserver(()=>don()).observe(document.querySelector('aside')||document.body,{childList:true,subtree:true});
-const g0=window.go;window.go=function(p,k){if(p&&!GIU.includes(p))p='mkh';const r=g0.call(this,p,k);setTimeout(()=>congTac(p),400);return r};
+const g0=window.go;window.go=function(p,k){if(p&&!GIU.includes(p))p='mdk';const r=g0.call(this,p,k);setTimeout(()=>congTac(p),400);return r};
 let CD=null;
 let dangVe=false;
 async function congTac(p){if(!['mkh','mkv'].includes(p)||dangVe)return;const R=document.getElementById('m5Root');if(!R||!R.parentNode||R.parentNode.querySelector(':scope>.oniCT'))return;dangVe=true;

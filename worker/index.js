@@ -21,9 +21,11 @@ const cookie = (req, k) => { const m = (req.headers.get('cookie') || '').match(n
 async function quyen(req, env) {
   const auth = req.headers.get('authorization') || '';
   if (env.API_KEY && auth.startsWith('Bearer ') && eqTime(auth.slice(7), env.API_KEY)) return 'bot';
+  if (auth.startsWith('Bearer oni_ts_')) { const k = await env.DB.get('khoa_thuso'); if (k && eqTime(auth.slice(7), k)) return 'thuso'; }
   if (env.ADMIN_PASSWORD && eqTime(cookie(req, 'oni_mk'), await sha('oni-mkt|' + env.ADMIN_PASSWORD))) return 'chi';
   return '';
 }
+async function ghiNK(env, viec, kq) { const a = JSON.parse((await env.DB.get('nhatky')) || '[]'); a.push({ luc: new Date().toISOString(), viec, kq: String(kq || '').slice(0, 500) }); await env.DB.put('nhatky', JSON.stringify(a.slice(-200))); }
 async function docBai(env) { return JSON.parse((await env.DB.get('posts')) || '[]'); }
 async function ghiBai(env, a) { await env.DB.put('posts', JSON.stringify(a.slice(-1500))); }
 const maBai = () => 'B' + new Date(Date.now() + 7 * 3600e3).toISOString().slice(2, 10).replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -97,6 +99,10 @@ export default {
     }
     if (!p.startsWith('/api/')) return new Response('Không có trang này', { status: 404 });
     if (!ai) return json({ loi: 'Chưa đăng nhập' }, 401);
+    if (ai === 'thuso') {   // máy chủ Apps Script chỉ được gửi số các kênh
+      if (p === '/api/thuso' && req.method === 'POST') { const b = await req.json(), cd = JSON.parse((await env.DB.get('caidat')) || '{}'); if (cd.thuso === false) return json({ ok: false, tat: true, loi: 'Chị đang tắt máy Thu số' }); await env.DB.put('app:gsc', JSON.stringify(b.data || {})); await ghiNK(env, 'Thu số', String(b.kq || 'Đã cập nhật số các kênh')); return json({ ok: true }); }
+      return json({ loi: 'Khóa này chỉ dùng để gửi số kênh' }, 403);
+    }
 
     if (p === '/api/posts' && req.method === 'GET') return json({ posts: await docBai(env) });
 
@@ -154,7 +160,7 @@ export default {
     if (p === '/api/app/drv' && req.method === 'POST') {
       const b = await req.json();
       if (b.action === 'gsc_get' || b.action === 'gsc_now') { const g = await env.DB.get('app:gsc'); return json(g ? Object.assign({ ok: true }, JSON.parse(g)) : { ok: false, err: 'Chưa có số liệu các kênh trên web (máy chủ chưa gửi sang)' }); }
-      if (b.action === 'gsc_put') { await env.DB.put('app:gsc', JSON.stringify(b.data || {})); return json({ ok: true }); }
+      if (b.action === 'gsc_put') { await env.DB.put('app:gsc', JSON.stringify(b.data || {})); await ghiNK(env, 'Thu số', 'Cập nhật số các kênh (' + (ai === 'chi' ? 'chị bấm' : 'máy') + ')'); return json({ ok: true }); }
       if (b.action === 'mk_luutru') { const a = JSON.parse((await env.DB.get('app:luutru')) || '[]'); a.push({ luc: new Date().toISOString(), d: b }); await env.DB.put('app:luutru', JSON.stringify(a.slice(-50))); return json({ ok: true, n: (b.bai || b.posts || []).length || 0 }); }
       return json({ ok: false, err: 'Chức năng này chưa có trên bản web' });
     }
@@ -184,7 +190,7 @@ export default {
     if (p === '/api/caidat' && req.method === 'PUT') {
       if (ai !== 'chi') return json({ loi: 'Chỉ chị được bật/tắt' }, 403);
       const b = await req.json(), c = JSON.parse((await env.DB.get('caidat')) || '{"soan":false,"dang":false}');
-      for (const k of ['soan', 'dang']) if (k in b) c[k] = !!b[k];
+      for (const k of ['soan', 'dang', 'nhan', 'thuso', 'baocao']) if (k in b) c[k] = !!b[k];
       c.luc = new Date().toISOString(); await env.DB.put('caidat', JSON.stringify(c)); return json({ ok: true, caidat: c });
     }
     // ---- Nhật ký máy chạy ----
@@ -199,6 +205,19 @@ export default {
       const b = await req.json(), a = JSON.parse((await env.DB.get('soloi')) || '[]');
       a.push({ luc: new Date().toISOString(), viec: String(b.viec || ''), loai: String(b.loai || ''), loi: String(b.loi || ''), sua: String(b.sua || ''), ma: String(b.ma || '') });
       await env.DB.put('soloi', JSON.stringify(a.slice(-500))); return json({ ok: true });
+    }
+    // ---- Báo cáo tuần ----
+    if (p === '/api/baocao' && req.method === 'GET') return json({ baocao: JSON.parse((await env.DB.get('baocao')) || '[]') });
+    if (p === '/api/baocao' && req.method === 'POST' && ai === 'bot') {
+      const b = await req.json(), a = JSON.parse((await env.DB.get('baocao')) || '[]');
+      a.push({ luc: new Date().toISOString(), nd: String(b.nd || '').slice(0, 8000) });
+      await env.DB.put('baocao', JSON.stringify(a.slice(-26))); return json({ ok: true });
+    }
+    // ---- Khóa riêng cho máy chủ Apps Script gửi số kênh (chị lấy khóa trên Bảng điều khiển) ----
+    if (p === '/api/thuso/khoa' && req.method === 'POST' && ai === 'chi') {
+      let k = await env.DB.get('khoa_thuso'); const b = await req.json().catch(() => ({}));
+      if (!k || b.moi) { const r = new Uint8Array(24); crypto.getRandomValues(r); k = 'oni_ts_' + [...r].map(x => x.toString(16).padStart(2, '0')).join(''); await env.DB.put('khoa_thuso', k); }
+      return json({ ok: true, khoa: k });
     }
     if (p === '/api/soloi' && req.method === 'GET') return json({ soloi: JSON.parse((await env.DB.get('soloi')) || '[]') });
     return json({ loi: 'Không hỗ trợ' }, 404);
