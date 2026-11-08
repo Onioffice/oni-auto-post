@@ -1,7 +1,7 @@
-name: Bản tin email (thứ Năm 9:00 giờ VN)
+name: Bản tin email (soạn thứ Sáu 9:00 giờ VN, gửi 8:00 thứ Bảy sau khi Giám đốc duyệt)
 on:
   schedule:
-    - cron: '0 2 * * 4'
+    - cron: '0 2 * * 5'
   workflow_dispatch:
 concurrency: { group: oni-bantin, cancel-in-progress: false }
 jobs:

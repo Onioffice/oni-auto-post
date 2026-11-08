@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Marketing Automation Dashboard – Oni Office</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Be Vietnam Pro',system-ui,sans-serif;background:#09090b}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+  .brand{font-family:'Playfair Display',Georgia,serif}
+  .sb{background:linear-gradient(180deg,#0E1A2E,#0A1322)}
+  .sb::-webkit-scrollbar-thumb{background:#2A3A55}
+  @keyframes inUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .in{animation:inUp .35s ease-out}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  .shimmer{background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);background-size:200% 100%;animation:shimmer 1.5s linear infinite}
+  @keyframes grow{from{transform:scaleY(.05)}to{transform:scaleY(1)}}
+  .bar{transform-origin:bottom;animation:grow .7s ease-out both}
+  ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#3f3f46;border-radius:8px}
+</style>
+</head>
+<body class="text-zinc-200 min-h-screen">
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect,useRef,useMemo}=React;
+
+/* ===== Icon (vẽ theo bộ Lucide) ===== */
+const Ic=({className="w-5 h-5",children})=>(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>);
+const Loader=p=><Ic {...p}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></Ic>;
+const Refresh=p=><Ic {...p}><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M8 16H3v5"/></Ic>;
+const Crown=p=><Ic {...p}><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/><path d="M5 20h14"/></Ic>;
+const BarChart=p=><Ic {...p}><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></Ic>;
+const Rocket=p=><Ic {...p}><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22 22 0 0 1-4 2z"/><path d="M9 12H4s.6-3 2-4c1.6-1 5 0 5 0M12 15v5s3-.6 4-2c1-1.6 0-5 0-5"/></Ic>;
+const Check=p=><Ic {...p}><path d="M20 6 9 17l-5-5"/></Ic>;
+const X=p=><Ic {...p}><path d="M18 6 6 18M6 6l12 12"/></Ic>;
+const Search=p=><Ic {...p}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></Ic>;
+const Bot=p=><Ic {...p}><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M12 8V4H8M2 14h2M20 14h2M9 13v2M15 13v2"/></Ic>;
+const Palette=p=><Ic {...p}><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 0 0 0 20c.9 0 1.7-.8 1.7-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16a6 6 0 0 0 6-6c0-4.9-4.5-8.4-10-8.4Z"/></Ic>;
+const Shield=p=><Ic {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></Ic>;
+const Globe=p=><Ic {...p}><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></Ic>;
+const Power=p=><Ic {...p}><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></Ic>;
+const Timer=p=><Ic {...p}><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/></Ic>;
+const Mail=p=><Ic {...p}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></Ic>;
+const Fb=p=><Ic {...p}><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></Ic>;
+const User=p=><Ic {...p}><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></Ic>;
+const Linkedin=p=><Ic {...p}><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></Ic>;
+const Insta=p=><Ic {...p}><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></Ic>;
+const AtSign=p=><Ic {...p}><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></Ic>;
+const Chat=p=><Ic {...p}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></Ic>;
+const Music=p=><Ic {...p}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></Ic>;
+const Pin=p=><Ic {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></Ic>;
+const Megaphone=p=><Ic {...p}><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></Ic>;
+const Eye=p=><Ic {...p}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></Ic>;
+const Pointer=p=><Ic {...p}><path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></Ic>;
+const Users=p=><Ic {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></Ic>;
+const Send=p=><Ic {...p}><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></Ic>;
+const Flame=p=><Ic {...p}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.3.4 1.6 1.4 2.8 2.5 2.8z"/></Ic>;
+const Tag=p=><Ic {...p}><path d="M12 2H2v10l9.3 9.3a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><path d="M7 7h.01"/></Ic>;
+const Trash=p=><Ic {...p}><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></Ic>;
+const Star=p=><Ic {...p}><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></Ic>;
+const PlusC=p=><Ic {...p}><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></Ic>;
+const Cal=p=><Ic {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></Ic>;
+const Flag=p=><Ic {...p}><path d="M4 22V4a1 1 0 0 1 1-1h12l-2 4 2 4H5"/></Ic>;
+const Chevron=p=><Ic {...p}><path d="m6 9 6 6 6-6"/></Ic>;
+const Menu=p=><Ic {...p}><path d="M4 6h16M4 12h16M4 18h16"/></Ic>;
+
+/* ===== Dữ liệu mẫu ===== */
+const fmt=n=>Math.round(Number(n||0)).toLocaleString('vi-VN');
+const gio=()=>new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const BUOC=[
+  {k:'tim',ten:'Quét xu hướng & từ khóa',chi:'Google Trends · Search Console · tin FDI',I:Search,log:'🔄 Đang quét từ khóa xu hướng và tin doanh nghiệp, FDI…',xong:'✅ Chọn chủ đề: '},
+  {k:'viet',ten:'AI viết bài SEO & mạng xã hội',chi:'Website · Facebook · LinkedIn · Threads · Zalo',I:Bot,log:'🤖 AI đang viết bài SEO và nội dung từng kênh…',xong:'✅ Viết xong bài: '},
+  {k:'ve',ten:'Thiết kế banner',chi:'1080×1350 · 1200×628 · logo Oni',I:Palette,log:'🎨 Đang thiết kế banner cho từng kênh…',xong:'✅ Banner đạt chuẩn, đủ logo'},
+  {k:'kiem',ten:'Kiểm lỗi chữ & hình',chi:'Từ cấm · giá · hashtag · dấu tiếng Việt',I:Shield,log:'🧐 Đang kiểm lỗi chữ, giãn dòng, từ cấm…',xong:'✅ Kiểm lỗi: Đạt'},
+  {k:'dang',ten:'Đăng bài tự động',chi:'WordPress · Fanpage · Zalo OA · Threads',I:Globe,log:'🌐 Đang đăng bài lên các kênh theo lịch mỗi giờ…',xong:'✅ Đã đăng lên các kênh'},
+  {k:'so',ten:'Thu số liệu',chi:'Lượt xem · lượt bấm · khách để lại thông tin',I:BarChart,log:'📊 Đang thu số liệu bài vừa đăng…',xong:'✅ Cập nhật số liệu xong'},
+];
+const CHU_DE_TU_DONG=['Thuê văn phòng ảo quận 1 cho công ty mới','Địa chỉ đăng ký kinh doanh tại Gò Vấp','Thủ tục thành lập công ty vốn nước ngoài 2026','Phòng họp theo giờ ở Tân Định','Văn phòng trọn gói cho startup','Đổi địa chỉ trụ sở công ty: hồ sơ cần có'];
+const daDung=new Set();
+const KENH={
+  content:[
+    {id:'web',ten:'Website',I:Globe,mau:'text-sky-300 bg-sky-500/10'},
+    {id:'email',ten:'Email newsletter',I:Mail,mau:'text-amber-300 bg-amber-500/10'},
+    {id:'fanpage',ten:'Fanpage Facebook',I:Flag,mau:'text-blue-300 bg-blue-500/10'},
+    {id:'fbcn',ten:'Facebook cá nhân',I:User,mau:'text-indigo-300 bg-indigo-500/10'},
+    {id:'li',ten:'LinkedIn',I:Linkedin,mau:'text-cyan-300 bg-cyan-500/10'},
+    {id:'ig',ten:'Instagram',I:Insta,mau:'text-pink-300 bg-pink-500/10'},
+    {id:'th',ten:'Threads',I:AtSign,mau:'text-zinc-200 bg-zinc-500/15'},
+    {id:'zl',ten:'Zalo OA',I:Chat,mau:'text-blue-300 bg-blue-600/10'},
+    {id:'tt',ten:'TikTok',I:Music,mau:'text-rose-300 bg-rose-500/10'},
+    {id:'gb',ten:'Google Business',I:Pin,mau:'text-emerald-300 bg-emerald-500/10'},
+  ],
+  paid:[
+    {id:'gads',ten:'Google Ads',I:Search,mau:'text-yellow-300 bg-yellow-500/10'},
+    {id:'fads',ten:'Facebook Ads',I:Megaphone,mau:'text-violet-300 bg-violet-500/10'},
+    {id:'zads',ten:'Zalo OA Ads',I:Chat,mau:'text-blue-300 bg-blue-500/10'},
+  ]};
+const TAT_CA=[...KENH.content,...KENH.paid];
+const SO_GOC={zads:[9800,240,11],web:[5200,410,18],email:[1340,212,9],fanpage:[20478,890,14],fbcn:[3120,160,4],li:[860,54,3],ig:[2410,96,2],th:[1880,73,1],zl:[960,118,7],tt:[0,0,0],gb:[4310,265,21],gads:[12800,620,26],fads:[35400,1130,31]};
+const DOI_TUONG=['Doanh nghiệp SME tại TP.HCM','Nhà đầu tư FDI (Hàn, Nhật, Trung, Singapore)','Startup & freelancer 22–35 tuổi','Bán kính 5 km quanh CS1 Tân Định / CS2 Gò Vấp','Kế toán, dịch vụ thành lập công ty'];
+const NEN=['from-[#1C2B4A] to-[#0F1A30]','from-[#3B2A1A] to-[#1E140C]','from-[#123A2A] to-[#0A2018]','from-[#2A1C3B] to-[#160E22]'];
+
+
+/* Chiến dịch quảng cáo mẫu: ngân sách/ngày, đã chi hôm nay, tổng đã chi, hiển thị, bấm, khách */
+const NEN_ADS={fads:'Facebook Ads',gads:'Google Ads',zads:'Zalo Ads'};
+const mk=(id,ten,nen,ns,ngay,daChay,tt,dt)=>{const l7=Array.from({length:7},(_,i)=>tt==='Tạm dừng'&&i>4?0:Math.round(ns*(.7+Math.random()*.3)));const chi=l7.slice(0,Math.min(7,daChay)).reduce((a,b)=>a+b,0)+Math.max(0,daChay-7)*ns*.85;
+  return {id,ten,nen,ns,ngay,daChay,tt,dt,l7,chi,chiHom:tt==='Đang chạy'?Math.round(ns*.42):0,hien:Math.round(chi/1000*36),click:Math.round(chi/1000*36*.019),lead:Math.round(chi/1000*36*.019*.06)}};
+const CD_MAU=[
+  mk(1,'Văn phòng ảo quận 1 – tin nhắn','Facebook Ads',200000,30,12,'Đang chạy','Doanh nghiệp SME tại TP.HCM'),
+  mk(2,'Phòng họp theo giờ Tân Định','Facebook Ads',150000,14,9,'Đang chạy','Bán kính 5 km quanh CS1 Tân Định / CS2 Gò Vấp'),
+  mk(3,'Ưu đãi văn phòng trọn gói CS2','Facebook Ads',100000,7,7,'Tạm dừng','Startup & freelancer 22–35 tuổi'),
+  mk(4,'Thành lập công ty vốn nước ngoài','Google Ads',300000,30,18,'Đang chạy','Nhà đầu tư FDI (Hàn, Nhật, Trung, Singapore)'),
+  mk(5,'Thuê văn phòng ảo – từ khóa','Google Ads',250000,30,21,'Đang chạy','Doanh nghiệp SME tại TP.HCM'),
+  mk(6,'Quan tâm Zalo OA Oni Office','Zalo Ads',120000,14,6,'Đang chạy','Doanh nghiệp SME tại TP.HCM'),
+];
+function DemSo({v,suffix=''}){const [h,setH]=useState(v);const t=useRef(v);useEffect(()=>{let f;const s=t.current,t0=performance.now();const run=x=>{const p=Math.min(1,(x-t0)/650);const val=s+(v-s)*p;t.current=val;setH(val);if(p<1)f=requestAnimationFrame(run)};f=requestAnimationFrame(run);return()=>cancelAnimationFrame(f)},[v]);return <>{fmt(h)}{suffix}</>}
+const The=({children,className=''})=><div className={`rounded-2xl bg-zinc-900/80 border border-zinc-800 ${className}`}>{children}</div>;
+
+
+/* Ô giao việc nhanh – có ở đầu Bảng điều khiển Auto */
+function GiaoNhanh({S}){const {setViec,themLog}=S;const [nd,setNd]=useState('');
+  const giao=()=>{if(!nd.trim())return;setViec(a=>[{id:Date.now(),nd:nd.trim(),loai:'Chủ đề nóng',kenh:['web','fanpage','li','th','zl'],uu:'Cao',tt:'Chờ vòng tới',luc:gio()},...a]);themLog('👑 Boss giao chủ đề: "'+nd.trim()+'" – bot viết ở vòng tới','text-amber-300 font-semibold');setNd('')};
+  return (<div className="rounded-xl border border-amber-400/40 bg-amber-400/5 p-3">
+    <div className="text-sm font-bold text-amber-200 flex items-center gap-2 mb-2"><Crown className="w-4 h-4"/>Boss giao chủ đề cho vòng tới</div>
+    <div className="flex gap-2 flex-col sm:flex-row"><input value={nd} onChange={e=>setNd(e.target.value)} onKeyDown={e=>e.key==='Enter'&&giao()} placeholder="VD: Ưu đãi phòng họp cuối năm cho doanh nghiệp FDI" className="flex-1 min-w-0 rounded-lg bg-zinc-950 border border-zinc-700 focus:border-amber-400 outline-none px-3 py-2.5"/>
+    <button onClick={giao} disabled={!nd.trim()} className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-extrabold bg-gradient-to-r from-amber-300 to-amber-500 text-zinc-900 disabled:opacity-40"><Send className="w-4 h-4"/>Giao việc</button></div>
+    <div className="text-[11.5px] text-zinc-400 mt-1.5">Không có việc Boss giao thì bot lấy chủ đề trong kho chủ đề (mỗi chủ đề viết 1 lần). Hết kho thì bot dừng chờ chị.</div></div>)}
+/* ===== TAB 1: AUTO DASHBOARD ===== */
+function TabAuto({S}){const {chay,pt,vong,buocNay,ptBuoc,log,dongHo,toc,setToc,viecDangLam,tk}=S;
+  const logRef=useRef(null);useEffect(()=>{if(logRef.current)logRef.current.scrollTop=0},[log]);
+  return (<div className="space-y-5 in">
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+      {[[Globe,'Bài Website đã đăng',tk.web],[Send,'Bài mạng xã hội',tk.mxh],[Refresh,'Vòng lặp đã chạy',vong-1],[Users,'Khách để lại thông tin',tk.lead]].map(([I,t,v],i)=>(
+        <The key={i} className="p-4"><div className="flex items-center justify-between text-xs text-zinc-400"><span>{t}</span><span className="p-2 rounded-lg bg-emerald-500/10 text-emerald-300"><I className="w-4 h-4"/></span></div><div className="mt-2 text-2xl md:text-3xl font-extrabold text-white"><DemSo v={v}/></div></The>))}
+    </div>
+    <The className="p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-bold text-lg flex items-center gap-2"><Refresh className={`w-5 h-5 text-emerald-400 ${chay?'animate-spin [animation-duration:3s]':''}`}/>Nhà máy nội dung tự động <span className="text-xs text-zinc-500 font-normal">· vòng #{vong}</span></h2>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/40 border border-zinc-700 mono text-emerald-300"><Timer className="w-4 h-4"/>{chay?'Vòng tới sau '+dongHo:'Tạm dừng'}</span>
+          <select value={toc} onChange={e=>setToc(+e.target.value)} className="bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs"><option value={1}>Tốc độ 1×</option><option value={2}>2×</option><option value={4}>4×</option></select>
+        </div>
+      </div>
+      <GiaoNhanh S={S}/>
+      {viecDangLam&&<div className="in flex items-center gap-2 text-sm rounded-xl px-3 py-2 bg-amber-500/10 border border-amber-400/30 text-amber-200"><Crown className="w-4 h-4"/>Vòng này đang viết việc Boss giao: <b className="truncate">{viecDangLam.nd}</b></div>}
+      {!S.coChuDe&&pt===0&&<div className="in flex items-center gap-2 text-sm rounded-xl px-3 py-2 bg-red-500/10 border border-red-400/30 text-red-200"><Timer className="w-4 h-4"/>Bot đang chờ chủ đề mới – mỗi chủ đề chỉ viết 1 lần, không viết lại. Chị giao chủ đề ở ô phía trên.</div>}
+      <div>
+        <div className="flex justify-between text-xs text-zinc-400 mb-1"><span>Tiến độ vòng #{vong}</span><span className="mono text-white">{Math.floor(pt)}%</span></div>
+        <div className="h-3 rounded-full bg-zinc-800 overflow-hidden relative"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400" style={{width:pt+'%'}}></div>{chay&&<div className="absolute inset-0 shimmer"></div>}</div>
+      </div>
+      <div className="grid md:grid-cols-2 gap-2.5">
+        {BUOC.map((b,i)=>{const xong=i<buocNay,dang=i===buocNay,I=b.I;
+          return (<div key={b.k} className={`rounded-xl border p-3 transition-all duration-300 ${dang?'border-emerald-400/50 bg-emerald-500/5 scale-[1.01]':xong?'border-zinc-700 bg-zinc-800/40':'border-zinc-800 bg-zinc-950/40 opacity-60'}`}>
+            <div className="flex items-center gap-3">
+              <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${dang?'bg-emerald-500/15 text-emerald-300':xong?'bg-emerald-500/20 text-emerald-300':'bg-zinc-800 text-zinc-500'}`}>{dang&&chay?<Loader className="w-5 h-5 animate-spin"/>:xong?<Check className="w-5 h-5"/>:<I className="w-5 h-5"/>}</span>
+              <div className="flex-1 min-w-0"><div className="flex justify-between gap-2"><b className="text-sm">{i+1}. {b.ten}</b><span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${dang?(chay?'bg-emerald-500/15 text-emerald-300':'bg-red-500/15 text-red-300'):xong?'bg-zinc-700 text-zinc-200':'bg-zinc-800 text-zinc-500'}`}>{dang?(chay?'Đang xử lý':'Tạm dừng'):xong?'Hoàn tất':'Chờ'}</span></div>
+                <div className="text-xs text-zinc-500 truncate">{b.chi}</div>
+                <div className="mt-1.5 h-1.5 rounded-full bg-zinc-800 overflow-hidden"><div className={`h-full rounded-full ${xong?'bg-emerald-400':'bg-cyan-400'}`} style={{width:(xong?100:dang?ptBuoc:0)+'%'}}></div></div></div>
+            </div></div>)})}
+      </div>
+      <div>
+        <div className="text-xs text-zinc-400 mb-1.5 flex items-center gap-2"><span className={`w-2 h-2 rounded-full ${chay?'bg-emerald-400 animate-pulse':'bg-red-500'}`}></span>Nhật ký bot trực tiếp</div>
+        <div ref={logRef} className="mono text-[12.5px] leading-relaxed h-64 overflow-y-auto rounded-xl bg-black/60 border border-zinc-800 p-3 space-y-1">
+          {log.map(x=>(<div key={x.id} className={`in ${x.c}`}><span className="text-cyan-400/80">[{x.t}]</span> {x.m}</div>))}
+        </div>
+      </div>
+    </The>
+  </div>)}
+
+/* ===== TAB 2: BOSS GIAO VIỆC ===== */
+function TabBoss({S}){const {viec,setViec,themLog}=S;
+  const [nd,setNd]=useState('');const [loai,setLoai]=useState('Chủ đề nóng');const [kenh,setKenh]=useState(['web','fanpage','li']);const [uu,setUu]=useState('Cao');const [lap,setLap]=useState('Một lần');const [thu,setThu]=useState('Thứ 7');const [gioL,setGioL]=useState('08:00');
+  const goiY=['Ưu đãi phòng họp cuối năm cho doanh nghiệp','Hướng dẫn nhà đầu tư Hàn Quốc mở công ty tại TP.HCM','Từ khóa: văn phòng ảo giá rẻ quận 3','Chiến dịch: văn phòng trọn gói CS2 Gò Vấp','Thay đổi quy định hóa đơn điện tử 2026'];
+  const giao=()=>{if(!nd.trim())return;const v={id:Date.now(),nd:nd.trim(),loai,kenh,uu,tt:lap==='Hằng tuần'?'Định kỳ':'Chờ vòng tới',lap:lap==='Hằng tuần'?`${thu} hằng tuần, ${gioL}`:'',luc:gio()};setViec(a=>[v,...a]);themLog('👑 Boss giao việc: "'+v.nd+'" → '+kenh.length+' kênh','text-amber-300 font-semibold');setNd('')};
+  return (<div className="grid xl:grid-cols-5 gap-5 in">
+    <The className="xl:col-span-2 p-5 space-y-4">
+      <h2 className="font-bold text-lg flex items-center gap-2"><Crown className="w-5 h-5 text-amber-300"/>Giao việc cho đội bot</h2>
+      <div className="flex gap-2 flex-wrap">{[['Chủ đề nóng',Flame],['Từ khóa SEO',Tag],['Chiến dịch sản phẩm',Megaphone]].map(([t,I])=>(<button key={t} onClick={()=>setLoai(t)} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition ${loai===t?'bg-amber-400 text-zinc-900 border-amber-400 font-bold':'border-zinc-700 hover:bg-zinc-800'}`}><I className="w-4 h-4"/>{t}</button>))}</div>
+      <textarea value={nd} onChange={e=>setNd(e.target.value)} rows={4} placeholder="Gõ chủ đề, từ khóa hoặc chiến dịch bot cần làm ngay vòng tới…" className="w-full rounded-xl bg-zinc-950 border border-zinc-700 focus:border-amber-400 outline-none p-3 text-[15px]"/>
+      <div><div className="text-xs text-zinc-400 mb-1.5">Gợi ý nhanh</div><div className="flex flex-wrap gap-1.5">{goiY.map(g=><button key={g} onClick={()=>setNd(g)} className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-left">{g}</button>)}</div></div>
+      <div><div className="text-xs text-zinc-400 mb-1.5">Kênh bot thực hiện</div><div className="flex flex-wrap gap-1.5">{KENH.content.map(k=>{const on=kenh.includes(k.id);const I=k.I;return <button key={k.id} onClick={()=>setKenh(a=>on?a.filter(x=>x!==k.id):[...a,k.id])} className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition ${on?'border-emerald-400/60 bg-emerald-500/10 text-emerald-200':'border-zinc-700 text-zinc-400 hover:bg-zinc-800'}`}><I className="w-3.5 h-3.5"/>{k.ten}</button>})}</div></div>
+      <div className="flex flex-wrap items-center gap-2 text-sm"><span className="text-zinc-400">Lặp lại</span>{['Một lần','Hằng tuần'].map(u=><button key={u} onClick={()=>setLap(u)} className={`px-3 py-1 rounded-lg border ${lap===u?'border-amber-400 text-amber-300 bg-amber-400/10':'border-zinc-700'}`}>{u}</button>)}
+        {lap==='Hằng tuần'&&<><select value={thu} onChange={e=>setThu(e.target.value)} className="bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1">{['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7','Chủ nhật'].map(t=><option key={t}>{t}</option>)}</select><input type="time" value={gioL} onChange={e=>setGioL(e.target.value)} className="bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1"/></>}</div>
+      {lap==='Hằng tuần'&&kenh.includes('email')&&<div className="text-xs rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-100 p-2.5">Bot soạn bản tin trước 1 ngày → vào <b>Chờ BOSS</b> để chị duyệt → tới {thu} {gioL} tự gửi cho khách đã đồng ý nhận tin (có nút hủy nhận). Chưa duyệt thì không gửi.</div>}
+      <div className="flex items-center gap-2 text-sm"><span className="text-zinc-400">Mức ưu tiên</span>{['Cao','Thường'].map(u=><button key={u} onClick={()=>setUu(u)} className={`px-3 py-1 rounded-lg border ${uu===u?'border-amber-400 text-amber-300 bg-amber-400/10':'border-zinc-700'}`}>{u}</button>)}</div>
+      <button onClick={giao} disabled={!nd.trim()} className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-extrabold bg-gradient-to-r from-amber-300 to-amber-500 text-zinc-900 disabled:opacity-40 hover:brightness-110 transition"><Send className="w-5 h-5"/>GIAO VIỆC CHO BOT</button>
+    </The>
+    <The className="xl:col-span-3 p-5">
+      <h2 className="font-bold text-lg mb-2">Kho chủ đề bot tự làm <span className="text-sm font-normal text-zinc-500">· {S.kho.length} chủ đề chưa viết · mỗi chủ đề viết 1 lần</span></h2>
+      <div className="flex flex-wrap gap-1.5 mb-5">{S.kho.length?S.kho.map(k=>(<span key={k.id} className="in inline-flex items-center gap-1.5 text-xs pl-2.5 pr-1 py-1 rounded-lg bg-zinc-800">{k.nd}<button onClick={()=>S.setKho(a=>a.filter(x=>x.id!==k.id))} className="text-zinc-500 hover:text-red-400" title="Bỏ chủ đề này"><X className="w-3.5 h-3.5"/></button></span>)):<span className="text-xs text-red-300">Kho trống – bot chờ chị giao chủ đề mới.</span>}</div>
+      <h2 className="font-bold text-lg mb-3">Hàng việc của Boss <span className="text-sm font-normal text-zinc-500">· bot nhận việc ở đầu mỗi vòng lặp</span></h2>
+      {!viec.length&&<div className="text-zinc-500 text-sm border border-dashed border-zinc-700 rounded-xl p-6 text-center">Chưa có việc. Chị giao việc bên trái, bot sẽ làm ngay vòng tới.</div>}
+      <ul className="space-y-2.5">{viec.map(v=>(<li key={v.id} className={`in rounded-xl border p-3 flex gap-3 items-start ${v.tt==='Đang xử lý'?'border-emerald-400/50 bg-emerald-500/5':v.tt==='Hoàn tất'?'border-zinc-700 bg-zinc-800/30':'border-zinc-800'}`}>
+        <span className={`w-9 h-9 rounded-full grid place-items-center shrink-0 ${v.tt==='Đang xử lý'?'bg-emerald-500/15 text-emerald-300':v.tt==='Hoàn tất'?'bg-emerald-500/20 text-emerald-300':'bg-amber-400/10 text-amber-300'}`}>{v.tt==='Đang xử lý'?<Loader className="w-5 h-5 animate-spin"/>:v.tt==='Hoàn tất'?<Check className="w-5 h-5"/>:<Timer className="w-5 h-5"/>}</span>
+        <div className="flex-1 min-w-0"><div className="flex justify-between gap-2"><b className="text-sm">{v.nd}</b><span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 h-fit ${v.tt==='Đang xử lý'?'bg-emerald-500/15 text-emerald-300':v.tt==='Hoàn tất'?'bg-zinc-700':'bg-amber-400/15 text-amber-300'}`}>{v.tt}</span></div>
+          <div className="text-xs text-zinc-500 mt-0.5">{v.loai} · ưu tiên {v.uu} · giao lúc {v.luc}{v.lap&&<span className="text-sky-300"> · 🔁 {v.lap}</span>}</div>
+          <div className="flex flex-wrap gap-1 mt-1.5">{v.kenh.map(id=>{const k=TAT_CA.find(x=>x.id===id);const I=k.I;return <span key={id} className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded ${k.mau}`}><I className="w-3 h-3"/>{k.ten}</span>})}</div>
+          {v.kq&&<div className="text-xs text-emerald-300 mt-1.5">{v.kq}</div>}</div>
+        {v.tt==='Chờ vòng tới'&&<button onClick={()=>setViec(a=>a.filter(x=>x.id!==v.id))} className="text-zinc-500 hover:text-red-400" title="Hủy việc"><Trash className="w-4 h-4"/></button>}
+      </li>))}</ul>
+    </The>
+  </div>)}
+
+/* ===== TAB 3: TỔNG QUAN & BÁO CÁO ===== */
+function TabBaoCao({S}){const {so}=S;const [nhom,setNhom]=useState('all');const [ky,setKy]=useState(30);const [chiSo,setChiSo]=useState(0);
+  const he=ky/30;const ds=nhom==='all'?TAT_CA:KENH[nhom];
+  const tong=[0,1,2].map(i=>ds.reduce((a,k)=>a+so[k.id][i]*he,0));
+  const CS=[['Lượt xem',Eye,'text-sky-300'],['Lượt bấm',Pointer,'text-emerald-300'],['Khách để lại thông tin',Users,'text-amber-300']];
+  const max=Math.max(...ds.map(k=>so[k.id][chiSo]*he),1);
+  const Nhom=({ten,list})=>(<div className="space-y-2"><div className="text-xs font-bold tracking-widest text-zinc-500 uppercase">{ten}</div>
+    <div className="grid sm:grid-cols-2 2xl:grid-cols-3 gap-2.5">{list.map(k=>{const I=k.I;const v=so[k.id].map(x=>x*he);const chua=!v[0];
+      return (<div key={k.id} className="in rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 hover:border-zinc-600 transition">
+        <div className="flex items-center gap-2"><span className={`w-8 h-8 rounded-lg grid place-items-center ${k.mau}`}><I className="w-4 h-4"/></span><b className="text-sm flex-1">{k.ten}</b>{chua?<span className="text-[11px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">Chưa có số</span>:<span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Đang thu</span>}</div>
+        <div className="grid grid-cols-3 gap-2 mt-2.5 text-center">{CS.map(([t,,c],i)=>(<div key={t} className="rounded-lg bg-zinc-900 py-1.5"><div className={`font-bold ${c}`}><DemSo v={v[i]}/></div><div className="text-[10.5px] text-zinc-500">{t}</div></div>))}</div>
+        <div className="mt-2 text-[11px] text-zinc-500">Tỷ lệ bấm: <b className="text-zinc-300">{v[0]?(v[1]/v[0]*100).toFixed(1):'0'}%</b> · Chuyển đổi: <b className="text-zinc-300">{v[1]?(v[2]/v[1]*100).toFixed(1):'0'}%</b></div>
+      </div>)})}</div></div>);
+  return (<div className="space-y-5 in">
+    <TongAds S={S}/>
+    <div className="flex flex-wrap gap-2 items-center justify-between">
+      <div className="flex flex-wrap gap-1.5">{[['all','Tất cả kênh'],['content','Kênh nội dung'],['paid','Kênh trả phí']].map(([k,t])=><button key={k} onClick={()=>setNhom(k)} className={`px-3 py-1.5 rounded-lg text-sm border transition ${nhom===k?'bg-white text-zinc-900 border-white font-bold':'border-zinc-700 hover:bg-zinc-800'}`}>{t}</button>)}</div>
+      <select value={ky} onChange={e=>setKy(+e.target.value)} className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm"><option value={7}>7 ngày qua</option><option value={30}>30 ngày qua</option><option value={90}>90 ngày qua</option></select>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">{CS.map(([t,I,c],i)=>(<button key={t} onClick={()=>setChiSo(i)} className={`text-left rounded-2xl border p-4 transition ${chiSo===i?'border-zinc-500 bg-zinc-800/80':'border-zinc-800 bg-zinc-900/80 hover:border-zinc-700'}`}><div className="flex justify-between text-xs text-zinc-400"><span>Tổng {t.toLowerCase()}</span><I className={`w-4 h-4 ${c}`}/></div><div className={`text-3xl font-extrabold mt-1 ${c}`}><DemSo v={tong[i]}/></div></button>))}</div>
+    <The className="p-5"><div className="flex justify-between items-center mb-3"><h3 className="font-bold">So sánh kênh theo {CS[chiSo][0].toLowerCase()}</h3><span className="text-xs text-zinc-500">bấm thẻ phía trên để đổi chỉ số</span></div>
+      <div className="flex items-end gap-2 h-44 overflow-x-hidden">{ds.map(k=>{const v=so[k.id][chiSo]*he;return (<div key={k.id+chiSo+nhom+ky} className="flex-1 min-w-0 flex flex-col items-center gap-1 h-full justify-end group">
+        <div className="text-[10px] text-zinc-400 opacity-0 group-hover:opacity-100 transition">{fmt(v)}</div>
+        <div className={`w-full rounded-t-md bar ${KENH.paid.includes(k)?'bg-violet-400/80':'bg-emerald-400/80'}`} style={{height:Math.max(2,v/max*100)+'%'}}></div>
+        <div className="text-[10px] text-zinc-500 truncate w-full text-center">{k.ten.replace('Facebook','FB').replace(' newsletter','')}</div></div>)})}</div></The>
+    {(nhom==='all'||nhom==='content')&&<Nhom ten="Kênh nội dung (Content channels)" list={KENH.content}/>}
+    {(nhom==='all'||nhom==='paid')&&<Nhom ten="Kênh trả phí (Paid channels)" list={KENH.paid}/>}
+  </div>)}
+
+/* ===== TAB 4: QUẢN LÝ & DUYỆT ADS ===== */
+function TabAds({S,nen0='Facebook Ads'}){const {bai,cd,setCd,setToast,themLog,setTk}=S;
+  const [chon,setChon]=useState(0);const [nen,setNen]=useState(nen0);const [dt,setDt]=useState(DOI_TUONG[0]);const [ns,setNs]=useState('');const [ngay,setNgay]=useState(7);const [dang,setDang]=useState(false);
+  const p=bai[Math.min(chon,bai.length-1)];const so=Number(ns.replace(/\D/g,''))||0;
+  const tiepCan=Math.round(so/1000*(nen==='Facebook Ads'?38:22));
+  const duyet=()=>{if(so<20000){setToast({loi:true,m:'Ngân sách tối thiểu 20.000 VND/ngày'});return}setDang(true);
+    setTimeout(()=>{setDang(false);setToast({m:`API Action: Campaign successfully launched on ${nen==='Facebook Ads'?'Facebook Ads Manager':nen==='Zalo Ads'?'Zalo Ads':'Google Ads Manager'} with budget ${fmt(so)} VND/ngày`});
+      setCd(c=>[{id:Date.now(),ten:p.tieu,nen,dt,ns:so,ngay,daChay:0,tt:'Đang chạy',l7:[0,0,0,0,0,0,0],chi:0,chiHom:0,hien:0,click:0,lead:0,moi:true},...c]);setTk(t=>({...t,ads:t.ads+1}));themLog(`🚀 Boss duyệt ${fmt(so)} VND/ngày · ${nen} · ${dt}`,'text-violet-300 font-semibold');setNs('')},1400)};
+  return (<div className="grid xl:grid-cols-5 gap-5 in">
+    <div className="xl:col-span-2 space-y-3">
+      <h2 className="font-bold text-lg">Bài tự nhiên mới nhất <span className="text-sm font-normal text-zinc-500">· từ nhà máy nội dung</span></h2>
+      <div className="space-y-2 max-h-[640px] overflow-y-auto pr-1">{bai.map((b,i)=>(<button key={b.id} onClick={()=>setChon(i)} className={`in w-full text-left rounded-xl border p-3 flex gap-3 transition ${i===chon?'border-violet-400/60 bg-violet-500/10':'border-zinc-800 bg-zinc-900/70 hover:border-zinc-600'}`}>
+        <div className={`w-16 h-16 rounded-lg bg-gradient-to-br ${NEN[b.nen]} shrink-0 flex items-end p-1.5 text-[8px] font-bold text-amber-300`}>ONI</div>
+        <div className="min-w-0"><b className="text-sm line-clamp-2">{b.tieu}</b><div className="text-xs text-zinc-500 mt-1">{b.kenh} · {b.luc}</div><div className="text-xs text-emerald-300 mt-0.5 inline-flex items-center gap-1"><Pointer className="w-3 h-3"/><DemSo v={b.click}/> lượt bấm tự nhiên</div></div></button>))}</div>
+    </div>
+    <div className="xl:col-span-3 space-y-5">
+      {p&&<The className="p-5 space-y-4 border-violet-500/30">
+        <div className="flex items-center justify-between gap-2"><h2 className="font-bold text-lg flex items-center gap-2"><Rocket className="w-5 h-5 text-violet-300"/>Duyệt chạy quảng cáo</h2><span className="text-[11px] px-2 py-1 rounded-full bg-violet-500/15 text-violet-300 font-bold">HUMAN-IN-THE-LOOP</span></div>
+        <div key={p.id} className="in rounded-xl overflow-hidden border border-zinc-700">
+          <div className={`h-44 bg-gradient-to-br ${NEN[p.nen]} relative p-4 flex flex-col justify-end`}>
+            <div className="absolute top-3 left-3 flex items-center gap-2 text-[11px] font-bold text-amber-300"><span className="w-6 h-6 rounded bg-amber-300 text-zinc-900 grid place-items-center text-[10px]">O</span>ONI OFFICE</div>
+            <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full border border-amber-300/60 text-amber-200">BANNER</div>
+            <div className="text-white font-extrabold text-lg leading-snug">{p.tieu}</div></div>
+          <div className="p-3 text-sm text-zinc-300 bg-zinc-950/60">{p.nd}</div>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div><div className="text-xs text-zinc-400 mb-1.5">Nền tảng quảng cáo</div><div className="flex gap-1.5">{['Facebook Ads','Google Ads','Zalo Ads'].map(x=><button key={x} onClick={()=>setNen(x)} className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm border transition ${nen===x?'border-violet-400 bg-violet-500/15 text-violet-200 font-bold':'border-zinc-700 hover:bg-zinc-800'}`}>{x==='Facebook Ads'?<Megaphone className="w-4 h-4"/>:x==='Zalo Ads'?<Chat className="w-4 h-4"/>:<Search className="w-4 h-4"/>}{x}</button>)}</div></div>
+          <label className="block"><div className="text-xs text-zinc-400 mb-1.5">Đối tượng mục tiêu</div><select value={dt} onChange={e=>setDt(e.target.value)} className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm">{DOI_TUONG.map(x=><option key={x}>{x}</option>)}</select></label>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-3 items-end">
+          <label className="block sm:col-span-2"><div className="text-xs text-zinc-400 mb-1.5">Ngân sách (VND/ngày)</div>
+            <div className="flex items-center rounded-xl bg-zinc-950 border border-zinc-700 focus-within:border-violet-400 transition"><input value={ns} onChange={e=>{const d=e.target.value.replace(/\D/g,'').slice(0,10);setNs(d?fmt(d):'')}} onKeyDown={e=>e.key==='Enter'&&duyet()} inputMode="numeric" placeholder="VD: 200.000" className="flex-1 bg-transparent px-4 py-3 text-xl font-bold text-white outline-none placeholder:text-zinc-600 min-w-0"/><span className="pr-4 text-zinc-500 text-sm">VND</span></div></label>
+          <label className="block"><div className="text-xs text-zinc-400 mb-1.5">Số ngày chạy</div><select value={ngay} onChange={e=>setNgay(+e.target.value)} className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-3">{[3,7,14,30].map(n=><option key={n} value={n}>{n} ngày</option>)}</select></label>
+        </div>
+        <div className="flex flex-wrap gap-1.5">{[100000,200000,500000,1000000].map(v=><button key={v} onClick={()=>setNs(fmt(v))} className="text-xs px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700">{fmt(v)}</button>)}</div>
+        <div className="grid grid-cols-3 gap-2 text-center text-sm">
+          <div className="rounded-xl bg-zinc-950/70 border border-zinc-800 p-2.5"><div className="text-zinc-500 text-[11px]">Tổng ngân sách</div><b className="text-white"><DemSo v={so*ngay}/> đ</b></div>
+          <div className="rounded-xl bg-zinc-950/70 border border-zinc-800 p-2.5"><div className="text-zinc-500 text-[11px]">Tiếp cận ước tính/ngày</div><b className="text-sky-300"><DemSo v={tiepCan}/></b></div>
+          <div className="rounded-xl bg-zinc-950/70 border border-zinc-800 p-2.5"><div className="text-zinc-500 text-[11px]">Lượt bấm ước tính/ngày</div><b className="text-emerald-300"><DemSo v={tiepCan*0.021}/></b></div>
+        </div>
+        <button onClick={duyet} disabled={dang} className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl font-extrabold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:brightness-110 active:scale-[.99] transition shadow-lg shadow-violet-900/40 disabled:opacity-70">{dang?<><Loader className="w-5 h-5 animate-spin"/>Đang gửi lên {nen}…</>:<><Rocket className="w-5 h-5"/>🚀 APPROVE BUDGET & LAUNCH ADS</>}</button>
+      </The>}
+
+    </div>
+  </div>)}
+
+
+/* ===== CHỜ BOSS DUYỆT ===== */
+function TabDuyet({S}){const {bai,setBai,themLog,setToast}=S;const cho=bai.filter(b=>b.tt==='Chờ duyệt');
+  const dat=(id,tt)=>{setBai(a=>a.map(b=>b.id===id?{...b,tt}:b));themLog((tt==='Đã duyệt'?'✅ Boss duyệt bài: ':'✏️ Boss trả về sửa: ')+(bai.find(b=>b.id===id)||{}).tieu,tt==='Đã duyệt'?'text-emerald-300':'text-amber-300')};
+  const het=()=>{setBai(a=>a.map(b=>b.tt==='Chờ duyệt'?{...b,tt:'Đã duyệt'}:b));themLog('✅ Boss duyệt tất cả '+cho.length+' bài – bot đăng đúng giờ','text-emerald-300 font-semibold');setToast({m:'Đã duyệt '+cho.length+' bài. Bot sẽ đăng đúng giờ trên lịch.'})};
+  return (<div className="space-y-4 in">
+    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-bold text-lg flex items-center gap-2"><Star className="w-5 h-5 text-amber-300"/>Bài chờ Boss duyệt <span className="text-sm font-normal text-zinc-500">· {cho.length} bài</span></h2>
+      {cho.length>0&&<button onClick={het} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white"><Check className="w-5 h-5"/>Duyệt tất cả {cho.length} bài</button>}</div>
+    {!cho.length&&<The className="p-8 text-center text-zinc-400">Không còn bài chờ duyệt. Bài mới bot viết xong sẽ hiện ở đây.</The>}
+    <div className="grid md:grid-cols-2 2xl:grid-cols-3 gap-4">{cho.map(b=>{const k=TAT_CA.find(x=>x.id===b.ch)||TAT_CA[0];const I=k.I;return (<The key={b.id} className="overflow-hidden in">
+      <div className={`h-36 bg-gradient-to-br ${NEN[b.nen]} relative p-3 flex flex-col justify-end`}><span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded ${k.mau}`}><I className="w-3 h-3"/>{k.ten}</span><b className="text-white leading-snug">{b.tieu}</b></div>
+      <div className="p-3 space-y-2"><p className="text-sm text-zinc-300 line-clamp-3">{b.nd}</p><div className="text-xs text-zinc-500">Bot viết lúc {b.luc} · đã kiểm lỗi: <span className="text-emerald-300">Đạt</span></div>
+        <div className="flex gap-2"><button onClick={()=>dat(b.id,'Đã duyệt')} className="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm">✓ Duyệt</button><button onClick={()=>dat(b.id,'Cần sửa')} className="flex-1 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-sm">✏️ Cần sửa</button></div></div></The>)})}</div>
+  </div>)}
+
+/* ===== LỊCH ĐĂNG ===== */
+function TabLich({S}){const {bai}=S;const L=[['07:00','web'],['08:00','th'],['09:00','web'],['10:00','fanpage'],['11:00','th'],['12:00','li'],['13:00','zl'],['14:00','ig'],['15:00','fanpage'],['16:00','th'],['17:00','ig'],['18:00','th'],['19:00','th'],['20:00','web']];
+  const h=new Date().getHours();
+  return (<div className="space-y-4 in"><h2 className="font-bold text-lg flex items-center gap-2"><Cal className="w-5 h-5 text-sky-300"/>Lịch đăng 24 giờ tới <span className="text-sm font-normal text-zinc-500">· 12 bài mạng xã hội + 3 bài Website SEO mỗi ngày</span></h2>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-7 gap-3">{L.map(([g,id],i)=>{const k=TAT_CA.find(x=>x.id===id);const I=k.I;const gh=+g.slice(0,2);const qua=gh<h;const st=qua?'Đã đăng':i%4===3?'Chờ duyệt':i%5===4?'Bot đang viết':'Đã duyệt';
+      return (<div key={g} className={`rounded-xl border p-3 ${st==='Đã đăng'?'border-zinc-800 opacity-60':st==='Chờ duyệt'?'border-amber-400/50 bg-amber-400/5':st==='Bot đang viết'?'border-cyan-400/50 bg-cyan-400/5':'border-emerald-500/40 bg-emerald-500/5'}`}>
+        <div className="flex justify-between items-center"><b className="text-lg mono">{g}</b>{st==='Bot đang viết'?<Loader className="w-4 h-4 animate-spin text-cyan-300"/>:st==='Đã đăng'?<Check className="w-4 h-4 text-zinc-400"/>:null}</div>
+        <div className={`mt-1 inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded ${k.mau}`}><I className="w-3 h-3"/>{k.ten}</div><div className="text-xs mt-1.5 text-zinc-400">{st}</div></div>)})}</div></div>)}
+
+/* ===== ĐỘI BOT ===== */
+function TabDoiBot({S}){const [tat,setTat]=useState({});return (<div className="space-y-4 in"><h2 className="font-bold text-lg flex items-center gap-2"><Bot className="w-5 h-5 text-emerald-300"/>Đội bot từng kênh</h2>
+  <div className="grid md:grid-cols-2 2xl:grid-cols-3 gap-3">{TAT_CA.map(k=>{const I=k.I;const off=tat[k.id];const loi=k.id==='tt'||k.id==='fbcn';return (<The key={k.id} className={`p-4 ${off?'opacity-50':''}`}>
+    <div className="flex items-center gap-3"><span className={`w-10 h-10 rounded-xl grid place-items-center ${k.mau}`}><I className="w-5 h-5"/></span><div className="flex-1"><b>Bot {k.ten}</b><div className="text-xs text-zinc-500">{off?'Đang nghỉ':loi?'Đang chờ kết nối':'Đang làm việc'}</div></div>
+      <button onClick={()=>setTat(t=>({...t,[k.id]:!t[k.id]}))} className={`w-11 h-6 rounded-full relative transition ${off?'bg-zinc-700':'bg-emerald-500'}`}><span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${off?'left-0.5':'left-[22px]'}`}></span></button></div>
+    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 text-xs">{['Soạn','Kiểm lỗi','Đăng','Thu số'].map((t,i)=>{const tt=off?'zinc':loi&&i>=2?'amber':'emerald';return <span key={t} className="inline-flex items-center gap-1"><span className={`w-2 h-2 rounded-full bg-${tt}-400 ${tt==='emerald'&&!off&&i===0?'animate-pulse':''}`}></span>{t}</span>})}</div>
+    {loi&&<div className="mt-2 text-xs text-amber-300">{k.id==='tt'?'Chờ video + TikTok duyệt quyền đăng':'Facebook không cho máy đăng trang cá nhân – bot soạn, chị đăng tay'}</div>}</The>)})}</div></div>)}
+
+
+/* Google Business = hồ sơ doanh nghiệp trên Google Tìm kiếm & Google Maps (không phải Google Analytics) */
+function GbTrang(){const CS=[
+  {ten:'CS1 – Tân Định',dc:'01 Nguyễn Văn Nguyễn, P. Tân Định',tk:2840,map:1470,goi:38,cd:96,web:173,sao:5.0,dg:4,chua:1,kw:[['văn phòng ảo quận 1',412],['oni office',268],['phòng họp tân định',131],['coworking quận 1',97]]},
+  {ten:'CS2 – Gò Vấp',dc:'70 Đường số 8, KDC CityLand Park Hills',tk:1120,map:640,goi:14,cd:41,web:62,sao:5.0,dg:1,chua:1,kw:[['văn phòng ảo gò vấp',188],['thuê văn phòng cityland',74],['oni office gò vấp',51]]}];
+  return (<div className="space-y-4">
+    <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 p-3 text-sm text-sky-100">Google Business là <b>hồ sơ Oni trên Google Tìm kiếm và Google Maps</b>: đo khách tìm thấy mình, gọi điện, bấm chỉ đường, vào website, đánh giá. Khác với Google Analytics (đo người vào website – xem ở mục Web).</div>
+    <div className="grid lg:grid-cols-2 gap-4">{CS.map(c=>(<The key={c.ten} className="p-5 space-y-4">
+      <div><b className="text-lg">{c.ten}</b><div className="text-xs text-zinc-500">{c.dc}</div></div>
+      <div className="grid grid-cols-2 gap-2">{[['Lượt xem trên Google Tìm kiếm',c.tk,'text-sky-300'],['Lượt xem trên Google Maps',c.map,'text-sky-300']].map(([t,v,cl])=>(<div key={t} className="rounded-xl bg-zinc-950/60 border border-zinc-800 p-3"><div className="text-xs text-zinc-400">{t} (30 ngày)</div><div className={`text-2xl font-extrabold ${cl}`}><DemSo v={v}/></div></div>))}</div>
+      <div className="grid grid-cols-3 gap-2 text-center">{[['📞 Gọi điện',c.goi],['🧭 Chỉ đường',c.cd],['🌐 Vào website',c.web]].map(([t,v])=>(<div key={t} className="rounded-xl bg-zinc-950/60 border border-zinc-800 p-2.5"><div className="text-xl font-extrabold text-emerald-300"><DemSo v={v}/></div><div className="text-[11px] text-zinc-400">{t}</div></div>))}</div>
+      <div className="flex items-center justify-between rounded-xl bg-zinc-950/60 border border-zinc-800 p-3"><div><span className="text-amber-300 text-lg">★★★★★</span> <b>{c.sao.toFixed(1)}</b> <span className="text-sm text-zinc-400">· {c.dg} đánh giá</span></div>{c.chua>0&&<span className="text-xs px-2 py-1 rounded-full bg-red-500/15 text-red-300 font-bold">{c.chua} chưa trả lời</span>}</div>
+      <div><div className="text-xs text-zinc-400 mb-1.5">Khách tìm thấy Oni bằng từ khóa</div><div className="space-y-1.5">{c.kw.map(([k,v])=>(<div key={k} className="text-sm"><div className="flex justify-between"><span>{k}</span><span className="mono text-zinc-400">{v}</span></div><div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden"><div className="h-full bg-sky-400 rounded-full" style={{width:v/c.kw[0][1]*100+'%'}}></div></div></div>))}</div></div>
+    </The>))}</div></div>)}
+/* ===== TRANG TỪNG KÊNH ===== */
+function TabKenh({S,id}){const {so,bai}=S;const k=TAT_CA.find(x=>x.id===id);const I=k.I;const v=so[id];const ds=bai.filter(b=>b.ch===id);
+  return (<div className="space-y-4 in">
+    <div className="flex items-center gap-3"><span className={`w-12 h-12 rounded-2xl grid place-items-center ${k.mau}`}><I className="w-6 h-6"/></span><div><h2 className="font-bold text-xl">{k.ten}</h2><div className="text-xs text-emerald-300 inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Bot {k.ten} đang làm việc</div></div></div>
+    {id==='web'&&<>
+      <The className="p-5"><div className="flex flex-wrap justify-between gap-2 items-baseline mb-4"><h3 className="text-xl font-bold">Thông tin web https://onioffice.vn</h3><span className="text-xs text-zinc-500">quét lúc 06:15 hôm nay · máy quét tự động</span></div>
+        <div className="grid lg:grid-cols-3 gap-5">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5 text-center h-fit"><div className="text-sm text-zinc-400">Điểm tổng</div><div className="my-1"><span className="text-6xl font-extrabold text-emerald-400"><DemSo v={86}/></span><span className="text-2xl text-zinc-500">/100</span></div><div className="text-xs text-zinc-500">Thang điểm nội bộ do máy quét tự chấm, không phải điểm của Google</div></div>
+          <div className="lg:col-span-2 space-y-3.5">{[['Trang mở được',20,20,'48/48 trang trong sơ đồ trang mở bình thường'],['SEO từng trang',22,25,'44/48 trang đủ tiêu đề, mô tả, 1 H1 · 4 trang thiếu mô tả'],['Link nội bộ',15,15,'0 link hỏng / 212 link'],['Google index',12.8,15,'41/48 trang đã lên Google · 7 trang chưa'],['Ảnh có chữ thay thế',7,10,'3 ảnh thiếu mô tả (alt)'],['Tốc độ trên điện thoại',9.3,15,'62/100 – ảnh bìa nặng, cần nén']].map(([t,d,m,g])=>{const r=d/m;return (<div key={t}><div className="flex justify-between font-bold text-[15px]"><span>{t}</span><span className="mono">{d}/{m}</span></div><div className="h-2 rounded-full bg-zinc-800 mt-1.5 overflow-hidden"><div className={`h-full rounded-full ${r>=.95?'bg-emerald-400':r>=.8?'bg-amber-400':'bg-red-400'}`} style={{width:r*100+'%'}}></div></div><div className="text-[13px] text-zinc-400 mt-1">{g}</div></div>)})}</div>
+        </div></The>
+      <div className="grid md:grid-cols-2 gap-4">
+        <The className="p-5"><h3 className="text-xl font-bold mb-2">Google index</h3><div className="text-lg"><b className="text-3xl text-emerald-400">41</b> đã index · <b className="text-3xl text-amber-400">7</b> chưa <span className="text-sm text-zinc-500">(trên 48 trang trong sơ đồ trang)</span></div>
+          <ul className="list-disc pl-5 text-sm text-zinc-400 mt-2 space-y-1"><li>5 · Đã phát hiện – chưa được lập chỉ mục</li><li>2 · Bài mới quá 3 ngày chưa lên Google → cần bấm "Yêu cầu lập chỉ mục"</li></ul>
+          <div className="text-sm text-zinc-400 mt-3">7 ngày qua: 80 lượt bấm · 5.200 lượt hiển thị · vị trí TB 18,4</div>
+          <div className="mt-3 font-semibold">Đã gửi yêu cầu index: <b>12</b> trang · hôm nay <span className="text-emerald-400">2</span></div></The>
+        <The className="p-5"><h3 className="text-xl font-bold mb-2">Link</h3><div className="font-semibold">Link nội bộ khác nhau: <b>212</b> · hỏng: <span className="text-emerald-400">0</span></div><div className="font-semibold mt-2">Link ra ngoài trong bài: 34/36 mở được · 2 trang chặn máy</div><div className="text-sm text-zinc-400 mt-1">2 trang báo chính thống chặn máy đọc, mở bằng trình duyệt vẫn được – không phải link chết</div></The>
+      </div></>}
+    {id==='gb'&&<GbTrang/>}
+    {id==='email'&&<The className="p-5 space-y-3"><h3 className="font-bold text-lg">🔁 Bản tin tuần – gửi tự động</h3>
+      <div className="grid sm:grid-cols-4 gap-2 text-sm">{[['Soạn bản tin','Thứ 6, 09:00'],['Chị duyệt','trong ngày Thứ 6'],['Gửi khách','Thứ 7, 08:00'],['Người nhận','186 khách đã đồng ý']].map(([a,b])=>(<div key={a} className="rounded-xl bg-zinc-950/60 border border-zinc-800 p-3"><div className="text-xs text-zinc-400">{a}</div><b>{b}</b></div>))}</div>
+      <div className="text-xs text-zinc-400">Bản tin gồm: tin chính sách doanh nghiệp/FDI trong tuần (có nguồn), bài hay của Oni trong tuần, 1 mẹo vận hành văn phòng, lời mời liên hệ. Mỗi email có nút hủy nhận tin. Tuần nào chị chưa duyệt thì bot không gửi.</div></The>}
+    {id!=='gb'&&<div className="grid grid-cols-3 gap-3">{[['Lượt xem',Eye,'text-sky-300'],['Lượt bấm',Pointer,'text-emerald-300'],['Khách để lại thông tin',Users,'text-amber-300']].map(([t,J,c],i)=>(<The key={t} className="p-4"><div className="flex justify-between text-xs text-zinc-400"><span>{t} (30 ngày)</span><J className={`w-4 h-4 ${c}`}/></div><div className={`text-2xl md:text-3xl font-extrabold mt-1 ${c}`}>{v[0]?<DemSo v={v[i]}/>:'—'}</div></The>))}</div>}
+    <The className="p-5"><h3 className="font-bold mb-3">{id==='gb'?'Bài cập nhật trên Google Business':'Bài của kênh'}</h3>{ds.length?<ul className="space-y-2">{ds.map(b=><li key={b.id} className="flex justify-between gap-2 text-sm rounded-lg bg-zinc-950/60 px-3 py-2"><span className="truncate">{b.tieu}</span><span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ${b.tt==='Chờ duyệt'?'bg-amber-400/15 text-amber-300':b.tt==='Đã đăng'?'bg-zinc-700':'bg-emerald-500/15 text-emerald-300'}`}>{b.tt}</span></li>)}</ul>:<div className="text-sm text-zinc-500">Chưa có bài trong phiên mô phỏng này – bot sẽ viết ở các vòng tới.</div>}</The>
+  </div>)}
+
+/* ===== TRANG KÊNH QUẢNG CÁO: chiến dịch đang chạy + tiền ===== */
+function AdsBang({S,id}){const {cd,setCd,themLog}=S;const nen=NEN_ADS[id];const k=TAT_CA.find(x=>x.id===id);const I=k.I;const ds=cd.filter(c=>c.nen===nen);
+  const sum=f=>ds.reduce((a,c)=>a+(+c[f]||0),0);const nsNgay=ds.filter(c=>c.tt==='Đang chạy').reduce((a,c)=>a+c.ns,0);
+  const l7=[0,1,2,3,4,5,6].map(i=>ds.reduce((a,c)=>a+(c.l7[i]||0),0));const mx=Math.max(...l7,1);const ngay7=[6,5,4,3,2,1,0].map(d=>{const t=new Date(Date.now()-d*864e5);return t.getDate()+'/'+(t.getMonth()+1)});
+  const doi=c=>{setCd(a=>a.map(x=>x.id===c.id?{...x,tt:x.tt==='Đang chạy'?'Tạm dừng':'Đang chạy'}:x));themLog((c.tt==='Đang chạy'?'⏸ Boss tạm dừng ':'▶ Boss bật lại ')+nen+': '+c.ten,'text-violet-300')};
+  return (<div className="space-y-4 in">
+    <div className="flex items-center gap-3"><span className={`w-12 h-12 rounded-2xl grid place-items-center ${k.mau}`}><I className="w-6 h-6"/></span><div><h2 className="font-bold text-xl">{k.ten}</h2><div className="text-xs text-zinc-400">{ds.filter(c=>c.tt==='Đang chạy').length} chiến dịch đang chạy · số cập nhật trực tiếp</div></div></div>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">{[['Ngân sách/ngày đang chạy',nsNgay,'đ','text-white'],['Đã chi hôm nay',sum('chiHom'),'đ','text-amber-300'],['Tổng đã chi',sum('chi'),'đ','text-violet-300'],['Chi phí / 1 khách',sum('lead')?sum('chi')/sum('lead'):0,'đ','text-emerald-300']].map(([t,v,u,c])=>(<The key={t} className="p-4"><div className="text-xs text-zinc-400">{t}</div><div className={`text-xl md:text-2xl font-extrabold mt-1 ${c}`}><DemSo v={v}/> {u}</div></The>))}</div>
+    <div className="grid grid-cols-3 gap-3">{[['Lượt hiển thị',sum('hien'),'text-sky-300'],['Lượt bấm',sum('click'),'text-emerald-300'],['Khách để lại thông tin',sum('lead'),'text-amber-300']].map(([t,v,c])=>(<The key={t} className="p-4"><div className="text-xs text-zinc-400">{t}</div><div className={`text-xl font-extrabold ${c}`}><DemSo v={v}/></div></The>))}</div>
+    <The className="p-5"><h3 className="font-bold mb-3">Tiền chi mỗi ngày – 7 ngày qua</h3><div className="flex items-end gap-2 h-36">{l7.map((v,i)=>(<div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1"><div className="text-[10px] text-zinc-400">{v?fmt(v/1000)+'k':''}</div><div className="w-full rounded-t-md bg-violet-400/80 bar" style={{height:Math.max(2,v/mx*100)+'%'}}></div><div className="text-[10px] text-zinc-500">{ngay7[i]}</div></div>))}</div></The>
+    <The className="p-5 overflow-hidden"><h3 className="font-bold mb-3">Chiến dịch</h3>
+      <div className="space-y-2.5">{ds.map(c=>{const pct=Math.min(100,c.chiHom/c.ns*100);return (<div key={c.id} className={`rounded-xl border p-3 ${c.tt==='Đang chạy'?'border-zinc-700 bg-zinc-950/60':'border-zinc-800 opacity-70'}`}>
+        <div className="flex flex-wrap items-center justify-between gap-2"><div className="min-w-0"><b className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full shrink-0 ${c.tt==='Đang chạy'?'bg-emerald-400 animate-pulse':'bg-zinc-500'}`}></span><span className="truncate">{c.ten}</span></b><div className="text-xs text-zinc-500 mt-0.5">{c.dt} · ngày {c.daChay}/{c.ngay}</div></div>
+          <button onClick={()=>doi(c)} className={`text-xs px-3 py-1.5 rounded-lg border ${c.tt==='Đang chạy'?'border-zinc-600 hover:bg-zinc-800':'border-emerald-500 text-emerald-300'}`}>{c.tt==='Đang chạy'?'⏸ Tạm dừng':'▶ Bật lại'}</button></div>
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-3 text-center text-xs">{[['Ngân sách/ngày',c.ns,'đ'],['Hôm nay đã chi',c.chiHom,'đ'],['Tổng đã chi',c.chi,'đ'],['Hiển thị',c.hien,''],['Lượt bấm',c.click,''],['Khách',c.lead,'']].map(([t,v,u])=>(<div key={t} className="rounded-lg bg-zinc-900 py-1.5"><div className="font-bold text-zinc-100"><DemSo v={v}/>{u&&' '+u}</div><div className="text-[10.5px] text-zinc-500">{t}</div></div>))}</div>
+        <div className="mt-2 text-[11px] text-zinc-500 flex justify-between"><span>Ngân sách hôm nay đã dùng</span><span>{pct.toFixed(0)}%</span></div><div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden"><div className="h-full bg-amber-400 rounded-full transition-all duration-700" style={{width:pct+'%'}}></div></div>
+      </div>)})}{!ds.length&&<div className="text-sm text-zinc-500">Chưa có chiến dịch.</div>}</div></The>
+    <h3 className="font-bold text-lg pt-2">Tạo chiến dịch mới cho {nen}</h3>
+  </div>)}
+
+/* Tổng ngân sách quảng cáo 3 kênh – đặt ở trang Tổng quan */
+function TongAds({S}){const {cd}=S;const ks=['fads','gads','zads'];const t=f=>cd.reduce((a,c)=>a+(+c[f]||0),0);
+  const per=ks.map(id=>{const ds=cd.filter(c=>c.nen===NEN_ADS[id]);return {id,ten:TAT_CA.find(x=>x.id===id).ten,chi:ds.reduce((a,c)=>a+c.chi,0),hom:ds.reduce((a,c)=>a+c.chiHom,0),lead:ds.reduce((a,c)=>a+c.lead,0),ns:ds.filter(c=>c.tt==='Đang chạy').reduce((a,c)=>a+c.ns,0)}});const mx=Math.max(...per.map(p=>p.chi),1);
+  return (<The className="p-5 border-violet-500/30"><h3 className="font-bold text-lg mb-3 flex items-center gap-2"><Megaphone className="w-5 h-5 text-violet-300"/>Tổng ngân sách quảng cáo – Facebook, Google, Zalo</h3>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">{[['Tổng đã chi',t('chi'),'text-violet-300'],['Đã chi hôm nay',t('chiHom'),'text-amber-300'],['Ngân sách/ngày đang chạy',cd.filter(c=>c.tt==='Đang chạy').reduce((a,c)=>a+c.ns,0),'text-white'],['Chi phí / 1 khách',t('lead')?t('chi')/t('lead'):0,'text-emerald-300']].map(([n,v,c])=>(<div key={n} className="rounded-xl bg-zinc-950/60 border border-zinc-800 p-3"><div className="text-xs text-zinc-400">{n}</div><div className={`text-xl md:text-2xl font-extrabold ${c}`}><DemSo v={v}/> đ</div></div>))}</div>
+    <div className="space-y-3">{per.map(p=>{const k=TAT_CA.find(x=>x.id===p.id);const I=k.I;return (<button key={p.id} onClick={()=>S.doiTab('k-'+p.id)} className="w-full text-left"><div className="flex justify-between text-sm"><span className="inline-flex items-center gap-2"><span className={`w-7 h-7 rounded-lg grid place-items-center ${k.mau}`}><I className="w-4 h-4"/></span><b>{p.ten}</b></span><span className="mono"><DemSo v={p.chi}/> đ</span></div>
+      <div className="h-2.5 rounded-full bg-zinc-800 mt-1.5 overflow-hidden"><div className="h-full rounded-full bg-violet-400 transition-all duration-700" style={{width:p.chi/mx*100+'%'}}></div></div>
+      <div className="text-xs text-zinc-500 mt-1">Hôm nay {fmt(p.hom)} đ · đang chạy {fmt(p.ns)} đ/ngày · {fmt(p.lead)} khách</div></button>)})}</div></The>)}
+/* ===== APP ===== */
+const TEN_NGAN={"web": "Web", "email": "Email", "fanpage": "Fanpage", "fbcn": "FB cá nhân", "li": "LinkedIn", "ig": "Instagram", "th": "Threads", "zl": "Zalo OA", "tt": "TikTok", "gb": "Google Business", "gads": "Google Ads", "fads": "Facebook Ads", "zads": "Zalo OA Ads"};
+const NHOM=[
+  ['ĐIỀU HÀNH',[['duyet','Chờ BOSS',Star],['boss','Giao việc',PlusC],['auto','Bảng việc',Refresh],['lich','Lịch đăng',Cal]]],
+  ['KÊNH',TAT_CA.map(k=>['k-'+k.id,TEN_NGAN[k.id],k.I])],
+  ['BÁO CÁO',[['report','Tổng quan',BarChart]]],
+];
+const MENU=NHOM.flatMap(n=>n[1]);
+function App(){
+  const [tab,setTab]=useState(()=>{const h=location.hash.slice(1);return MENU.some(m=>m[0]===h)?h:'duyet'});
+  useEffect(()=>{const f=()=>{const h=location.hash.slice(1);if(MENU.some(m=>m[0]===h))setTab(h)};addEventListener('hashchange',f);return()=>removeEventListener('hashchange',f)},[]);
+  const [mo,setMo]=useState(false),[tim,setTim]=useState(''),[dong,setDong]=useState({});
+  const doiTab=t=>{setTab(t);try{history.replaceState(null,'','#'+t)}catch(e){}};
+  const [chay,setChay]=useState(true),[toc,setToc]=useState(1),[pt,setPt]=useState(0),[vong,setVong]=useState(1);
+  const [log,setLog]=useState([{id:0,t:gio(),m:'🚀 Hệ thống khởi động – nhà máy nội dung bắt đầu chạy',c:'text-cyan-300'}]);
+  const [tk,setTk]=useState({web:128,mxh:742,lead:96,ads:2});
+  const [viec,setViec]=useState([{id:9,nd:'Soạn bản tin tổng hợp tuần gửi khách',loai:'Chiến dịch sản phẩm',kenh:['email'],uu:'Cao',tt:'Định kỳ',lap:'Thứ 7 hằng tuần, 08:00',luc:'—'}]);
+  const [kho,setKho]=useState(CHU_DE_TU_DONG.map((t,i)=>({id:'k'+i,nd:t})));   // kho chủ đề bot tự tìm – mỗi chủ đề chỉ viết 1 lần
+  const [so,setSo]=useState(SO_GOC);
+  const [toast,setToast]=useState(null);
+  const [bai,setBai]=useState([
+    {id:3,tt:'Chờ duyệt',ch:'th',tieu:'Có giấy phép rồi, bạn làm gì đầu tiên?',kenh:'Threads',luc:'01:25',click:0,nen:2,nd:'Vừa nhận giấy phép kinh doanh, việc đầu tiên bạn làm là gì? Mở tài khoản ngân hàng, đăng ký chữ ký số hay treo bảng hiệu? Chia sẻ thứ tự của bạn nhé.'},
+    {id:4,tt:'Chờ duyệt',ch:'li',tieu:'Foreign investors in HCMC: 6 steps to set up your company',kenh:'LinkedIn',luc:'00:40',click:0,nen:3,nd:'EN: A practical roadmap for foreign investors opening a company in Ho Chi Minh City… VI: Lộ trình 6 bước cho nhà đầu tư nước ngoài mở công ty tại TP.HCM…'},
+    {id:1,tt:'Đã đăng',ch:'web',tieu:'Đổi địa chỉ trụ sở năm 2026: hồ sơ và thời gian xử lý',kenh:'Website + Fanpage',luc:'08:00',click:186,nen:0,nd:'Doanh nghiệp đổi địa chỉ trụ sở cần chuẩn bị những gì? Oni tổng hợp 6 bước và giấy tờ cần có, kèm mẹo tránh bị trả hồ sơ.'},
+    {id:2,tt:'Đã đăng',ch:'fanpage',tieu:'Phòng họp theo giờ ở Tân Định – đặt nhanh trong 2 phút',kenh:'Fanpage + Zalo OA',luc:'07:00',click:142,nen:1,nd:'Phòng họp 6–10 khách có tivi trình chiếu, lễ tân đón khách, đặt theo giờ ngay trên website.'},
+  ]);
+  const [cd,setCd]=useState(CD_MAU);
+  const themLog=(m,c='text-zinc-200')=>setLog(l=>[{id:Date.now()+Math.random(),t:gio(),m,c},...l].slice(0,80));
+  const n=BUOC.length,buocNay=Math.min(n-1,Math.floor(pt/(100/n))),ptBuoc=((pt%(100/n))/(100/n))*100;
+  const viecDangLam=viec.find(v=>v.tt==='Đang xử lý');
+  const coChuDe=viec.some(v=>v.tt==='Chờ vòng tới'||v.tt==='Đang xử lý')||kho.length>0;
+  const chuDeVong=useRef('');
+
+  // Thanh tiến trình chạy 0→100% rồi tự quay lại 0% (vòng lặp)
+  useEffect(()=>{if(!chay||(!coChuDe&&pt===0))return;const t=setInterval(()=>setPt(p=>{const q=p+0.5*toc;return q>=100?0:q}),100);return()=>clearInterval(t)},[chay,toc,coChuDe,pt===0]);
+
+  // Sang bước mới → ghi nhật ký
+  const daBao=useRef({});const vongRef=useRef(1);useEffect(()=>{vongRef.current=vong},[vong]);
+  useEffect(()=>{if(!chay)return;const key=vong+':'+buocNay;if(daBao.current[key])return;if(buocNay===0&&!viec.some(x=>x.tt==='Chờ vòng tới')&&!kho.length)return;daBao.current[key]=1;
+    if(buocNay===0){const cho=viec.filter(x=>x.tt==='Chờ vòng tới');if(cho.length){chuDeVong.current=cho[cho.length-1].nd}else if(kho.length){chuDeVong.current=kho[0].nd;setKho(k=>k.slice(1))}else{chuDeVong.current=''}}
+    const cdx=chuDeVong.current||'(chờ chủ đề)';const b=BUOC[buocNay];const add=[];
+    if(buocNay>0){const tr=BUOC[buocNay-1];add.push([tr.xong+(tr.k==='tim'||tr.k==='viet'?'"'+cdx+'"':''),'text-emerald-300'])}
+    if(buocNay===0){setViec(a=>{const i=a.map(x=>x.tt).lastIndexOf('Chờ vòng tới');if(i<0)return a;const b2=[...a];b2[i]={...b2[i],tt:'Đang xử lý'};return b2})}
+    add.push([b.log,'text-zinc-200']);add.reverse().forEach(([m,c])=>themLog(m,c));
+  },[buocNay,vong,chay,viec.length]);
+
+  // Hết vòng → cộng số, tạo bài mới, việc Boss xong
+  const ptTruoc=useRef(0);
+  useEffect(()=>{if(pt<ptTruoc.current){const v=vongRef.current;const dl=viec.find(x=>x.tt==='Đang xử lý');const tieu=dl?dl.nd:(chuDeVong.current||'Bài mới');
+      const soKenh=dl?dl.kenh.length:5;
+      setTk(s=>({...s,web:s.web+1,mxh:s.mxh+soKenh-1,lead:s.lead+Math.floor(Math.random()*3)}));
+      setBai(a=>[{id:Date.now(),tt:'Chờ duyệt',ch:(dl?dl.kenh[0]:['web','fanpage','li','th','zl'][v%5]),tieu,kenh:dl?dl.kenh.map(id=>TAT_CA.find(k=>k.id===id).ten).slice(0,2).join(' + '):'Website + Fanpage',luc:new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}),click:Math.floor(20+Math.random()*60),nen:v%NEN.length,nd:'Bài viết do AI soạn theo chủ đề "'+tieu+'", đã kiểm lỗi và đăng tự động lên các kênh.'},...a].slice(0,20));
+      if(dl)setViec(a=>a.map(x=>x.id===dl.id?{...x,tt:'Hoàn tất',kq:'✓ Đã đăng '+x.kenh.length+' kênh lúc '+gio()}:x));
+      themLog('✅ Xong vòng '+v+(dl?' – hoàn tất việc Boss giao':'')+' · bắt đầu vòng '+(v+1),'text-cyan-300 font-semibold');setVong(v+1)}
+    ptTruoc.current=pt},[pt]);
+
+  // Số liệu kênh, lượt bấm bài, chi tiêu chiến dịch tăng dần theo thời gian thực
+  useEffect(()=>{if(!chay)return;const t=setInterval(()=>{
+    setSo(s=>{const o={...s};Object.keys(o).forEach(k=>{if(o[k][0]){const r=Math.random();o[k]=[o[k][0]+Math.floor(r*12),o[k][1]+(r>.6?1:0),o[k][2]+(r>.97?1:0)]}});return o});
+    setBai(a=>a.map((b,i)=>i<3?{...b,click:b.click+Math.floor(Math.random()*3)}:b));
+    setCd(c=>c.map(x=>{if(x.tt!=='Đang chạy')return x;const add=x.ns/900*(.6+Math.random()*.8);const h=Math.round(add/1000*36*(.8+Math.random()*.4));return {...x,chi:x.chi+add,chiHom:Math.min(x.ns,x.chiHom+add),hien:x.hien+h,click:x.click+(Math.random()>.55?1:0),lead:x.lead+(Math.random()>.985?1:0)}}));
+  },2000);return()=>clearInterval(t)},[chay]);
+  useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(null),5000);return()=>clearTimeout(t)},[toast]);
+
+  const giayCon=Math.max(0,Math.round((100-pt)/(0.5*toc)/10));const dongHo=String(Math.floor(giayCon/60)).padStart(2,'0')+':'+String(giayCon%60).padStart(2,'0');
+  const dung=()=>setChay(c=>{themLog(c?'⏹ Boss bấm DỪNG KHẨN – tất cả bot tạm dừng':'▶ Boss bật lại tự động',c?'text-red-400 font-semibold':'text-emerald-300 font-semibold');return !c});
+  const S={setBai,doiTab:t=>doiTab(t),kho,setKho,coChuDe,chay,pt,vong,buocNay,ptBuoc,log,dongHo,toc,setToc,viecDangLam,tk,setTk,viec,setViec,themLog,so,bai,cd,setCd,setToast};
+  const choViec=viec.filter(v=>v.tt==='Chờ vòng tới'||v.tt==='Đang xử lý').length;
+  const soCho=bai.filter(b=>b.tt==='Chờ duyệt').length;
+
+  return (<div className="min-h-screen lg:flex bg-[#070D18]">
+    {/* SIDEBAR – kiểu Thái Tín: nền navy, chữ vàng, chia nhóm, số đếm */}
+    {mo&&<div className="fixed inset-0 bg-black/60 z-30 lg:hidden" onClick={()=>setMo(false)}></div>}
+    <aside className={`sb fixed lg:sticky top-0 left-0 z-40 h-screen w-72 shrink-0 overflow-y-auto border-r border-[#1E2B44] flex flex-col transition-transform ${mo?'translate-x-0':'-translate-x-full lg:translate-x-0'}`}>
+      <div className="px-5 pt-5 pb-3 flex items-center gap-3"><span className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#FFE38A] to-[#E9B83A] grid place-items-center text-[#0E1A2E] brand text-xl font-bold shadow-lg shadow-amber-900/30">O</span>
+        <div><div className="brand text-[22px] leading-none tracking-[.12em] text-[#F2D27A]">ONI OFFICE</div><div className="text-[10.5px] tracking-[.28em] text-[#C9B27A] mt-1">BẢNG ĐIỀU KHIỂN</div></div></div>
+      <nav className="px-3 pb-4 flex-1">{NHOM.map(([ten,ds])=>{
+        return (<div key={ten} className="mt-3">
+          <div className="px-3 py-1.5 text-[11px] font-bold tracking-[.22em] text-[#7F8DA8]">{ten}</div>
+          {<div className="space-y-0.5">{ds.map(([k,t,I])=>{const on=tab===k;const so=k==='duyet'?soCho:k==='boss'?choViec:NEN_ADS[k.slice(2)]?cd.filter(c=>c.nen===NEN_ADS[k.slice(2)]&&c.tt==='Đang chạy').length:0;
+            return (<button key={k} onClick={()=>{doiTab(k);setMo(false)}} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14.5px] transition border ${on?'bg-[#E9B83A]/10 border-[#E9B83A]/60 text-[#F6E3A6] font-semibold':'border-transparent text-[#C7CFDE] hover:bg-white/5'}`}>
+              <I className={`w-[19px] h-[19px] shrink-0 ${on?'text-[#F2D27A]':'text-[#8E9AB3]'} ${k==='auto'&&chay?'animate-spin [animation-duration:4s]':''}`}/><span className="truncate text-left flex-1">{t}</span>
+              {so>0&&<span className={`text-[11px] font-bold rounded-full min-w-[26px] px-2 py-0.5 ${k==='duyet'?'bg-gradient-to-r from-[#FFE38A] to-[#E9B83A] text-[#0E1A2E]':'bg-[#1E2E4D] text-[#C7CFDE]'}`}>{so}</span>}
+            </button>)})}</div>}
+        </div>)})}</nav>
+      <div className="px-5 py-3 border-t border-[#1E2B44] text-[11px] text-[#5B6884]">Bản mô phỏng · dữ liệu mẫu</div>
+    </aside>
+    {/* MAIN */}
+    <main className="flex-1 min-w-0 p-4 md:p-6 space-y-5">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3"><button onClick={()=>setMo(true)} className="lg:hidden p-2 rounded-lg border border-zinc-700" aria-label="Mở menu"><Menu className="w-5 h-5"/></button><div><div className="text-[11px] text-zinc-500 uppercase tracking-widest">AI Marketing Automation</div><h1 className="text-xl md:text-2xl font-extrabold text-white">{(MENU.find(m=>m[0]===tab)||MENU[0])[1]}</h1></div></div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <label className="flex items-center gap-2 rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2 focus-within:border-amber-400 w-full sm:w-56"><Search className="w-4 h-4 text-zinc-500"/><input value={tim} onChange={e=>{setTim(e.target.value);const m=MENU.find(x=>x[1].toLowerCase().includes(e.target.value.toLowerCase()));if(e.target.value&&m)doiTab(m[0])}} placeholder="Tìm nhanh: Web, Zalo, duyệt…" className="bg-transparent outline-none text-sm w-full"/></label>
+          <span className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold border ${chay?'bg-emerald-500/10 text-emerald-300 border-emerald-500/40':'bg-red-500/10 text-red-300 border-red-500/40'}`}><span className="relative flex h-2.5 w-2.5">{chay&&<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}<span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${chay?'bg-emerald-400':'bg-red-500'}`}></span></span>CONTENT LOOP: {chay?'ACTIVE':'STOPPED'}</span>
+          <button onClick={dung} className={`inline-flex items-center gap-2.5 pl-3 pr-2 py-2 rounded-xl font-extrabold text-sm text-white transition ${chay?'bg-red-600 hover:bg-red-500':'bg-emerald-600 hover:bg-emerald-500'}`}><Power className="w-4 h-4"/>{chay?'STOP AUTOMATION':'START AUTOMATION'}<span className={`w-10 h-6 rounded-full relative ${chay?'bg-white/30':'bg-black/30'}`}><span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${chay?'left-[18px]':'left-0.5'}`}></span></span></button>
+        </div>
+      </header>
+      <div key={tab}>
+        {tab==='auto'&&<TabAuto S={S}/>}
+        {tab==='boss'&&<TabBoss S={S}/>}
+        {tab==='report'&&<TabBaoCao S={S}/>}
+        {tab==='ads'&&<TabAds S={S}/>}
+        {tab==='duyet'&&<TabDuyet S={S}/>}
+        {tab==='lich'&&<TabLich S={S}/>}
+        {tab==='doibot'&&<TabDoiBot S={S}/>}
+        {tab.startsWith('k-')&&!NEN_ADS[tab.slice(2)]&&<TabKenh S={S} id={tab.slice(2)}/>}
+        {NEN_ADS[tab.slice(2)]&&<div className="space-y-6"><AdsBang S={S} id={tab.slice(2)}/><TabAds key={tab} S={S} nen0={NEN_ADS[tab.slice(2)]}/></div>}
+      </div>
+      <p className="lg:hidden text-center text-xs text-zinc-600">Bản mô phỏng · dữ liệu mẫu · nút duyệt Ads chưa nối API thật.</p>
+    </main>
+    {toast&&(<div className="fixed bottom-5 right-5 left-5 sm:left-auto sm:w-[440px] z-50 in"><div className={`rounded-2xl p-4 shadow-2xl border flex gap-3 items-start backdrop-blur ${toast.loi?'bg-red-950/95 border-red-500/50':'bg-emerald-950/95 border-emerald-400/50'}`}>
+      <span className={`w-9 h-9 rounded-full grid place-items-center shrink-0 ${toast.loi?'bg-red-500/20 text-red-300':'bg-emerald-500/20 text-emerald-300'}`}>{toast.loi?<X className="w-5 h-5"/>:<Check className="w-5 h-5"/>}</span>
+      <div className="text-sm flex-1"><b className={toast.loi?'text-red-200':'text-emerald-200'}>{toast.loi?'Chưa gửi được':'Thành công'}</b><div className="text-zinc-200 mt-0.5">{toast.m}</div></div>
+      <button onClick={()=>setToast(null)} className="text-zinc-400 hover:text-white"><X className="w-4 h-4"/></button></div></div>)}
+  </div>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
