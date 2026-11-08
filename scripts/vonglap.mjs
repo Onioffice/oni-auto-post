@@ -6,7 +6,8 @@
 import { homNay, layMK, opMK, ghiLoi, layCaiDat, ghiNhatKy } from './lib.mjs';
 
 const MXH = [['08:00', 'Threads'], ['10:00', 'Facebook'], ['11:00', 'Threads'], ['12:00', 'LinkedIn'], ['13:00', 'Zalo'],
-  ['14:00', 'Instagram'], ['15:00', 'Facebook'], ['16:00', 'Threads'], ['17:00', 'Instagram'], ['18:00', 'Threads'], ['19:00', 'Threads'], ['09:00', 'Threads']];
+  ['14:00', 'Instagram'], ['15:00', 'Facebook'], ['16:00', 'Threads'], ['17:00', 'Instagram'], ['18:00', 'Threads'], ['19:00', 'Threads'], ['09:00', 'Threads'], ['20:00', 'Facebook']];
+// Fanpage Facebook 3 bài/ngày (10:00, 15:00, 20:00), 3 chủ đề khác nhau (chị chốt 09/11/2026)
 // Website: mỗi giờ 1 bài từ 07:00 đến 22:00 (16 bài/ngày) theo từ khóa khách tìm trên Google (chị chốt 09/11/2026 03:00)
 const WEB = Array.from({ length: 16 }, (_, i) => [String(7 + i).padStart(2, '0') + ':00', 'Website']);
 export const LICH = [...WEB, ...MXH].sort((x, y) => x[0].localeCompare(y[0]) || (x[1] === 'Website' ? -1 : 1));

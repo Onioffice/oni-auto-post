@@ -143,7 +143,7 @@ function veLuong(){const M=LS('oni_mkt')||{},mks=LS('oni_mks')||{},P=(M.posts||[
 function veSoDo(B){return B.map((c,i)=>(i?'<div class="mui">↓</div>':'')+`<div class="cn ${c.tt}" ${c.go?`data-go="${c.go}" style="cursor:pointer"`:''}><div class="so">${c.tt==='ok'?'✓':c.tt==='do'?'!':i+1}</div><div><b>${i+1}. ${c.nguoi?'👩 ':'🤖 '}${Es(c.ten)}</b><div class="mo">${Es(c.mo)}</div><div class="kq">${Es(c.kq)}</div>${c.nut||''}</div><div>${c.k?`<label class="sw" title="Bật/tắt"><input type="checkbox" data-may="${c.k}" ${bat(c.k)?'checked':''}><span></span></label>`:''}</div></div>`).join('')}
 const DOI=[
  {id:'web',ten:'Bot Website',kenh:'Website',icon:'🌐',viec:'Mỗi giờ 1 bài SEO (7:00 → 22:00, 16 bài/ngày) theo từ khóa khách tìm trên Google, tự đăng WordPress, thu số Search Console'},
- {id:'fb',ten:'Bot Fanpage Facebook',kenh:'Facebook',icon:'📘',viec:'2 bài/ngày (10:00, 15:00) có hình navy, tự đăng khi có mã Facebook, thu số Fanpage',ch:'fb'},
+ {id:'fb',ten:'Bot Fanpage Facebook',kenh:'Facebook',icon:'📘',viec:'3 bài/ngày (10:00, 15:00, 20:00), 3 chủ đề khác nhau, hình navy, tự đăng khi có mã Facebook, thu số Fanpage',ch:'fb'},
  {id:'ig',ten:'Bot Instagram',kenh:'Instagram',icon:'📸',viec:'2 bài/ngày (14:00, 17:00) hình nền kem, thu số Instagram',ch:'ig'},
  {id:'li',ten:'Bot LinkedIn',kenh:'LinkedIn',icon:'💼',viec:'1 bài/ngày (12:00) song ngữ + ảnh văn phòng thật',ch:'li'},
  {id:'th',ten:'Bot Threads',kenh:'Threads',icon:'🧵',viec:'4–5 bài/ngày chỉ chữ, câu hỏi trao đổi, thu số Threads',ch:'th'},
@@ -187,7 +187,7 @@ function veDoi(){const {P}=duLieu(),mks=LS('oni_mks')||{},hn=homNay();
   const dg=['web','fb'].includes(b.id)?dot(bat('dang')?'ok':'xam',bat('dang')?'Tự đăng':b.id==='fb'?'Chờ mã FB':'Tắt'):b.kenh&&b.id!=='em'?dot('xam','Đăng tay'):b.id==='em'?dot('vang','Gửi ở Bản tin email'):'';
   const so=['ga','fa'].includes(b.id)?dot('vang','Xem trang Quảng cáo'):dot(sn.at?'ok':'vang',sn.at?'Số '+fD(sn.at):'Chưa có số');
   return `<div class="bot"><div class="bd"><span class="bi">${b.icon}</span><div><b>${b.ten}</b><small>${Es(b.viec)}</small></div><label class="sw"><input type="checkbox" data-may="bot_${b.id}" ${CD['bot_'+b.id]!==false?'checked':''}><span></span></label></div><div class="bj">${[soan,kiem,du,dg,so].filter(Boolean).join('')}</div></div>`}).join('')}</div></div>`}
-const LICH_W=[...Array.from({length:16},(_,i)=>[String(7+i).padStart(2,'0')+':00','Website']),['08:00','Threads'],['09:00','Threads'],['10:00','Facebook'],['11:00','Threads'],['12:00','LinkedIn'],['13:00','Zalo'],['14:00','Instagram'],['15:00','Facebook'],['16:00','Threads'],['17:00','Instagram'],['18:00','Threads'],['19:00','Threads']].sort((x,y)=>x[0].localeCompare(y[0]));
+const LICH_W=[...Array.from({length:16},(_,i)=>[String(7+i).padStart(2,'0')+':00','Website']),['08:00','Threads'],['09:00','Threads'],['10:00','Facebook'],['11:00','Threads'],['12:00','LinkedIn'],['13:00','Zalo'],['14:00','Instagram'],['15:00','Facebook'],['16:00','Threads'],['17:00','Instagram'],['18:00','Threads'],['19:00','Threads'],['20:00','Facebook']].sort((x,y)=>x[0].localeCompare(y[0]));
 let QC=[],demT=null;
 const MAY_TAT=['vonglap','nhan','dang','soan','bantin'];
 function dangChay(){return bat('vonglap')||bat('nhan')}

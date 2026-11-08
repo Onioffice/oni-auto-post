@@ -31,7 +31,7 @@ export async function yTuongCho(khung, posts) {
     messages: [{ role: 'user', content: `Hôm nay ${homNay()}. Em là công nhân "Ý tưởng" của Oni Office (cho thuê văn phòng, văn phòng ảo, phòng họp tại TP.HCM – CS1 Tân Định, CS2 Gò Vấp; hỗ trợ thủ tục doanh nghiệp cho doanh nghiệp Việt và nhà đầu tư FDI).
 ${NGUON}
 
-Cần ý tưởng cho các khung giờ sau (mỗi khung một bài, KHÁC CHỦ ĐỀ nhau, không trùng các bài gần đây):
+Cần ý tưởng cho các khung giờ sau (mỗi khung một bài, KHÁC CHỦ ĐỀ nhau, không trùng các bài gần đây). Cùng một kênh trong cùng một ngày (VD Facebook 3 bài/ngày) phải là 3 chủ đề khác hẳn nhau, không chỉ đổi góc viết:
 ${khung.map(k => `- ${k.ngay} ${k.gio} – ${k.kenh}`).join('\n')}
 
 Bài gần đây (không lặp chủ đề/góc nhìn):
