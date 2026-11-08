@@ -129,7 +129,7 @@ function GiaoNhanh({S}){const {setViec,themLog}=S;const [nd,setNd]=useState('');
     <div className="text-sm font-bold text-amber-200 flex items-center gap-2 mb-2"><Crown className="w-4 h-4"/>Boss giao chủ đề cho vòng tới</div>
     <div className="flex gap-2 flex-col sm:flex-row"><input value={nd} onChange={e=>setNd(e.target.value)} onKeyDown={e=>e.key==='Enter'&&giao()} placeholder="VD: Ưu đãi phòng họp cuối năm cho doanh nghiệp FDI" className="flex-1 min-w-0 rounded-lg bg-zinc-950 border border-zinc-700 focus:border-amber-400 outline-none px-3 py-2.5"/>
     <button onClick={giao} disabled={!nd.trim()} className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-extrabold bg-gradient-to-r from-amber-300 to-amber-500 text-zinc-900 disabled:opacity-40"><Send className="w-4 h-4"/>Giao việc</button></div>
-    <div className="text-[11.5px] text-zinc-400 mt-1.5">Không có việc Boss giao thì bot lấy chủ đề trong kho chủ đề (mỗi chủ đề viết 1 lần). Hết kho thì bot dừng chờ chị.</div></div>)}
+    <div className="text-[11.5px] text-zinc-400 mt-1.5">Bot chỉ làm chủ đề chị giao. Làm xong thì vòng lặp tự dừng, chờ chị giao tiếp.</div></div>)}
 /* ===== TAB 1: AUTO DASHBOARD ===== */
 function TabAuto({S}){const {chay,pt,vong,buocNay,ptBuoc,log,dongHo,toc,setToc,viecDangLam,tk}=S;
   const logRef=useRef(null);useEffect(()=>{if(logRef.current)logRef.current.scrollTop=0},[log]);
@@ -142,13 +142,13 @@ function TabAuto({S}){const {chay,pt,vong,buocNay,ptBuoc,log,dongHo,toc,setToc,v
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-bold text-lg flex items-center gap-2"><Refresh className={`w-5 h-5 text-emerald-400 ${chay?'animate-spin [animation-duration:3s]':''}`}/>Nhà máy nội dung tự động <span className="text-xs text-zinc-500 font-normal">· vòng #{vong}</span></h2>
         <div className="flex items-center gap-2 text-sm">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/40 border border-zinc-700 mono text-emerald-300"><Timer className="w-4 h-4"/>{chay?'Vòng tới sau '+dongHo:'Tạm dừng'}</span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/40 border border-zinc-700 mono text-emerald-300"><Timer className="w-4 h-4"/>{!chay?'Tạm dừng':(!S.coChuDe&&pt===0)?'Chờ chị giao việc':'Vòng tới sau '+dongHo}</span>
           <select value={toc} onChange={e=>setToc(+e.target.value)} className="bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs"><option value={1}>Tốc độ 1×</option><option value={2}>2×</option><option value={4}>4×</option></select>
         </div>
       </div>
       <GiaoNhanh S={S}/>
       {viecDangLam&&<div className="in flex items-center gap-2 text-sm rounded-xl px-3 py-2 bg-amber-500/10 border border-amber-400/30 text-amber-200"><Crown className="w-4 h-4"/>Vòng này đang viết việc Boss giao: <b className="truncate">{viecDangLam.nd}</b></div>}
-      {!S.coChuDe&&pt===0&&<div className="in flex items-center gap-2 text-sm rounded-xl px-3 py-2 bg-red-500/10 border border-red-400/30 text-red-200"><Timer className="w-4 h-4"/>Bot đang chờ chủ đề mới – mỗi chủ đề chỉ viết 1 lần, không viết lại. Chị giao chủ đề ở ô phía trên.</div>}
+      {!S.coChuDe&&pt===0&&<div className="in flex items-center gap-2 text-sm rounded-xl px-3 py-2 bg-red-500/10 border border-red-400/30 text-red-200"><Timer className="w-4 h-4"/>Đã làm xong việc chị giao – vòng lặp dừng, chờ chị giao chủ đề mới ở ô phía trên. Mỗi chủ đề chỉ viết 1 lần.</div>}
       <div>
         <div className="flex justify-between text-xs text-zinc-400 mb-1"><span>Tiến độ vòng #{vong}</span><span className="mono text-white">{Math.floor(pt)}%</span></div>
         <div className="h-3 rounded-full bg-zinc-800 overflow-hidden relative"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400" style={{width:pt+'%'}}></div>{chay&&<div className="absolute inset-0 shimmer"></div>}</div>
@@ -191,8 +191,8 @@ function TabBoss({S}){const {viec,setViec,themLog}=S;
       <button onClick={giao} disabled={!nd.trim()} className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl font-extrabold bg-gradient-to-r from-amber-300 to-amber-500 text-zinc-900 disabled:opacity-40 hover:brightness-110 transition"><Send className="w-5 h-5"/>GIAO VIỆC CHO BOT</button>
     </The>
     <The className="xl:col-span-3 p-5">
-      <h2 className="font-bold text-lg mb-2">Kho chủ đề bot tự làm <span className="text-sm font-normal text-zinc-500">· {S.kho.length} chủ đề chưa viết · mỗi chủ đề viết 1 lần</span></h2>
-      <div className="flex flex-wrap gap-1.5 mb-5">{S.kho.length?S.kho.map(k=>(<span key={k.id} className="in inline-flex items-center gap-1.5 text-xs pl-2.5 pr-1 py-1 rounded-lg bg-zinc-800">{k.nd}<button onClick={()=>S.setKho(a=>a.filter(x=>x.id!==k.id))} className="text-zinc-500 hover:text-red-400" title="Bỏ chủ đề này"><X className="w-3.5 h-3.5"/></button></span>)):<span className="text-xs text-red-300">Kho trống – bot chờ chị giao chủ đề mới.</span>}</div>
+      <h2 className="font-bold text-lg mb-2">Gợi ý chủ đề <span className="text-sm font-normal text-zinc-500">· bot tìm sẵn, chị bấm + để giao</span></h2>
+      <div className="flex flex-wrap gap-1.5 mb-5">{S.kho.length?S.kho.map(k=>(<span key={k.id} className="in inline-flex items-center gap-1.5 text-xs pl-1 pr-1 py-1 rounded-lg bg-zinc-800"><button onClick={()=>{setViec(a=>[{id:Date.now(),nd:k.nd,loai:'Chủ đề nóng',kenh:['web','fanpage','li','th','zl'],uu:'Thường',tt:'Chờ vòng tới',luc:gio()},...a]);S.setKho(a=>a.filter(x=>x.id!==k.id));themLog('👑 Boss giao chủ đề: "'+k.nd+'"','text-amber-300 font-semibold')}} className="px-1.5 rounded bg-amber-400 text-zinc-900 font-bold" title="Giao chủ đề này">+</button>{k.nd}<button onClick={()=>S.setKho(a=>a.filter(x=>x.id!==k.id))} className="text-zinc-500 hover:text-red-400" title="Bỏ chủ đề này"><X className="w-3.5 h-3.5"/></button></span>)):<span className="text-xs text-zinc-500">Hết gợi ý.</span>}</div>
       <h2 className="font-bold text-lg mb-3">Hàng việc của Boss <span className="text-sm font-normal text-zinc-500">· bot nhận việc ở đầu mỗi vòng lặp</span></h2>
       {!viec.length&&<div className="text-zinc-500 text-sm border border-dashed border-zinc-700 rounded-xl p-6 text-center">Chưa có việc. Chị giao việc bên trái, bot sẽ làm ngay vòng tới.</div>}
       <ul className="space-y-2.5">{viec.map(v=>(<li key={v.id} className={`in rounded-xl border p-3 flex gap-3 items-start ${v.tt==='Đang xử lý'?'border-emerald-400/50 bg-emerald-500/5':v.tt==='Hoàn tất'?'border-zinc-700 bg-zinc-800/30':'border-zinc-800'}`}>
@@ -297,11 +297,11 @@ function TabDuyet({S}){const {bai,setBai,themLog,setToast}=S;const cho=bai.filte
   </div>)}
 
 /* ===== LỊCH ĐĂNG ===== */
-function TabLich({S}){const {bai}=S;const L=[['07:00','web'],['08:00','th'],['09:00','web'],['10:00','fanpage'],['11:00','th'],['12:00','li'],['13:00','zl'],['14:00','ig'],['15:00','fanpage'],['16:00','th'],['17:00','ig'],['18:00','th'],['19:00','th'],['20:00','web']];
+function TabLich({S}){const {bai}=S;const L=[...Array.from({length:16},(_,i)=>[String(7+i).padStart(2,'0')+':00','web']),['08:00','th'],['09:00','th'],['10:00','fanpage'],['11:00','th'],['12:00','li'],['13:00','zl'],['14:00','ig'],['15:00','fanpage'],['16:00','th'],['17:00','ig'],['18:00','th'],['19:00','th']].sort((x,y)=>x[0].localeCompare(y[0]));
   const h=new Date().getHours();
-  return (<div className="space-y-4 in"><h2 className="font-bold text-lg flex items-center gap-2"><Cal className="w-5 h-5 text-sky-300"/>Lịch đăng 24 giờ tới <span className="text-sm font-normal text-zinc-500">· 12 bài mạng xã hội + 3 bài Website SEO mỗi ngày</span></h2>
+  return (<div className="space-y-4 in"><h2 className="font-bold text-lg flex items-center gap-2"><Cal className="w-5 h-5 text-sky-300"/>Lịch đăng 24 giờ tới <span className="text-sm font-normal text-zinc-500">· Website mỗi giờ 1 bài (7:00 → 22:00) + 12 bài mạng xã hội mỗi ngày</span></h2>
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-7 gap-3">{L.map(([g,id],i)=>{const k=TAT_CA.find(x=>x.id===id);const I=k.I;const gh=+g.slice(0,2);const qua=gh<h;const st=qua?'Đã đăng':i%4===3?'Chờ duyệt':i%5===4?'Bot đang viết':'Đã duyệt';
-      return (<div key={g} className={`rounded-xl border p-3 ${st==='Đã đăng'?'border-zinc-800 opacity-60':st==='Chờ duyệt'?'border-amber-400/50 bg-amber-400/5':st==='Bot đang viết'?'border-cyan-400/50 bg-cyan-400/5':'border-emerald-500/40 bg-emerald-500/5'}`}>
+      return (<div key={g+id} className={`rounded-xl border p-3 ${st==='Đã đăng'?'border-zinc-800 opacity-60':st==='Chờ duyệt'?'border-amber-400/50 bg-amber-400/5':st==='Bot đang viết'?'border-cyan-400/50 bg-cyan-400/5':'border-emerald-500/40 bg-emerald-500/5'}`}>
         <div className="flex justify-between items-center"><b className="text-lg mono">{g}</b>{st==='Bot đang viết'?<Loader className="w-4 h-4 animate-spin text-cyan-300"/>:st==='Đã đăng'?<Check className="w-4 h-4 text-zinc-400"/>:null}</div>
         <div className={`mt-1 inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded ${k.mau}`}><I className="w-3 h-3"/>{k.ten}</div><div className="text-xs mt-1.5 text-zinc-400">{st}</div></div>)})}</div></div>)}
 
@@ -396,7 +396,7 @@ function App(){
   const [chay,setChay]=useState(true),[toc,setToc]=useState(1),[pt,setPt]=useState(0),[vong,setVong]=useState(1);
   const [log,setLog]=useState([{id:0,t:gio(),m:'🚀 Hệ thống khởi động – nhà máy nội dung bắt đầu chạy',c:'text-cyan-300'}]);
   const [tk,setTk]=useState({web:128,mxh:742,lead:96,ads:2});
-  const [viec,setViec]=useState([{id:9,nd:'Soạn bản tin tổng hợp tuần gửi khách',loai:'Chiến dịch sản phẩm',kenh:['email'],uu:'Cao',tt:'Định kỳ',lap:'Thứ 7 hằng tuần, 08:00',luc:'—'}]);
+  const [viec,setViec]=useState([{id:8,nd:'Ưu đãi phòng họp cuối năm cho doanh nghiệp',loai:'Chủ đề nóng',kenh:['web','fanpage','li'],uu:'Cao',tt:'Chờ vòng tới',luc:'02:50'},{id:9,nd:'Soạn bản tin tổng hợp tuần gửi khách',loai:'Chiến dịch sản phẩm',kenh:['email'],uu:'Cao',tt:'Định kỳ',lap:'Thứ 7 hằng tuần, 08:00',luc:'—'}]);
   const [kho,setKho]=useState(CHU_DE_TU_DONG.map((t,i)=>({id:'k'+i,nd:t})));   // kho chủ đề bot tự tìm – mỗi chủ đề chỉ viết 1 lần
   const [so,setSo]=useState(SO_GOC);
   const [toast,setToast]=useState(null);
@@ -410,7 +410,7 @@ function App(){
   const themLog=(m,c='text-zinc-200')=>setLog(l=>[{id:Date.now()+Math.random(),t:gio(),m,c},...l].slice(0,80));
   const n=BUOC.length,buocNay=Math.min(n-1,Math.floor(pt/(100/n))),ptBuoc=((pt%(100/n))/(100/n))*100;
   const viecDangLam=viec.find(v=>v.tt==='Đang xử lý');
-  const coChuDe=viec.some(v=>v.tt==='Chờ vòng tới'||v.tt==='Đang xử lý')||kho.length>0;
+  const coChuDe=viec.some(v=>v.tt==='Chờ vòng tới'||v.tt==='Đang xử lý');   // chỉ chạy khi có việc Boss giao
   const chuDeVong=useRef('');
 
   // Thanh tiến trình chạy 0→100% rồi tự quay lại 0% (vòng lặp)
@@ -418,8 +418,8 @@ function App(){
 
   // Sang bước mới → ghi nhật ký
   const daBao=useRef({});const vongRef=useRef(1);useEffect(()=>{vongRef.current=vong},[vong]);
-  useEffect(()=>{if(!chay)return;const key=vong+':'+buocNay;if(daBao.current[key])return;if(buocNay===0&&!viec.some(x=>x.tt==='Chờ vòng tới')&&!kho.length)return;daBao.current[key]=1;
-    if(buocNay===0){const cho=viec.filter(x=>x.tt==='Chờ vòng tới');if(cho.length){chuDeVong.current=cho[cho.length-1].nd}else if(kho.length){chuDeVong.current=kho[0].nd;setKho(k=>k.slice(1))}else{chuDeVong.current=''}}
+  useEffect(()=>{if(!chay)return;const key=vong+':'+buocNay;if(daBao.current[key])return;if(buocNay===0&&!viec.some(x=>x.tt==='Chờ vòng tới'))return;daBao.current[key]=1;
+    if(buocNay===0){const cho=viec.filter(x=>x.tt==='Chờ vòng tới');if(cho.length){chuDeVong.current=cho[cho.length-1].nd}else{chuDeVong.current=''}}
     const cdx=chuDeVong.current||'(chờ chủ đề)';const b=BUOC[buocNay];const add=[];
     if(buocNay>0){const tr=BUOC[buocNay-1];add.push([tr.xong+(tr.k==='tim'||tr.k==='viet'?'"'+cdx+'"':''),'text-emerald-300'])}
     if(buocNay===0){setViec(a=>{const i=a.map(x=>x.tt).lastIndexOf('Chờ vòng tới');if(i<0)return a;const b2=[...a];b2[i]={...b2[i],tt:'Đang xử lý'};return b2})}
@@ -473,7 +473,7 @@ function App(){
         <div className="flex items-center gap-3"><button onClick={()=>setMo(true)} className="lg:hidden p-2 rounded-lg border border-zinc-700" aria-label="Mở menu"><Menu className="w-5 h-5"/></button><div><div className="text-[11px] text-zinc-500 uppercase tracking-widest">AI Marketing Automation</div><h1 className="text-xl md:text-2xl font-extrabold text-white">{(MENU.find(m=>m[0]===tab)||MENU[0])[1]}</h1></div></div>
         <div className="flex flex-wrap items-center gap-2.5">
           <label className="flex items-center gap-2 rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2 focus-within:border-amber-400 w-full sm:w-56"><Search className="w-4 h-4 text-zinc-500"/><input value={tim} onChange={e=>{setTim(e.target.value);const m=MENU.find(x=>x[1].toLowerCase().includes(e.target.value.toLowerCase()));if(e.target.value&&m)doiTab(m[0])}} placeholder="Tìm nhanh: Web, Zalo, duyệt…" className="bg-transparent outline-none text-sm w-full"/></label>
-          <span className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold border ${chay?'bg-emerald-500/10 text-emerald-300 border-emerald-500/40':'bg-red-500/10 text-red-300 border-red-500/40'}`}><span className="relative flex h-2.5 w-2.5">{chay&&<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}<span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${chay?'bg-emerald-400':'bg-red-500'}`}></span></span>CONTENT LOOP: {chay?'ACTIVE':'STOPPED'}</span>
+          <span className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold border ${chay?'bg-emerald-500/10 text-emerald-300 border-emerald-500/40':'bg-red-500/10 text-red-300 border-red-500/40'}`}><span className="relative flex h-2.5 w-2.5">{chay&&<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}<span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${chay?'bg-emerald-400':'bg-red-500'}`}></span></span>CONTENT LOOP: {!chay?'STOPPED':(!coChuDe&&pt===0)?'CHỜ VIỆC':'ACTIVE'}</span>
           <button onClick={dung} className={`inline-flex items-center gap-2.5 pl-3 pr-2 py-2 rounded-xl font-extrabold text-sm text-white transition ${chay?'bg-red-600 hover:bg-red-500':'bg-emerald-600 hover:bg-emerald-500'}`}><Power className="w-4 h-4"/>{chay?'STOP AUTOMATION':'START AUTOMATION'}<span className={`w-10 h-6 rounded-full relative ${chay?'bg-white/30':'bg-black/30'}`}><span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all ${chay?'left-[18px]':'left-0.5'}`}></span></span></button>
         </div>
       </header>

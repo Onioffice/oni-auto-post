@@ -3421,7 +3421,7 @@ function veLuong(){const M=LS('oni_mkt')||{},mks=LS('oni_mks')||{},P=(M.posts||[
  return `<div class="luong"><table><thead><tr><th>Kênh</th><th>① Soạn bài</th><th>② Kiểm lỗi</th><th>③ Chị duyệt</th><th>④ Đăng bài</th><th>⑤ Thu số</th></tr></thead><tbody>${rows}</tbody></table></div>`}
 function veSoDo(B){return B.map((c,i)=>(i?'<div class="mui">↓</div>':'')+`<div class="cn ${c.tt}" ${c.go?`data-go="${c.go}" style="cursor:pointer"`:''}><div class="so">${c.tt==='ok'?'✓':c.tt==='do'?'!':i+1}</div><div><b>${i+1}. ${c.nguoi?'👩 ':'🤖 '}${Es(c.ten)}</b><div class="mo">${Es(c.mo)}</div><div class="kq">${Es(c.kq)}</div>${c.nut||''}</div><div>${c.k?`<label class="sw" title="Bật/tắt"><input type="checkbox" data-may="${c.k}" ${bat(c.k)?'checked':''}><span></span></label>`:''}</div></div>`).join('')}
 const DOI=[
- {id:'web',ten:'Bot Website',kenh:'Website',icon:'🌐',viec:'3 bài SEO/ngày (7:00, 9:00, 20:00) theo từ khóa khách tìm trên Google, tự đăng WordPress, thu số Search Console'},
+ {id:'web',ten:'Bot Website',kenh:'Website',icon:'🌐',viec:'Mỗi giờ 1 bài SEO (7:00 → 22:00, 16 bài/ngày) theo từ khóa khách tìm trên Google, tự đăng WordPress, thu số Search Console'},
  {id:'fb',ten:'Bot Fanpage Facebook',kenh:'Facebook',icon:'📘',viec:'2 bài/ngày (10:00, 15:00) có hình navy, tự đăng khi có mã Facebook, thu số Fanpage',ch:'fb'},
  {id:'ig',ten:'Bot Instagram',kenh:'Instagram',icon:'📸',viec:'2 bài/ngày (14:00, 17:00) hình nền kem, thu số Instagram',ch:'ig'},
  {id:'li',ten:'Bot LinkedIn',kenh:'LinkedIn',icon:'💼',viec:'1 bài/ngày (12:00) song ngữ + ảnh văn phòng thật',ch:'li'},
@@ -3451,9 +3451,9 @@ function veVong(){const {P}=duLieu(),moc=new Date(Date.now()-24*36e5).toISOStrin
   return `<div class="tr ${tt}" ${k==='duyet'?'data-go="mkd"':''}><div class="ic">${ic}</div><b>${i+1}. ${t}</b><small>${ghi}</small>${k==='duyet'&&cho.length?'<button class="btn duyetHet">✓ Duyệt tất cả '+cho.length+' bài</button>':''}</div>`}).join('<div class="mt">➜</div>');
  return `<div class="k"><h3>🔄 Vòng lặp tự động (chạy mỗi giờ)</h3><div class="g">Bài đi qua 10 trạm, xong trạm 10 thì quay lại trạm 1. Số trong mỗi trạm là bài 24 giờ qua. Trạm đỏ là có lỗi.</div><div class="vong">${o}<div class="mt ve">↺ quay lại trạm 1</div></div></div>`}
 function veLich(){const {P}=duLieu(),now=new Date(Date.now()+7*36e5),ra=[];
- for(let d=0;d<=1;d++){const ngay=homNay(d);LICH_W.forEach(([g,k])=>{const t=new Date(ngay+'T'+g+':00Z');if(t<new Date(now-36e5)||ra.length>=15)return;const kenh=k==='Zalo'&&Number(ngay.slice(8))%2===0?'Threads':k;
+ for(let d=0;d<=1;d++){const ngay=homNay(d);LICH_W.forEach(([g,k])=>{const t=new Date(ngay+'T'+g+':00Z');if(t<new Date(now-36e5)||ra.length>=40)return;const kenh=k==='Zalo'&&Number(ngay.slice(8))%2===0?'Threads':k;
   const ds=P.filter(p=>p.at===ngay&&p.kenh===kenh);const p=ds.find(x=>x.gio===g)||ds[ra.filter(r=>r.ngay===ngay&&r.kenh===kenh).length];ra.push({ngay,g,kenh,p})})}
- return `<div class="k"><h3>🕐 Lịch 24 giờ tới – mạng xã hội mỗi giờ 1 bài (8:00 → 19:00) + 3 bài Website SEO</h3><div class="g">Ô trống: bot sẽ tự soạn trong giờ tới. Bấm ô có bài để xem.</div><div class="lich">${ra.map(r=>{const p=r.p,tt=!p?'trong':p.tt==='Đã đăng'?'ok':p.tt==='Đã duyệt'?'ok':p.tt==='Cần sửa'?'do':'vang';
+ return `<div class="k"><h3>🕐 Lịch 24 giờ tới – Website mỗi giờ 1 bài (7:00 → 22:00) + 12 bài mạng xã hội</h3><div class="g">Ô trống: bot sẽ tự soạn trong giờ tới. Bấm ô có bài để xem.</div><div class="lich">${ra.map(r=>{const p=r.p,tt=!p?'trong':p.tt==='Đã đăng'?'ok':p.tt==='Đã duyệt'?'ok':p.tt==='Cần sửa'?'do':'vang';
   return `<div class="o2 ${tt}" ${p?'data-go="mkd"':''}><b>${r.g}</b><small>${r.ngay===homNay()?'Hôm nay':'Ngày mai'}</small><div>${Es(r.kenh)}</div><small>${p?Es(p.tt):'Chưa có bài'}</small></div>`}).join('')}</div></div>`}
 function veDoi(){const {P}=duLieu(),mks=LS('oni_mks')||{},hn=homNay();
  return `<div class="k"><h3>🤖 Đội bot từng kênh</h3><div class="g">Mỗi kênh một bot phụ trách: soạn bài, đăng, lấy số. Gạt công tắc để cho bot kênh đó nghỉ.</div><div class="doi">${DOI.map(b=>{
@@ -3466,7 +3466,7 @@ function veDoi(){const {P}=duLieu(),mks=LS('oni_mks')||{},hn=homNay();
   const dg=['web','fb'].includes(b.id)?dot(bat('dang')?'ok':'xam',bat('dang')?'Tự đăng':b.id==='fb'?'Chờ mã FB':'Tắt'):b.kenh&&b.id!=='em'?dot('xam','Đăng tay'):b.id==='em'?dot('vang','Gửi ở Bản tin email'):'';
   const so=['ga','fa'].includes(b.id)?dot('vang','Xem trang Quảng cáo'):dot(sn.at?'ok':'vang',sn.at?'Số '+fD(sn.at):'Chưa có số');
   return `<div class="bot"><div class="bd"><span class="bi">${b.icon}</span><div><b>${b.ten}</b><small>${Es(b.viec)}</small></div><label class="sw"><input type="checkbox" data-may="bot_${b.id}" ${CD['bot_'+b.id]!==false?'checked':''}><span></span></label></div><div class="bj">${[soan,kiem,du,dg,so].filter(Boolean).join('')}</div></div>`}).join('')}</div></div>`}
-const LICH_W=[['07:00','Website'],['08:00','Threads'],['09:00','Website'],['10:00','Facebook'],['11:00','Threads'],['12:00','LinkedIn'],['13:00','Zalo'],['14:00','Instagram'],['15:00','Facebook'],['16:00','Threads'],['17:00','Instagram'],['18:00','Threads'],['19:00','Threads'],['20:00','Website']];
+const LICH_W=[...Array.from({length:16},(_,i)=>[String(7+i).padStart(2,'0')+':00','Website']),['08:00','Threads'],['09:00','Threads'],['10:00','Facebook'],['11:00','Threads'],['12:00','LinkedIn'],['13:00','Zalo'],['14:00','Instagram'],['15:00','Facebook'],['16:00','Threads'],['17:00','Instagram'],['18:00','Threads'],['19:00','Threads']].sort((x,y)=>x[0].localeCompare(y[0]));
 let QC=[],demT=null;
 const MAY_TAT=['vonglap','nhan','dang','soan','bantin'];
 function dangChay(){return bat('vonglap')||bat('nhan')}

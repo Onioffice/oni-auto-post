@@ -5,9 +5,11 @@
 // `node scripts/vonglap.mjs --kiem` chỉ đếm khung trống (không cần cài gói) để GitHub quyết định có chạy tiếp không.
 import { homNay, layMK, opMK, ghiLoi, layCaiDat, ghiNhatKy } from './lib.mjs';
 
-export const LICH = [['07:00', 'Website'], ['08:00', 'Threads'], ['09:00', 'Website'], ['10:00', 'Facebook'], ['11:00', 'Threads'], ['12:00', 'LinkedIn'], ['13:00', 'Zalo'],
-  ['14:00', 'Instagram'], ['15:00', 'Facebook'], ['16:00', 'Threads'], ['17:00', 'Instagram'], ['18:00', 'Threads'], ['19:00', 'Threads'], ['20:00', 'Website']];
-// Website 3 bài/ngày (7:00, 9:00, 20:00) theo từ khóa khách tìm trên Google để phủ nhiều từ khóa (chị chốt 09/11)
+const MXH = [['08:00', 'Threads'], ['10:00', 'Facebook'], ['11:00', 'Threads'], ['12:00', 'LinkedIn'], ['13:00', 'Zalo'],
+  ['14:00', 'Instagram'], ['15:00', 'Facebook'], ['16:00', 'Threads'], ['17:00', 'Instagram'], ['18:00', 'Threads'], ['19:00', 'Threads'], ['09:00', 'Threads']];
+// Website: mỗi giờ 1 bài từ 07:00 đến 22:00 (16 bài/ngày) theo từ khóa khách tìm trên Google (chị chốt 09/11/2026 03:00)
+const WEB = Array.from({ length: 16 }, (_, i) => [String(7 + i).padStart(2, '0') + ':00', 'Website']);
+export const LICH = [...WEB, ...MXH].sort((x, y) => x[0].localeCompare(y[0]) || (x[1] === 'Website' ? -1 : 1));
 const MOI_LAN = Number(process.env.MOI_LAN || 3);          // mỗi lần chạy làm tối đa 3 bài (giữ chi phí và thời gian)
 const gioVN = () => new Date(Date.now() + 7 * 3600e3);
 
