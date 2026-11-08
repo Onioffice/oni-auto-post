@@ -32,7 +32,7 @@ const MAY=[
  {k:'nhan',ten:'Nhận việc chị giao',lich:'Mỗi giờ, 7:00–22:00',viec:/^Việc chị giao/,mo:'Đọc việc ở "Giao việc cho AI Marketing" (Bảng việc), soạn bài + hình, kiểm lỗi, đưa vào Chờ duyệt'},
  {k:'soan',ten:'Soạn bài buổi sáng',lich:'7:45 mỗi ngày',viec:/^Tự soạn/,mo:'Soạn bài Facebook (+ Website thứ Ba, thứ Sáu) cho ngày kia theo trụ cột tuần'},
  {k:'dang',ten:'Đăng bài',lich:'10:55 mỗi ngày',viec:/^Tự đăng/,mo:'Đăng bài "Đã duyệt" đến ngày lên Facebook, Website (Facebook cần mã đăng bài)'},
- {k:'thuso',ten:'Thu số các kênh',lich:'6:30 mỗi ngày (máy chủ Apps Script)',viec:/^Thu số/,mo:'Lấy số Google, Fanpage, Instagram, Threads, Zalo, Google Business đưa lên trang web'},
+ {k:'thuso',ten:'Thu số các kênh',lich:'6:45 mỗi ngày (máy chủ Apps Script)',viec:/^Thu số/,mo:'Lấy số Google, Fanpage, Instagram, Threads, Zalo, Google Business đưa lên trang web'},
  {k:'baocao',ten:'Báo cáo tuần',lich:'Thứ Hai 8:05',viec:/^Báo cáo tuần/,mo:'Tổng hợp số bài, kênh thiếu bài, việc tồn, đề xuất tuần mới'},
 ];
 const KENH={
@@ -57,16 +57,16 @@ function trangMay(){const M=LS('oni_mkt')||{},mks=LS('oni_mks')||{};
   if(m.k==='thuso'){const at=(mks.web||{}).gscAt||'';lan=lan||(at?{luc:at+'T06:30:00',kq:'Số Google/kênh cập nhật ngày '+fD(at)}:null)}
   if(m.k==='nhan'&&!lan&&M.ai&&M.ai.lastRun)lan={luc:String(M.ai.lastRun).replace(' ','T')+':00',kq:'AI chạy lần cuối'};
   const tre=lan?Math.round((Date.now()-new Date(lan.luc))/36e5):null;
-  const tt=!bat(m.k)?['Đang tắt','xam']:!lan?['Chưa chạy lần nào','vang']:(m.k==='nhan'&&tre>26)||(m.k!=='nhan'&&m.k!=='baocao'&&tre>30)?['Quá hạn chưa chạy','do']:/lỗi/i.test(lan.kq||'')?['Có lỗi','do']:['Đang chạy tốt','ok'];
+  const tt=!bat(m.k)?['Đang tắt','xam']:!lan?['Chưa chạy lần nào','vang']:(m.k==='nhan'&&tre>26)||(m.k!=='nhan'&&m.k!=='baocao'&&tre>30)?['Quá hạn chưa chạy','do']:/^Lỗi/i.test(lan.kq||'')?['Có lỗi','do']:['Đang chạy tốt','ok'];
   return `<div class="may"><div><b>${Es(m.ten)}</b><small>${Es(m.mo)}</small></div><div class="an"><small>${Es(m.lich)}</small></div><div><span class="ch ${tt[1]}">${tt[0]}</span>${lan?'<br><small>'+Es(new Date(lan.luc).toLocaleString('vi-VN'))+'</small>':''}</div><div class="an"><small>${Es((lan&&lan.kq)||'—')}</small>${m.k==='thuso'?'<br><button class="btn" data-khoa style="margin-top:6px;font-size:12px">🔑 Lấy khóa cho máy chủ</button>':''}</div><label class="sw" title="Bật/tắt"><input type="checkbox" data-may="${m.k}" ${bat(m.k)?'checked':''}><span></span></label></div>`}).join('')}
 
 function viecCho(){const M=LS('oni_mkt')||{},mks=LS('oni_mks')||{},P=(M.posts||[]).filter(p=>!p.del),hn=homNay();
  const cho=P.filter(p=>p.tt==='Chờ duyệt').length,sua=P.filter(p=>p.tt==='Cần sửa').length,lenh=((M.ai||{}).lenh||[]).filter(l=>l.tt==='Chờ AI'||l.tt==='AI đang làm').length;
  const chuaHen=P.filter(p=>p.tt==='Đã duyệt'&&!p.hen&&!p.link&&p.at>=hn).length;
  const gb=(mks.ch||[]).filter(c=>c.gb).reduce((a,c)=>{const l=(c.snaps||[]).slice(-1)[0]||{};return a+(+l.unrep||0)},0);
- const loi=SL.filter(x=>!/Đã sửa/.test(x.xuly||x.tt||'')).length;
+ const loi=SL.filter(x=>x.luc>=new Date(Date.now()-7*864e5).toISOString()&&(!x.sua||/^Chưa/i.test(x.sua))).length;
  const o=(so,t,go,can)=>`<div class="o ${can&&so?'can':''}" data-go="${go}"><div class="so">${so}</div><div>${t}</div></div>`;
- return o(cho,'bài chờ chị duyệt','mkd',1)+o(sua,'bài cần sửa','mkd',1)+o(chuaHen,'bài đã duyệt chưa hẹn giờ / chưa đăng','mkw',1)+o(lenh,'việc AI đang chờ làm','mkv',0)+o(gb,'đánh giá Google chưa trả lời','mkc',1)+o(loi,'lỗi máy chưa xử lý','loi',1)}
+ return o(cho,'bài chờ chị duyệt','mkd',1)+o(sua,'bài cần sửa','mkd',1)+o(chuaHen,'bài đã duyệt chưa hẹn giờ / chưa đăng','mkw',1)+o(lenh,'việc AI đang chờ làm','mkv',0)+o(gb,'đánh giá Google chưa trả lời','mkc',1)+o(loi,'lỗi máy 7 ngày chưa tự sửa được','loi',1)}
 
 function theKenh(){const M=LS('oni_mkt')||{},mks=LS('oni_mks')||{},P=(M.posts||[]).filter(p=>!p.del&&p.tt!=='Hủy'),hn=homNay(),web=mks.web||{};
  const lich=k=>P.filter(p=>p.kenh===k&&p.at>=hn&&['Đã duyệt','Chờ duyệt'].includes(p.tt)).length;
