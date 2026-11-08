@@ -26,7 +26,7 @@ const css=`#dk{display:flex;flex-direction:column;gap:16px}#dk .k{background:#ff
 #dk .th ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.5}#dk .th .t{font-size:12.5px;font-weight:800;color:#6F4F31;text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
 #dk .bc{white-space:pre-wrap;font-size:14px;line-height:1.55;background:#F7F3EC;border-radius:12px;padding:12px;max-height:340px;overflow:auto}
 @media(max-width:760px){#dk .may{grid-template-columns:1fr auto;}#dk .may .an{display:none}#dk .th .so4{grid-template-columns:repeat(2,1fr)}}`;
-const st=d.createElement('style');st.textContent=css;d.head.appendChild(st);
+const st=d.createElement('style');st.textContent=css+'\n#dk .tong{border-radius:16px;padding:16px 18px;font-size:17px;font-weight:800;display:flex;gap:10px;align-items:center}\n#dk .tong.ok{background:#E3F1E1;color:#2F6B2A}#dk .tong.do{background:#FDE2DD;color:#B5523B}#dk .tong.vang{background:#FFF3C9;color:#7A5A12}\n#dk .tong small{display:block;font-weight:500;font-size:13.5px;margin-top:2px}\n#dk .sd{display:flex;flex-direction:column;gap:0}\n#dk .cn{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;background:#fff;border:2px solid #EEE5D6;border-radius:14px;padding:12px 14px}\n#dk .cn.ok{border-color:#9CCB95}#dk .cn.do{border-color:#E39A88;background:#FFF7F5}#dk .cn.vang{border-color:#EED48A}#dk .cn.xam{opacity:.6}\n#dk .cn .so{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;background:#F1ECE4;color:#6F4F31}\n#dk .cn.ok .so{background:#2F8A3B;color:#fff}#dk .cn.do .so{background:#C2452D;color:#fff}#dk .cn.vang .so{background:#E9B83A;color:#fff}\n#dk .cn b{font-size:15.5px}#dk .cn .mo{font-size:13px;color:#896441}#dk .cn .kq{font-size:13.5px;margin-top:3px}\n#dk .cn.do .kq{color:#B5523B;font-weight:700}\n#dk .mui{text-align:center;color:#C9B79A;font-size:20px;line-height:22px;height:22px}\n#dk details{background:#fff;border:1px solid #EEE5D6;border-radius:14px;padding:12px 16px}#dk summary{cursor:pointer;font-weight:800;color:#6F4F31;font-size:15.5px}\n#dk .chu{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:#896441}#dk .chu i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}\n';d.head.appendChild(st);
 
 const MAY=[
  {k:'nhan',ten:'Nhận việc chị giao',lich:'Mỗi giờ, 7:00–22:00',viec:/^Việc chị giao/,mo:'Đọc việc ở "Giao việc cho AI Marketing" (Bảng việc), soạn bài + hình, kiểm lỗi, đưa vào Chờ duyệt'},
@@ -99,14 +99,47 @@ function the(ab,ten,so,tt,v,can,tim){return `<div class="th"><div class="dau"><d
  ${can.length?`<div class="t">🔧 Cần chỉnh</div><ul>${can.map(x=>'<li>'+Es(x)+'</li>').join('')}</ul>`:''}
  ${tim.length?`<div class="t">🎯 Cách tìm khách tiềm năng</div><ul>${tim.map(x=>'<li>'+Es(x)+'</li>').join('')}</ul>`:''}</div>`}
 
-function ve(){const R=d.getElementById('dk');if(!R)return;const b=BC[BC.length-1];
- R.innerHTML=`<div class="k"><h3>🤖 Các máy tự động</h3><div class="g">Chạy trên GitHub và Cloudflare – máy Mac tắt vẫn chạy. Gạt công tắc để bật/tắt từng máy. <a href="/duyet" target="_blank">Sổ lỗi máy ↗</a></div>${trangMay()}</div>
- <div class="k"><h3>📌 Việc chờ chị</h3><div class="g">Bấm vào ô để mở đúng trang.</div><div class="viec">${viecCho()}</div></div>
- <div class="k"><h3>📣 Các kênh – tình trạng, vướng mắc, cách tìm khách</h3><div class="g">Số liệu lần cập nhật gần nhất. Kênh thiếu bài so với mục tiêu không bao giờ hiện "Ổn".</div><div class="kenh">${theKenh()}</div></div>
- <div class="k"><h3>🗒 Báo cáo tuần gần nhất</h3>${b?`<div class="g">${Es(new Date(b.luc).toLocaleString('vi-VN'))}</div><div class="bc">${Es(b.nd)}</div>`:'<div class="g">Chưa có – máy báo cáo chạy sáng thứ Hai.</div>'}</div>`;
- R.querySelectorAll('[data-may]').forEach(i=>i.onchange=async()=>{const r=await fetch('/api/caidat',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({[i.dataset.may]:i.checked})});if(r.ok){CD[i.dataset.may]=i.checked;try{pqToast(i.checked?'Đã bật máy':'Đã tắt máy')}catch(e){}ve()}else{i.checked=!i.checked;try{pqToast('Chưa lưu được, chị thử lại')}catch(e){}}});
- const tc=d.getElementById('tsCho');if(tc){if(TS.cho){tc.innerHTML='<div style="margin-top:8px;background:#FFF3C9;border-radius:10px;padding:8px 10px;font-size:13px">Máy chủ Apps Script xin gửi số (mã <b>'+Es(TS.cho.ma)+'</b>, lúc '+Es(new Date(TS.cho.luc).toLocaleTimeString('vi-VN'))+')<br><button class="btn" id="tsOK" style="margin-top:6px;background:#896441;color:#fff">✓ Cho phép</button></div>';d.getElementById('tsOK').onclick=async()=>{const r=await fetch('/api/thuso/duyet',{method:'POST'});try{pqToast(r.ok?'Đã cho phép máy chủ gửi số':'Chưa được, chị bấm lại')}catch(e){}await napServer();ve()}}else if(TS.coKhoa===false){tc.innerHTML='<small>Chưa kết nối máy chủ</small>'}else if(TS.coKhoa){tc.innerHTML='<small style="color:#2F6B2A">✓ Máy chủ đã kết nối</small>'}}
- R.querySelectorAll('[data-go]').forEach(o=>o.onclick=()=>{const g=o.dataset.go;if(g==='loi')window.open('/duyet','_blank');else go(g)})}
+
+const gioVN=s=>{if(!s)return'';const t=new Date(s);const hn=new Date().toDateString()===t.toDateString();return (hn?'hôm nay ':t.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})+' ')+t.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})};
+function soDo(){const M=LS('oni_mkt')||{},mks=LS('oni_mks')||{},P=(M.posts||[]).filter(p=>!p.del),hn=homNay(),moc=new Date(Date.now()-36*36e5).toISOString();
+ const nk=re=>[...NK].reverse().find(x=>re.test(x.viec||''));
+ const loi=re=>SL.filter(x=>x.luc>=moc&&re.test(x.viec||'')&&/^1/.test(x.loai||'')&&(!x.sua||/^Chưa/i.test(x.sua)));
+ const bat_=k=>bat(k);
+ const cho=P.filter(p=>p.tt==='Chờ duyệt').length,sua=P.filter(p=>p.tt==='Cần sửa').length,daDuyet=P.filter(p=>p.tt==='Đã duyệt'&&!p.link&&p.at>=hn).length;
+ const batLoi=SL.filter(x=>x.luc>=moc&&/^2/.test(x.loai||''));
+ const B=[];
+ // 1 Thu số
+ {const l=nk(/^Thu số/),e=[];const tre=l?(Date.now()-new Date(l.luc))/36e5:999;
+  let tt=!bat_('thuso')?'xam':(TS.cho||!l)?'vang':tre>30?'do':'ok',kq=TS.cho?'Máy chủ đang xin kết nối – chị bấm Cho phép':!l?'Chưa gửi số lần nào':tre>30?'Quá hạn: số mới nhất từ '+gioVN(l.luc):'Đã cập nhật số '+gioVN(l.luc);
+  B.push({k:'thuso',ten:'Thu số các kênh',mo:'6:45 sáng · lấy số Google, Facebook, Zalo, Threads, Google Business',tt,kq,nut:TS.cho?'<button class="btn" id="tsOK" style="background:#896441;color:#fff;margin-top:6px">✓ Cho phép (mã '+Es(TS.cho.ma)+')</button>':''})}
+ // 2 Nhận việc
+ {const l=nk(/^Việc chị giao/),e=loi(/Việc chị giao|Nhận việc/),dang=((M.ai||{}).lenh||[]).filter(x=>['Chờ AI','AI đang làm'].includes(x.tt)).length;
+  B.push({k:'nhan',ten:'Nhận việc chị giao',mo:'Mỗi giờ 7h–22h · đọc việc chị giao ở Bảng việc',tt:!bat_('nhan')?'xam':e.length?'do':dang?'vang':'ok',kq:e.length?'Lỗi: '+e[e.length-1].loi:dang?dang+' việc đang chờ máy làm (giờ tới máy nhận)':l?'Xong việc gần nhất '+gioVN(l.luc):'Chưa có việc chị giao'})}
+ // 3 Soạn
+ {const l=nk(/^Tự soạn/),e=loi(/^Soạn/);
+  B.push({k:'soan',ten:'Soạn bài + làm hình',mo:'7:45 sáng · viết bài Facebook (Website thứ Ba, thứ Sáu)',tt:!bat_('soan')?'xam':e.length?'do':'ok',kq:e.length?'Lỗi: '+e[e.length-1].loi:l?(/^Lỗi/.test(l.kq)?'Lỗi: '+l.kq:'Xong '+gioVN(l.luc)+' – '+l.kq):'Chưa chạy'})}
+ // 4 Kiểm lỗi
+ B.push({k:'',ten:'Tự kiểm lỗi bài',mo:'Ngay sau khi soạn · kiểm chữ, giá, hashtag, chữ ký, hình',tt:sua?'vang':'ok',kq:sua?sua+' bài máy bắt lỗi, chưa sửa xong (Cần sửa)':batLoi.length?'Đã tự bắt '+batLoi.length+' lỗi trong 36 giờ, bài lỗi không được đăng':'Không có bài lỗi',go:sua?'mkd':''});
+ // 5 Chị duyệt
+ B.push({k:'',ten:'Chị duyệt bài',mo:'Bài có giá / việc chị giao cần chị bấm Duyệt',tt:cho?'vang':'ok',kq:cho?cho+' bài đang chờ chị duyệt – bấm để xem':'Không có bài chờ duyệt',go:'mkd',nguoi:1});
+ // 6 Đăng
+ {const l=nk(/^Tự đăng/),e=loi(/^Đăng|Tự đăng/);
+  B.push({k:'dang',ten:'Đăng bài',mo:'10:55 sáng · đăng bài đã duyệt lên Website, Facebook',tt:!bat_('dang')?'xam':e.length?'do':'ok',kq:!bat_('dang')?'Đang tắt – chờ mã Facebook. '+daDuyet+' bài đã duyệt chờ đăng':e.length?'Lỗi: '+e[e.length-1].loi:l?'Lần cuối '+gioVN(l.luc)+' – '+l.kq:'Chưa chạy'})}
+ // 7 Báo cáo
+ {const l=nk(/^Báo cáo tuần/),e=loi(/Báo cáo/);
+  B.push({k:'baocao',ten:'Báo cáo tuần',mo:'Thứ Hai 8:05 · tổng kết tuần, đề xuất tuần mới',tt:!bat_('baocao')?'xam':e.length?'do':'ok',kq:e.length?'Lỗi: '+e[e.length-1].loi:l?'Báo cáo gần nhất '+gioVN(l.luc)+' (xem bên dưới)':'Chưa chạy'})}
+ return B}
+function veSoDo(B){return B.map((c,i)=>(i?'<div class="mui">↓</div>':'')+`<div class="cn ${c.tt}" ${c.go?`data-go="${c.go}" style="cursor:pointer"`:''}><div class="so">${c.tt==='ok'?'✓':c.tt==='do'?'!':i+1}</div><div><b>${i+1}. ${c.nguoi?'👩 ':'🤖 '}${Es(c.ten)}</b><div class="mo">${Es(c.mo)}</div><div class="kq">${Es(c.kq)}</div>${c.nut||''}</div><div>${c.k?`<label class="sw" title="Bật/tắt"><input type="checkbox" data-may="${c.k}" ${bat(c.k)?'checked':''}><span></span></label>`:''}</div></div>`).join('')}
+function ve(){const R=d.getElementById('dk');if(!R)return;const b=BC[BC.length-1];const B=soDo();
+ const nDo=B.filter(c=>c.tt==='do'),nVang=B.filter(c=>c.tt==='vang');
+ const tong=nDo.length?`<div class="tong do">⚠️<div>Có ${nDo.length} công nhân đang lỗi: ${nDo.map(c=>Es(c.ten)).join(', ')}<small>Bước lỗi có viền đỏ bên dưới, ghi rõ lỗi gì. Chi tiết ở Sổ lỗi máy.</small></div></div>`:nVang.length?`<div class="tong vang">👀<div>Mọi máy chạy bình thường – có ${nVang.length} việc cần chị xem<small>${nVang.map(c=>Es(c.kq)).join(' · ')}</small></div></div>`:`<div class="tong ok">✅<div>Mọi việc đang ổn<small>Các công nhân chạy đúng lịch, không có lỗi.</small></div></div>`;
+ R.innerHTML=tong+`<div class="k"><h3>Quy trình tự động – từ công nhân đầu đến cuối</h3><div class="chu" style="margin:6px 0 12px"><span><i style="background:#2F8A3B"></i>Xong, ổn</span><span><i style="background:#E9B83A"></i>Đang chờ / cần chị xem</span><span><i style="background:#C2452D"></i>Lỗi</span><span><i style="background:#ccc"></i>Đang tắt</span><span>Gạt công tắc bên phải để bật/tắt từng công nhân</span></div><div class="sd">${veSoDo(B)}</div></div>
+ <details><summary>📣 Chi tiết từng kênh (số liệu, vướng mắc, cách tìm khách)</summary><div class="kenh" style="margin-top:12px">${theKenh()}</div></details>
+ <details><summary>🗒 Báo cáo tuần gần nhất</summary>${b?`<div class="g" style="margin-top:8px">${Es(new Date(b.luc).toLocaleString('vi-VN'))}</div><div class="bc">${Es(b.nd)}</div>`:'<div class="g">Chưa có – máy báo cáo chạy sáng thứ Hai.</div>'}</details>
+ <div class="g">Sổ lỗi chi tiết: <a href="/duyet" target="_blank">mở Sổ lỗi máy ↗</a></div>`;
+ R.querySelectorAll('[data-may]').forEach(i=>{i.onclick=e=>e.stopPropagation();i.onchange=async()=>{const r=await fetch('/api/caidat',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({[i.dataset.may]:i.checked})});if(r.ok){CD[i.dataset.may]=i.checked;try{pqToast(i.checked?'Đã bật':'Đã tắt')}catch(e){}ve()}else{i.checked=!i.checked;try{pqToast('Chưa lưu được, chị thử lại')}catch(e){}}}});
+ const ok=d.getElementById('tsOK');if(ok)ok.onclick=async e=>{e.stopPropagation();const r=await fetch('/api/thuso/duyet',{method:'POST'});try{pqToast(r.ok?'Đã cho phép – sáng mai 6:45 máy chủ tự gửi số':'Chưa được, chị bấm lại')}catch(e){}await napServer();ve()};
+ R.querySelectorAll('[data-go]').forEach(o=>o.onclick=()=>go(o.dataset.go))}
 window.pages=window.pages||{};
 pages.mdk=function(){setTimeout(async()=>{ve();await napServer();ve()},0);return '<div id="dk"><div class="k">Đang tải bảng điều khiển…</div></div>'};
 /* thêm mục menu "Bảng điều khiển" (trước khi khung giao diện dựng menu) */
