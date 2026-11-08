@@ -48,7 +48,12 @@ export async function claude({ system, messages, max_tokens = 8000, tools }) {
       body: JSON.stringify({ model: MODEL, max_tokens, system, messages, ...(tools ? { tools } : {}) })
     });
     const j = await r.json();
-    if (r.ok) return (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+    if (r.ok) {
+      const txt = (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+      if (txt.trim() || lan === 3) { if (!txt.trim()) console.error('Claude trả rỗng:', j.stop_reason, JSON.stringify(j.usage || {}), (j.content || []).map(b => b.type).join(',')); return txt; }
+      console.error('Claude trả rỗng, thử lại:', j.stop_reason, JSON.stringify(j.usage || {}), (j.content || []).map(b => b.type).join(','));
+      continue;
+    }
     if (lan === 3 || ![429, 500, 529].includes(r.status)) throw new Error(`Claude API lỗi ${r.status}: ${j.error?.message || ''}`);
     await new Promise(s => setTimeout(s, 15000 * lan));
   }
