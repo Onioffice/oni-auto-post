@@ -1,0 +1,21 @@
+name: Bản tin email (thứ Năm 9:00 giờ VN)
+on:
+  schedule:
+    - cron: '0 2 * * 4'
+  workflow_dispatch:
+concurrency: { group: oni-bantin, cancel-in-progress: false }
+jobs:
+  chay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/bantin.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ONI_API_URL: ${{ secrets.ONI_API_URL }}
+          ONI_API_KEY: ${{ secrets.ONI_API_KEY }}
+          ONI_MODEL: ${{ vars.ONI_MODEL }}
+          SU_KIEN: ${{ github.event_name }}

@@ -85,7 +85,7 @@ function ve(){const M=MK();const R=d.getElementById('m5Root');if(!M||!R||!R.pare
  const ds=P.filter(p=>loai(p)===loc).sort((a,b)=>((a.at||'9')+(a.gio||'')).localeCompare((b.at||'9')+(b.gio||'')));
  const tag={cho:['Chờ duyệt','cho'],lich:['Đã duyệt – chờ đăng','ok'],sua:['Cần sửa','sua']};
  const h='<h3>🖼 Xem bài trước khi đăng</h3><div class="ghi">Mỗi bài hiện hình lớn và đủ nội dung. Bấm vào hình để phóng to toàn màn hình.</div>'+
- '<div class="tab">'+[['cho','Chờ duyệt'],['lich','Đã duyệt – chờ đăng'],['sua','Cần sửa']].map(([k,t])=>'<button data-loc="'+k+'" class="'+(loc===k?'on':'')+'">'+t+' ('+dem[k]+')</button>').join('')+'</div>'+
+ '<div class="tab">'+[['cho','Chờ duyệt'],['lich','Đã duyệt – chờ đăng'],['sua','Cần sửa']].map(([k,t])=>'<button data-loc="'+k+'" class="'+(loc===k?'on':'')+'">'+t+' ('+dem[k]+')</button>').join('')+(loc==='cho'&&ds.length?'<button data-duyethet="1" style="margin-left:auto;background:#2F8A3B;color:#fff;border-color:#2F8A3B">✓ Duyệt tất cả '+ds.length+' bài</button>':'')+'</div>'+
  (ds.length?'<div class="ds">'+ds.map(p=>{const s=src(p);return '<div class="the">'+
   (s?'<div class="hinh" data-to="'+Es(s)+'" data-t="'+Es(p.ma+' – '+(p.tieude||''))+'"><img loading="lazy" src="'+Es(s)+'" alt="" data-goc="'+Es(String(p.anh||'').split(/[\s,]+/)[0])+'"><span class="kinh">🔍 Bấm để phóng to</span></div>':'<div class="hinh khong">Chưa có hình'+(p.anh?' (tệp: '+Es(String(p.anh).slice(0,60))+')':'')+'</div>')+
   '<div class="nd"><div><span class="nhan">'+Es(p.kenh||'')+'</span><span class="nhan">'+Es(fD(p.at))+' '+Es(p.gio||'')+'</span><span class="nhan '+tag[loai(p)][1]+'">'+tag[loai(p)][0]+'</span>'+(p.ai?'<span class="nhan">🤖 AI soạn</span>':'')+(p.coGia?'<span class="nhan sua">Có giá/ưu đãi</span>':'')+'</div>'+
@@ -97,6 +97,7 @@ function ve(){const M=MK();const R=d.getElementById('m5Root');if(!M||!R||!R.pare
   :'<div class="ghi" style="padding:20px;text-align:center">Không có bài nào ở mục này.</div>');
  if(!g){g=d.createElement('div');g.className='oniGal';R.parentNode.insertBefore(g,R)}
  if(g.__h===h)return;g.__h=h;g.innerHTML=h;
+ g.querySelectorAll('[data-duyethet]').forEach(b=>b.onclick=()=>{if(!confirm('Duyệt tất cả '+ds.length+' bài đang chờ? Bài đã duyệt sẽ được máy đăng đúng giờ.'))return;let n=0;ds.forEach(p=>{try{window.mkDuyet(p.id);n++}catch(e){}});try{pqToast('Đã duyệt '+n+' bài')}catch(e){}});
  g.querySelectorAll('[data-loc]').forEach(b=>b.onclick=()=>{loc=b.dataset.loc;ve()});
  g.querySelectorAll('[data-to]').forEach(b=>b.onclick=()=>phong(b.dataset.to,b.dataset.t));
  g.querySelectorAll('[data-xem]').forEach(b=>b.onclick=()=>xemDang((MK().posts||[]).find(x=>x.id===b.dataset.xem)));

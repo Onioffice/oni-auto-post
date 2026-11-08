@@ -118,7 +118,7 @@ export function kiemChu(bai) {
   if (/\d[\d.,]*\s*(đồng|đ(?![\p{L}])|vnđ|vnd|k(?![\p{L}])|nghìn|ngàn|triệu|usd|\$)/iu.test(bai.nd || '')) loi.push('Caption có ghi giá (giá chỉ được để trên hình)');
   if (/Oni\s*\n\s*Office/.test(bai.nd || '')) loi.push('"Oni Office" bị tách dòng');
   const GIA = /\d[\d.,]*\s*(đồng|đ(?![\p{L}])|vnđ|vnd|k(?![\p{L}])|nghìn|ngàn|triệu|usd|\$)|chưa VAT|gồm VAT/iu;
-  if (['Facebook', 'Instagram'].includes(bai.kenh) && GIA.test(JSON.stringify(bai.hinh || {}) + JSON.stringify(bai.trang || []))) loi.push('Ảnh Facebook/Instagram không được ghi giá');
+  if (['Facebook', 'Instagram', 'Threads', 'X'].includes(bai.kenh) && GIA.test(JSON.stringify(bai.hinh || {}) + JSON.stringify(bai.trang || []))) loi.push('Ảnh Facebook/Instagram không được ghi giá');
   const soTag = ((bai.nd || '') + ' ' + (bai.tag || '')).match(/#[\p{L}\p{N}_]+/gu)?.filter((v, i, a) => a.indexOf(v) === i).length || 0;
   if (bai.kenh === 'Facebook' && (soTag < 3 || soTag > 5)) loi.push(`Facebook cần 3–5 hashtag (đang ${soTag})`);
   if (bai.kenh === 'Instagram' && (soTag < 6 || soTag > 8)) loi.push(`Instagram cần 6–8 hashtag (đang ${soTag})`);
@@ -129,6 +129,6 @@ export function kiemChu(bai) {
     if (h.cards.length !== 4) loi.push('Hình phải đúng 4 thẻ');
     h.cards.forEach((c, i) => { if ((c.t || '').length > 22) loi.push(`Thẻ ${i + 1}: tiêu đề quá 22 ký tự`); if ((c.s || '').length > 34) loi.push(`Thẻ ${i + 1}: dòng phụ quá 34 ký tự`); });
   }
-  if (/0932\s?668\s?642/.test(all) === false && bai.kenh !== 'Instagram') loi.push('Thiếu Hotline/Zalo 0932 668 642 trong bài');
+  if (/0932\s?668\s?642/.test(all) === false && ['Facebook', 'Zalo', 'Website'].includes(bai.kenh)) loi.push('Thiếu Hotline/Zalo 0932 668 642 trong bài');
   return loi;
 }

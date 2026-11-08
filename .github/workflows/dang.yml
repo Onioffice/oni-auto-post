@@ -1,7 +1,5 @@
 name: Đăng bài (10:55 sáng giờ VN)
 on:
-  schedule:
-    - cron: '55 3 * * *'
   workflow_dispatch:
     inputs:
       thu_nghiem:

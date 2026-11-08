@@ -4,20 +4,21 @@
 import { homNay, layMK, opMK, ghiLoi, kiemChu, fbDangAnh, igDangAnh, wpDangBai, layCaiDat, ghiNhatKy } from './lib.mjs';
 
 const THU_NGHIEM = process.env.THU_NGHIEM === '1';   // chạy thử: chỉ in ra, không đăng
-const nay = homNay(), som = homNay(-2);
+const nay = homNay(), som = homNay(-2), gioNay = new Date(Date.now() + 7 * 3600e3).toISOString().slice(11, 16);
 const MAY_DANG = ['Facebook', 'Website'];             // Instagram chờ mẫu carousel; kênh khác đăng tay
 
 async function main() {
   if (process.env.SU_KIEN === 'schedule' && !(await layCaiDat()).dang) { console.log('Công tắc "Tự đăng bài" đang tắt.'); return; }
+  const cd = await layCaiDat(), ID = { Website: 'web', Facebook: 'fb', Instagram: 'ig' };
   const M = await layMK(), tat = M.posts || [], daLam = [];
   const daDangHomNay = new Set(tat.filter(x => x.tt === 'Đã đăng' && (x.dang || '').startsWith(nay)).map(x => x.kenh));
   // chỉ đăng bài do máy GitHub soạn (có botAt) và chưa hẹn giờ tay trên trang – tránh đăng trùng bài cũ của lịch trên máy Mac
-  const can = tat.filter(x => x.tt === 'Đã duyệt' && !x.link && x.botAt && !x.hen && MAY_DANG.includes(x.kenh) && x.at >= som && x.at <= nay)
+  const can = tat.filter(x => x.tt === 'Đã duyệt' && !x.link && x.botAt && !x.hen && MAY_DANG.includes(x.kenh) && cd['bot_' + ID[x.kenh]] !== false && x.at >= som && x.at <= nay && !(x.at === nay && x.gio && x.gio > gioNay))   // bài vòng lặp: tới giờ mới đăng
     .sort((a, b) => (a.at !== b.at ? (a.at < b.at ? -1 : 1) : (a.kenh === 'Website' ? -1 : b.kenh === 'Website' ? 1 : 0) || (!!b.lenh - !!a.lenh) || ((a.gio || '') < (b.gio || '') ? -1 : 1)));
-  if (!can.length) { console.log('Hôm nay không có bài cần đăng.'); if (!THU_NGHIEM) await ghiNhatKy('Tự đăng', 'Không có bài cần đăng'); return; }
+  if (!can.length) { console.log('Giờ này không có bài cần đăng.'); return; }
   if (!THU_NGHIEM) await opMK({ op: 'batDau' });
   for (const b of can) {
-    if (daDangHomNay.has(b.kenh)) { console.log(`Bỏ ${b.ma}: kênh ${b.kenh} đã có bài hôm nay`); continue; }
+    if (daDangHomNay.has(b.kenh) && !b.gio) { console.log(`Bỏ ${b.ma}: kênh ${b.kenh} đã có bài hôm nay`); continue; }
     const loi = kiemChu(b);                                        // kiểm lỗi lần 2 ngay trước khi đăng
     if (!b.anh) loi.push('Thiếu hình');
     if (loi.length) { if (!THU_NGHIEM) { await opMK({ op: 'canSua', ma: b.ma, ly: 'Kiểm lần 2 trước khi đăng: ' + loi.join('; ') }); await ghiLoi('Đăng bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', b.ma); } else console.log('[Thử] Lỗi', b.ma, loi); continue; }

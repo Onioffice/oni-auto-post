@@ -61,12 +61,18 @@ function lamOp(M, o) {
   switch (o.op) {
     case 'batDau': M.ai.lastRun = now; return { ok: true };
     case 'nhatKy': LOG(o.viec, o.ct); return { ok: true };
+    case 'giaoViec': {   // chị (Boss) giao việc từ Bảng điều khiển
+      const nd = String(o.nd || '').trim().slice(0, 2000); if (!nd) return { ok: false, err: 'chưa có nội dung' };
+      M.ai = M.ai || {}; M.ai.lenh = M.ai.lenh || [];
+      const l = { id: 'l' + Date.now().toString(36), at: gioVN(), by: 'Giám đốc', nd, kenh: String(o.kenh || 'Mọi kênh'), han: String(o.han || ''), tt: 'Chờ AI' };
+      M.ai.lenh.unshift(l); M.ai.lenh = M.ai.lenh.slice(0, 200); LOG('Chị giao việc', nd); return { ok: true, id: l.id };
+    }
     case 'nhanViec': { const l = M.ai.lenh.find(x => x.id === o.id); if (!l || ['Hủy', 'Xong'].includes(l.tt)) return { ok: false }; l.tt = 'AI đang làm'; l.nhan = now; l.botAt = botAt; LOG('Nhận việc', l.nd); return { ok: true }; }
     case 'xongViec': { const l = M.ai.lenh.find(x => x.id === o.id); if (!l || l.tt === 'Hủy') return { ok: false }; l.tt = o.loi ? 'Chờ AI' : 'Xong'; l.xong = now; l.kq = String(o.kq || ''); l.botAt = botAt; LOG((o.loi ? 'Lỗi việc: ' : 'Xong việc: ') + l.nd, o.kq); return { ok: true }; }
     case 'taoBai': {
       const b = o.bai || {}; if (!b.kenh || !b.tieude) return { ok: false, err: 'thiếu kênh/tiêu đề' };
       const tt = ['Chờ duyệt', 'Cần sửa', 'Đã duyệt'].includes(b.tt) ? b.tt : 'Chờ duyệt';
-      const p = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), ma: maMoi(M, b.at), at: b.at || '', gio: b.gio || '', kenh: b.kenh, tieude: b.tieude, nd: b.nd || '', tag: b.tag || '', anh: b.anh || '', anhId: b.anhId || null, loai: b.loai || '', cd: b.cd || '', mt: b.mt || '', note: b.note || '', ph: AI, by: AI, ai: 1, tt, coGia: !!b.coGia, lenh: b.lenh || '', lienKetWeb: !!b.lienKetWeb,
+      const p = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), ma: maMoi(M, b.at), at: b.at || '', gio: b.gio || '', kenh: b.kenh, tieude: b.tieude, nd: b.nd || '', tag: b.tag || '', anh: b.anh || '', anhId: b.anhId || null, loai: b.loai || '', cd: b.cd || '', mt: b.mt || '', note: b.note || '', ph: AI, by: AI, ai: 1, tt, coGia: !!b.coGia, lenh: b.lenh || '', lienKetWeb: !!b.lienKetWeb, vong: b.vong || null,
         hist: [{ at: now, by: AI, t: tt === 'Đã duyệt' ? '🤖 AI soạn – tin tức không giá, tự đăng theo quy định chị chốt 07/11' : tt === 'Cần sửa' ? '🤖 AI soạn – máy kiểm lỗi chưa đạt: ' + (b.note || '') : '🤖 AI soạn & gửi duyệt' + (b.lenh ? ' (việc ' + b.lenh + ')' : '') }], botAt };
       M.posts.unshift(p); LOG('Soạn bài ' + p.ma + ' – ' + p.kenh, p.tieude); return { ok: true, ma: p.ma };
     }
@@ -160,8 +166,8 @@ export default {
     // Máy (GitHub) đọc / làm việc trên dữ liệu Marketing của app
     if (p === '/api/mk' && req.method === 'GET') { const M = await docMK(env); return json({ ok: true, mk: M }); }
     if (p === '/api/mk/op' && req.method === 'POST') {
-      if (ai !== 'bot') return json({ loi: 'Chỉ máy được dùng' }, 403);
       const b = await req.json(), M = await docMK(env), kq = [];
+      if (ai !== 'bot' && !(ai === 'chi' && [].concat(b.ops || b).every(o => o.op === 'giaoViec'))) return json({ loi: 'Chỉ máy được dùng' }, 403);
       for (const o of (Array.isArray(b.ops) ? b.ops : [b])) kq.push(lamOp(M, o));
       await ghiMK(env, M); return json({ ok: true, kq });
     }
@@ -198,7 +204,7 @@ export default {
     if (p === '/api/caidat' && req.method === 'PUT') {
       if (ai !== 'chi') return json({ loi: 'Chỉ chị được bật/tắt' }, 403);
       const b = await req.json(), c = JSON.parse((await env.DB.get('caidat')) || '{"soan":false,"dang":false}');
-      for (const k of ['soan', 'dang', 'nhan', 'thuso', 'baocao']) if (k in b) c[k] = !!b[k];
+      for (const k of Object.keys(b)) if (['soan', 'dang', 'nhan', 'thuso', 'baocao', 'vonglap', 'bantin'].includes(k) || /^bot_[a-z]{2,4}$/.test(k)) c[k] = !!b[k];
       c.luc = new Date().toISOString(); await env.DB.put('caidat', JSON.stringify(c)); return json({ ok: true, caidat: c });
     }
     // ---- Nhật ký máy chạy ----

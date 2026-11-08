@@ -6,9 +6,9 @@ import { homNay, thuTrongTuan, layMK, opMK, ghiLoi, claude, layJSON, kiemChu, wp
 import { khungFB, mauA, chuanBi, coLogo, infoWeb } from './khung.mjs';
 
 const THU = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-const GIO = { Facebook: '11:30', Instagram: '12:00', Website: '09:00' };
+const GIO = { Facebook: '11:30', Instagram: '12:00', Website: '09:00', Threads: '14:00', LinkedIn: '12:00', Zalo: '13:00', X: '16:00' };
 // Instagram tạm ngưng tới khi có mẫu carousel nền trắng riêng (quy tắc chị chốt 07/11)
-export const KENH_DANG_LAM = ['Facebook', 'Website'];
+export const KENH_DANG_LAM = ['Facebook', 'Website', 'Threads', 'LinkedIn', 'Zalo', 'X', 'Instagram'];
 export const kenhMacDinh = ngay => ['Facebook'].concat([2, 5].includes(thuTrongTuan(ngay)) ? ['Website'] : []); // website T3, T6
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 
@@ -93,7 +93,7 @@ Trả lời đúng dạng: \`\`\`json\n{"dat": true|false, "loi": ["…"]}\n\`\`
 }
 
 // yeuCau: việc chị giao (có thì viết đúng yêu cầu, bài luôn vào Chờ duyệt). lenh: mã việc.
-export async function soanBai({ ngay, kenhs, yeuCau = '', lenh = '' }) {
+export async function soanBai({ ngay, kenhs, yeuCau = '', lenh = '', yTuong = '', gio = '', timTin = true }) {
   await chuanBi();
   if (!coLogo()) throw new Error('Không tải được logo Oni từ website – dừng, không làm hình thiếu logo');
   const cu = ((await layMK()).posts || []).filter(x => x.tt !== 'Hủy');
@@ -103,9 +103,11 @@ export async function soanBai({ ngay, kenhs, yeuCau = '', lenh = '' }) {
   const t = await claude({
     max_tokens: 16000,
     system: QUY_TAC,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
+    ...(timTin ? { tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }] } : {}),
     messages: [{ role: 'user', content: `Hôm nay ${homNay()}. Soạn bài đăng ngày ${ngay} (${THU[thuTrongTuan(ngay)]}) cho các kênh: ${kenhs.join(', ')}.
-${yeuCau ? `CHỊ GIÁM ĐỐC GIAO VIỆC – viết ĐÚNG theo yêu cầu dưới đây (ưu tiên hơn trụ cột trong tuần, vẫn giữ mọi luật bắt buộc):
+${yTuong ? `Ý TƯỞNG ĐÃ CHỌN (đã tìm tin và chọn nguồn ở bước trước – viết đúng ý tưởng này, không tìm tin thêm, giữ mọi luật bắt buộc):
+«${yTuong}»
+` : yeuCau ? `CHỊ GIÁM ĐỐC GIAO VIỆC – viết ĐÚNG theo yêu cầu dưới đây (ưu tiên hơn trụ cột trong tuần, vẫn giữ mọi luật bắt buộc):
 «${yeuCau}»
 Chỉ tìm tin trên mạng khi yêu cầu cần tin tức hoặc số liệu. Nếu yêu cầu nhắc giá hay ưu đãi thì đặt coGia true.
 ` : `Trước tiên tìm tin trên mạng trong 48 giờ qua (nguồn chính thống: chinhphu.vn, baochinhphu.vn, thuvienphapluat.vn, dangkykinhdoanh.gov.vn, gdt.gov.vn, VnExpress, Tuổi Trẻ, Thanh Niên…) về: đăng ký doanh nghiệp, thuế/hóa đơn cho doanh nghiệp nhỏ, FDI, thị trường văn phòng ảo / coworking TP.HCM. Chọn 1 chủ đề hợp trụ cột của ${THU[thuTrongTuan(ngay)]} và có ích cho khách Oni; nếu không có tin mới phù hợp thì viết bài kiến thức/mẹo theo trụ cột.
@@ -127,6 +129,10 @@ ${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
   {"kenh":"Facebook","tieude":"…","nd":"caption đầy đủ","tag":"#OniOffice …","coGia":false,
    "hinh":{"pill":"…","eyebrow":"…","t1":"…","t2":"…","boxTop":"…","boxTitle":"…","cards":[{"icon":"doc","t":"…","s":"…"},{"icon":"…","t":"…","s":"…"},{"icon":"…","t":"…","s":"…"},{"icon":"…","t":"…","s":"…"}],"loc":"…","cta":"…"}},
   {"kenh":"Instagram", … cùng dạng Facebook …},
+  {"kenh":"Zalo", … cùng dạng Facebook (caption gọn, rõ lợi ích, có Hotline/Zalo) …},
+  {"kenh":"Threads","tieude":"…","nd":"chỉ chữ, ngắn, tự nhiên, kết bằng câu hỏi thực chất, không hashtag quảng cáo, không giá"},
+  {"kenh":"X","tieude":"…","nd":"≤ 270 ký tự, song ngữ: tiếng Anh trước, tiếng Việt sau, không giá"},
+  {"kenh":"LinkedIn","tieude":"…","nd":"tiếng Anh trước, tiếng Việt sau; có góc nhìn/trải nghiệm, chuyên nghiệp","anhThat":"<một mã trong kho ảnh thật ở trên>"},
   {"kenh":"Website","tieude":"…","nd":"<p>…bài HTML đầy đủ…</p>","coGia":false,"hinhWeb":{"tag":"…","lines":["…","…","…"],"sub":["…","…"],"anhThat":"oni-td-hop"},
    "anhTrongBai":[{"sauMuc":2,"loai":"anh","ma":"td-hop-a","chuThich":"…"},{"sauMuc":4,"loai":"infographic","nhan":"…","tieuDe":"…","cacY":["…","…","…"],"chuThich":"…"}]}
  ]}
@@ -154,20 +160,29 @@ ${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
         buf = await mauA(b.hinhWeb, photo); mime = 'image/jpeg'; ten = `web_${ngay}_oni_1200x628@2x.jpg`;
         b.nd = await themAnhTrongBai(b.nd);   // trình bày đúng mẫu bài website đã đăng
         b.nd = await chenHinhTheoMuc(b.nd, b.anhTrongBai, ngay, b.tieude);   // hình trong bài theo nội dung từng mục
-      } else {
-        buf = await khungFB({ ...b.hinh, theme: b.kenh === 'Instagram' ? 'kem' : 'navy' }); ten = `${b.kenh === 'Instagram' ? 'ig' : 'fb'}_${ngay}_oni.png`;
+      } else if (['Facebook', 'Instagram', 'Zalo'].includes(b.kenh)) {
+        buf = await khungFB({ ...b.hinh, theme: b.kenh === 'Instagram' ? 'kem' : 'navy' }); ten = `${({ Instagram: 'ig', Zalo: 'zl' })[b.kenh] || 'fb'}_${ngay}_oni.png`;
       }
-      // 4) Claude xem hình kiểm lỗi
-      const kh = await kiemHinh(buf, b.kenh, mime);
-      if (!kh.dat) loi = loi.concat(kh.loi || ['Hình chưa đạt']);
-      // 5) Tải hình lên website để có link công khai
-      const up = await wpTaiAnh(buf, ten, `${b.tieude} – Oni Office`, mime);
+      const vong = { tim: timTin || yTuong ? 'ok' : '—', yt: 'ok', kb: 'ok', kc: loi.length ? 'loi' : 'ok', tk: '—', kh: '—', ll: 'ok' };
+      let up = { url: '', id: null };
+      if (buf) {
+        vong.tk = 'ok';
+        // 4) Claude xem hình kiểm lỗi
+        const kh = await kiemHinh(buf, b.kenh, mime);
+        vong.kh = kh.dat ? 'ok' : 'loi';
+        if (!kh.dat) loi = loi.concat(kh.loi || ['Hình chưa đạt']);
+        // 5) Tải hình lên website để có link công khai
+        up = await wpTaiAnh(buf, ten, `${b.tieude} – Oni Office`, mime);
+      } else if (b.kenh === 'LinkedIn') {                       // LinkedIn: ảnh văn phòng thật
+        up.url = await anhTheoMa(b.anhThat) || await anhTheoMa('toa-nha'); vong.tk = up.url ? 'ok' : 'loi'; vong.kh = up.url ? 'ok' : 'loi';
+        if (!up.url) loi.push('Không tìm được ảnh thật cho LinkedIn');
+      }
       const datHet = loi.length === 0;
       if (!datHet) await ghiLoi('Soạn bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', ngay);
-      ra.push({ lenh, kenh: b.kenh, at: ngay, gio: GIO[b.kenh], tieude: b.tieude, nd: b.nd,
+      ra.push({ lenh, kenh: b.kenh, at: ngay, gio: gio || GIO[b.kenh], tieude: b.tieude, nd: b.nd, vong,
         tag: b.tag || '', anh: up.url, anhId: up.id, coGia: !!b.coGia,
-        tt: !datHet ? 'Cần sửa' : (b.coGia || yeuCau ? 'Chờ duyệt' : 'Đã duyệt'),   // tin tức không giá: tự đăng (chị chốt 07/11)
-        lienKetWeb: b.kenh === 'Facebook' && kenhs.includes('Website'), loai: 'AI soạn',
+        tt: !datHet ? 'Cần sửa' : (b.coGia || yeuCau || yTuong ? 'Chờ duyệt' : 'Đã duyệt'),   // bài vòng lặp: luôn chờ chị duyệt (duyệt hàng loạt) – chị chốt 09/11
+        lienKetWeb: b.kenh === 'Facebook' && kenhs.includes('Website'), loai: yTuong ? 'Vòng lặp' : 'AI soạn',
         note: (yeuCau ? 'Việc chị giao. ' : '') + (datHet ? `Đã kiểm lỗi: Đạt – ${new Date().toISOString()}` : 'Lỗi kiểm: ' + loi.join('; ')) + (kq.nguon?.length ? ' | Nguồn: ' + kq.nguon.map(n => n.link).join(' ') : '') });
     } catch (e) { await ghiLoi('Soạn bài ' + b.kenh, '1. Chạy hỏng', e.message, 'Chưa', ngay); }
   }
@@ -179,7 +194,9 @@ ${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
 
 // Chạy theo lịch 7:45 (hoặc bấm tay trên GitHub)
 async function main() {
-  if (process.env.SU_KIEN === 'schedule' && !(await layCaiDat()).soan) { console.log('Công tắc "Tự soạn bài mỗi sáng" đang tắt.'); return; }
+  const cd = await layCaiDat();
+  if (process.env.SU_KIEN === 'schedule' && cd.vonglap !== false) { console.log('Vòng lặp đang chạy – không soạn theo lịch sáng nữa.'); return; }
+  if (process.env.SU_KIEN === 'schedule' && !cd.soan) { console.log('Công tắc "Tự soạn bài mỗi sáng" đang tắt.'); return; }
   const ngay = process.env.NGAY_DANG || homNay(2);          // soạn trước 2 ngày, để chị kịp duyệt
   await opMK({ op: 'batDau' });
   const cu = ((await layMK()).posts || []).filter(x => !['Hủy', 'Cần sửa'].includes(x.tt));

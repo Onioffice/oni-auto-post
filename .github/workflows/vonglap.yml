@@ -1,0 +1,46 @@
+name: Vòng lặp – soạn & đăng bài (mỗi giờ)
+on:
+  schedule:
+    - cron: '25 * * * *'
+  workflow_dispatch:
+    inputs:
+      moi_lan:
+        description: "Số bài tối đa mỗi lần (mặc định 3)"
+        required: false
+concurrency: { group: oni-vonglap, cancel-in-progress: false }
+jobs:
+  chay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ONI_API_URL: ${{ secrets.ONI_API_URL }}
+      ONI_API_KEY: ${{ secrets.ONI_API_KEY }}
+      WP_URL: ${{ secrets.WP_URL }}
+      WP_USERNAME: ${{ secrets.WP_USERNAME }}
+      WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+      FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      ONI_MODEL: ${{ vars.ONI_MODEL }}
+      SU_KIEN: ${{ github.event_name }}
+      MOI_LAN: ${{ inputs.moi_lan }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      # Công nhân đăng bài: tới giờ thì đăng (không cần cài gói, chạy vài giây)
+      - name: Đăng bài tới giờ
+        run: node scripts/dang.mjs || true
+      # Đếm khung trống trong 24 giờ tới; không trống thì dừng ngay
+      - name: Đếm khung trống
+        id: dem
+        run: echo "n=$(node scripts/vonglap.mjs --kiem | tail -1)" >> "$GITHUB_OUTPUT"
+      - if: steps.dem.outputs.n != '0'
+        uses: actions/cache@v4
+        with: { path: fonts, key: fonts-bevietnampro-v1 }
+      - if: steps.dem.outputs.n != '0'
+        run: npm ci
+      - if: steps.dem.outputs.n != '0'
+        name: Tìm tin → ý tưởng → viết → kiểm → thiết kế → kiểm hình → xếp lịch
+        run: node scripts/vonglap.mjs
