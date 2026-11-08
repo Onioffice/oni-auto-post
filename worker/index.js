@@ -68,6 +68,10 @@ function lamOp(M, o) {
       const l = { id: 'l' + Date.now().toString(36), at: gioVN(), by: 'Giám đốc', nd, kenh: String(o.kenh || 'Mọi kênh'), han: String(o.han || ''), tt: 'Chờ AI' };
       M.ai.lenh.unshift(l); M.ai.lenh = M.ai.lenh.slice(0, 200); LOG('Chị giao việc', nd); return { ok: true, id: l.id };
     }
+    // Chị (Boss) duyệt / trả sửa bài, hủy việc ngay trên Bảng điều khiển mới
+    case 'chiDuyet': { const p = M.posts.find(x => x.id === o.id); if (!p || !['Chờ duyệt', 'Cần sửa'].includes(p.tt)) return { ok: false, err: 'bài không ở trạng thái chờ duyệt' }; p.tt = 'Đã duyệt'; p.duyet = { by: 'Giám đốc', at: now }; (p.hist = p.hist || []).unshift({ at: now, by: 'Giám đốc', txt: 'Duyệt bài' }); p.botAt = botAt; LOG('Chị duyệt bài ' + (p.ma || ''), p.tieude); return { ok: true }; }
+    case 'chiSua': { const p = M.posts.find(x => x.id === o.id); if (!p) return { ok: false }; const ly = String(o.ly || '').slice(0, 500); p.tt = 'Cần sửa'; p.note = ((p.note || '') + ' | Chị: ' + ly).slice(0, 1000); (p.hist = p.hist || []).unshift({ at: now, by: 'Giám đốc', txt: 'Cần sửa: ' + ly }); p.botAt = botAt; LOG('Chị trả sửa ' + (p.ma || ''), ly); return { ok: true }; }
+    case 'chiHuyViec': { const l = M.ai.lenh.find(x => x.id === o.id); if (!l || l.tt !== 'Chờ AI') return { ok: false, err: 'việc đã được nhận, không hủy được' }; l.tt = 'Hủy'; l.botAt = botAt; LOG('Chị hủy việc', l.nd); return { ok: true }; }
     case 'nhanViec': { const l = M.ai.lenh.find(x => x.id === o.id); if (!l || ['Hủy', 'Xong'].includes(l.tt)) return { ok: false }; l.tt = 'AI đang làm'; l.nhan = now; l.botAt = botAt; LOG('Nhận việc', l.nd); return { ok: true }; }
     case 'xongViec': { const l = M.ai.lenh.find(x => x.id === o.id); if (!l || l.tt === 'Hủy') return { ok: false }; l.tt = o.loi ? 'Chờ AI' : 'Xong'; l.xong = now; l.kq = String(o.kq || ''); l.botAt = botAt; LOG((o.loi ? 'Lỗi việc: ' : 'Xong việc: ') + l.nd, o.kq); return { ok: true }; }
     case 'taoBai': {
@@ -176,8 +180,10 @@ export default {
     if (p === '/dang-xuat') return new Response('', { status: 303, headers: { location: '/', 'set-cookie': 'oni_mk=; Path=/; Max-Age=0' } });
 
     const ai = await quyen(req, env);
-    if (p === '/' || p === '/index.html' || p === '/duyet') {
+    if (p === '/' || p === '/index.html' || p === '/duyet' || p === '/bdk' || p === '/cu') {
       if (ai !== 'chi') return new Response(trangDangNhap(''), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+      // Bảng điều khiển mới (số liệu thật) – xem thử ở /bdk; bảng cũ giữ ở /cu để quay lại
+      if (p === '/bdk' && typeof BDK_HTML !== 'undefined') return new Response(BDK_HTML, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
       const html = (p === '/duyet' || typeof APP_HTML === 'undefined') ? TRANG : APP_HTML;   // "/" = Marketing giống app; "/duyet" = trang duyệt nhanh
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
     }
@@ -246,7 +252,7 @@ export default {
     if (p === '/api/mk' && req.method === 'GET') { const M = await docMK(env); return json({ ok: true, mk: M }); }
     if (p === '/api/mk/op' && req.method === 'POST') {
       const b = await req.json(), M = await docMK(env), kq = [];
-      if (ai !== 'bot' && !(ai === 'chi' && [].concat(b.ops || b).every(o => o.op === 'giaoViec'))) return json({ loi: 'Chỉ máy được dùng' }, 403);
+      if (ai !== 'bot' && !(ai === 'chi' && [].concat(b.ops || b).every(o => ['giaoViec', 'chiDuyet', 'chiSua', 'chiHuyViec'].includes(o.op)))) return json({ loi: 'Chỉ máy được dùng' }, 403);
       for (const o of (Array.isArray(b.ops) ? b.ops : [b])) kq.push(lamOp(M, o));
       await ghiMK(env, M); return json({ ok: true, kq });
     }

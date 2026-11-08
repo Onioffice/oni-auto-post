@@ -20,5 +20,8 @@ R = os.path.join(D, '..', 'prompts')
 qt = open(os.path.join(R, 'quy-tac.md'), encoding='utf-8').read() + '\n\n' + open(os.path.join(R, 'grok-bot.md'), encoding='utf-8').read()
 ka = json.load(open(os.path.join(R, 'kho-anh.json'), encoding='utf-8'))
 w += '\nconst QUY_TAC_G = ' + json.dumps(qt, ensure_ascii=False) + ';\nconst KHO_ANH_G = ' + json.dumps({k: v[1] for k, v in ka.items()}, ensure_ascii=False) + ';\n'
+bdk = open(os.path.join(D, 'bdk.html'), encoding='utf-8').read()
+if re.findall(r'ONI0\d\d|(?<![\d.])(?!0319364530|0932668642)0\d{9}(?!\d)', bdk): sys.exit('DỪNG – bdk.html nghi có dữ liệu khách')
+w += '\nconst BDK_HTML = ' + json.dumps(bdk, ensure_ascii=False) + ';\n'
 open(os.path.join(D, 'dist.js'), 'w', encoding='utf-8').write(w + '\nconst APP_HTML = ' + json.dumps(html, ensure_ascii=False) + ';\n')
 print('dist.js', os.path.getsize(os.path.join(D, 'dist.js')))
