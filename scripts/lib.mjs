@@ -17,9 +17,12 @@ Giải pháp tối ưu chi phí cho doanh nghiệp hiện đại.
 📞 Hotline & Zalo: 0932 668 642`;
 
 // ---------- Kho bài (Cloudflare Worker) ----------
-async function kho(duong, opt = {}) {
+async function kho(duong, opt = {}, lan = 1) {
+  // Cloudflare KV chỉ cho ghi 1 lần/giây vào cùng một khóa → ghi dồn dập bị lỗi 500/429: đợi rồi thử lại
+  if (lan > 1) await new Promise(s => setTimeout(s, 1500 * lan));
   const r = await fetch(env('ONI_API_URL').replace(/\/$/, '') + duong, { ...opt, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env('ONI_API_KEY'), ...(opt.headers || {}) } });
   const j = await r.json().catch(() => ({}));
+  if (!r.ok && [429, 500, 503].includes(r.status) && lan < 4) return kho(duong, opt, lan + 1);
   if (!r.ok) throw new Error(`Kho bài lỗi ${r.status}: ${j.loi || ''}`);
   return j;
 }
