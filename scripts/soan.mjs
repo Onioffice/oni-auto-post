@@ -12,6 +12,25 @@ export const KENH_DANG_LAM = ['Facebook', 'Website'];
 export const kenhMacDinh = ngay => ['Facebook'].concat([2, 5].includes(thuTrongTuan(ngay)) ? ['Website'] : []); // website T3, T6
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 
+// Bài website: chèn 2 ảnh thật cơ sở Oni (khác ảnh bìa) vào giữa bài, thêm khối liên hệ nền navy cuối bài
+async function themAnhTrongBai(html, anhBia) {
+  let kho = [];
+  for (const tu of ['oni-', 'oni office', 'cs1', 'cs2']) { try { kho = kho.concat(await wpTimAnh(tu)); } catch (e) {} }
+  kho = [...new Set(kho)].filter(u => u !== anhBia && !/\/(web|fb|ig)_\d{4}|logo|icon|favicon|avatar/i.test(u));
+  const chon = kho.sort(() => Math.random() - .5).slice(0, 2);
+  const hinh = (u, cap) => `<figure style="margin:24px 0"><img src="${u}" alt="${cap}" style="width:100%;height:auto;border-radius:12px" loading="lazy"><figcaption style="font-size:13px;color:#896441;text-align:center;margin-top:6px">${cap}</figcaption></figure>`;
+  const h2 = [...html.matchAll(/<h2[\s>]/gi)].map(m => m.index);
+  let out = html;
+  if (chon[1] && h2.length >= 4) out = out.slice(0, h2[h2.length - 1]) + hinh(chon[1], 'Không gian làm việc thực tế tại Oni Office') + out.slice(h2[h2.length - 1]);
+  if (chon[0] && h2.length >= 2) out = out.slice(0, h2[1]) + hinh(chon[0], 'Hình ảnh thực tế tại cơ sở Oni Office') + out.slice(h2[1]);
+  if (!/0932 668 642<\/a>|oni-lien-he/.test(out)) out += `<div class="oni-lien-he" style="background:#1E2A44;color:#fff;border-radius:14px;padding:20px 22px;margin-top:28px">
+<p style="margin:0 0 8px;font-weight:700;color:#E9B83A;font-size:18px">ONI OFFICE – Optimal · Network · Innovation</p>
+<p style="margin:0 0 6px">📍 CS1: 01 Nguyễn Văn Nguyễn, P. Tân Định, TP.HCM</p>
+<p style="margin:0 0 6px">📍 CS2: 70 Đường số 8, KDC CityLand Park Hills, P. Gò Vấp, TP.HCM</p>
+<p style="margin:0">📞 Hotline &amp; Zalo: <a href="https://zalo.me/0932668642" style="color:#FFE38A">0932 668 642</a> · 📧 <a href="mailto:sales@onioffice.vn" style="color:#FFE38A">sales@onioffice.vn</a> · 🌐 <a href="https://onioffice.vn" style="color:#FFE38A">onioffice.vn</a></p></div>`;
+  return out;
+}
+
 async function kiemHinh(png, kenh, mime = 'image/png', lan = 1) {
   const t = await claude({
     max_tokens: 1200,
@@ -87,6 +106,7 @@ Trả lời DUY NHẤT một khối:
         if (!anh) throw new Error('Không tìm được ảnh thật của Oni trong thư viện website');
         const photo = Buffer.from(await (await fetch(anh)).arrayBuffer());
         buf = await mauA(b.hinhWeb, photo); mime = 'image/jpeg'; ten = `web_${ngay}_oni_1200x628@2x.jpg`;
+        b.nd = await themAnhTrongBai(b.nd, anh);   // 2 ảnh thật của Oni trong thân bài + khối liên hệ cuối bài
       } else {
         buf = await khungFB({ ...b.hinh, theme: b.kenh === 'Instagram' ? 'kem' : 'navy' }); ten = `${b.kenh === 'Instagram' ? 'ig' : 'fb'}_${ngay}_oni.png`;
       }

@@ -43,7 +43,7 @@ const css=`.oniGal{background:#fff;border:1px solid #EEE5D6;border-radius:14px;p
 .oniGal .xem{font-size:13px;color:#896441;cursor:pointer;text-decoration:underline;align-self:flex-start}
 .oniGal .nut{display:flex;gap:6px;flex-wrap:wrap}.oniGal .nut button{flex:1;min-width:90px;border:0;border-radius:10px;padding:10px;font:inherit;font-weight:700;cursor:pointer}
 .oniGal .d{background:linear-gradient(90deg,#FFE38A,#E9B83A);color:#4A3220}.oniGal .s{background:#F3E7D3;color:#6F4F31}.oniGal .h{background:#eee;color:#555}
-.oniGal .ghichu{font-size:12.5px;color:#896441;word-break:break-word}
+.oniGal .xemdang{border:1px solid #896441;background:#fff;color:#6F4F31;border-radius:10px;padding:9px;font:inherit;font-weight:700;cursor:pointer}.oniGal .ghichu{font-size:12.5px;color:#896441;word-break:break-word}
 #oniTo{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100000;display:none;overflow:auto;-webkit-overflow-scrolling:touch}
 #oniTo .bar{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;color:#fff;background:rgba(0,0,0,.6);gap:10px}
 #oniTo .bar button{background:#E9B83A;border:0;border-radius:999px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}
@@ -61,27 +61,46 @@ function phong(u,t){let o=d.getElementById('oniTo');if(!o){o=d.createElement('di
  d.addEventListener('keydown',e=>{if(e.key==='Escape'){o.style.display='none';o.classList.remove('lon')}})}
  o.querySelector('#oniToI').src=lon(u);o.querySelector('#oniToT').textContent=t||'';o.classList.remove('lon');o.style.display='block';o.scrollTop=0}
 window.__oniPhong=phong;
-function loai(p){if(p.tt==='Chờ duyệt')return 'cho';if(p.tt==='Đã duyệt'&&!p.link)return 'lich';if(p.tt==='Cần sửa')return 'sua';return ''}
+/* ---- Xem bài như khi đã đăng lên từng kênh ---- */
+const SACH=h=>{const t=d.createElement('template');t.innerHTML=String(h||'');t.content.querySelectorAll('script,style,iframe,object,embed,form').forEach(e=>e.remove());t.content.querySelectorAll('*').forEach(e=>[...e.attributes].forEach(a=>{if(/^on/i.test(a.name)||(/^(href|src)$/i.test(a.name)&&/^\s*javascript:/i.test(a.value)))e.removeAttribute(a.name)}));return t.innerHTML};
+const chuNd=t=>Es(String(t||'').replace(/\{LINK_WEB\}/g,'https://onioffice.vn/… (link bài website cùng ngày)')).replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" style="color:#1877F2">$1</a>').replace(/(^|\s)(#[\p{L}\p{N}_]+)/gu,'$1<span style="color:#1877F2">$2</span>');
+function xemDang(p){if(!p)return;const s=src(p);const K=p.kenh||'';let h='';
+ const logo='<span style="width:40px;height:40px;border-radius:50%;background:#6F4F31;display:inline-flex;align-items:center;justify-content:center;color:#FFE38A;font-weight:800;font-size:13px;flex:none">ONI</span>';
+ const im=s?'<img src="'+Es(s)+'" style="width:100%;display:block" onerror="this.outerHTML=\'<div style=&quot;padding:30px;text-align:center;background:#F3EBDD;color:#896441&quot;>(Hình chưa xem được ở đây)</div>\'">':'';
+ if(K==='Website'){h='<div style="background:#fff;max-width:820px;margin:0 auto;border-radius:12px;overflow:hidden;font-family:\'Be Vietnam Pro\',system-ui;color:#2E2117">'+
+  '<div style="background:#6F4F31;color:#FFE38A;padding:10px 18px;font-weight:700">onioffice.vn › Tin tức</div>'+im+
+  '<div style="padding:22px 26px 30px;line-height:1.7;font-size:16px"><h1 style="font-size:28px;line-height:1.3;margin:0 0 6px">'+Es(p.tieude||'')+'</h1><div style="color:#896441;font-size:13px;margin-bottom:16px">'+Es(fD(p.at))+' · Oni Office</div>'+SACH(p.nd)+'</div></div>'}
+ else if(K==='Instagram'){h='<div style="background:#fff;max-width:470px;margin:0 auto;border-radius:12px;overflow:hidden;font-family:system-ui;color:#111"><div style="display:flex;gap:10px;align-items:center;padding:10px 12px">'+logo+'<b>onioffice</b></div>'+(im||'<div style="aspect-ratio:4/5;background:#eee"></div>')+'<div style="padding:10px 12px;font-size:14px;white-space:pre-wrap;line-height:1.45"><b>onioffice</b> '+chuNd(p.nd)+'</div></div>'}
+ else{const ten=K==='Facebook'?'Oni Office':K;h='<div style="background:#fff;max-width:560px;margin:0 auto;border-radius:12px;overflow:hidden;font-family:system-ui;color:#050505"><div style="display:flex;gap:10px;align-items:center;padding:12px 14px">'+logo+'<div><b>'+Es(ten)+'</b><div style="font-size:12px;color:#65676B">'+Es(fD(p.at))+' '+Es(p.gio||'')+' · 🌎</div></div></div>'+
+  '<div style="padding:0 14px 10px;font-size:15px;white-space:pre-wrap;line-height:1.45">'+chuNd(p.nd)+'</div>'+im+
+  '<div style="display:flex;justify-content:space-around;border-top:1px solid #ddd;padding:8px;color:#65676B;font-size:14px;font-weight:600"><span>👍 Thích</span><span>💬 Bình luận</span><span>↗ Chia sẻ</span></div></div>'}
+ let o=d.getElementById('oniXem');if(!o){o=d.createElement('div');o.id='oniXem';o.style.cssText='position:fixed;inset:0;background:rgba(20,15,10,.85);z-index:100001;overflow:auto;padding:14px';d.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)o.style.display='none'})}
+ o.innerHTML='<div style="max-width:860px;margin:0 auto 10px;display:flex;justify-content:space-between;align-items:center;color:#fff;gap:8px"><b>Xem trước: bài sẽ hiện thế này trên '+Es(K)+'</b><button id="oniXemX" style="background:#E9B83A;border:0;border-radius:999px;padding:8px 14px;font-weight:700;cursor:pointer">✕ Đóng</button></div>'+h;
+ o.querySelector('#oniXemX').onclick=()=>{o.style.display='none'};o.style.display='block';o.scrollTop=0}
+window.__oniXemDang=xemDang;
+function loai(p){if(p.tt==='Đã đăng'||p.link)return '';if(p.tt==='Chờ duyệt')return 'cho';if(p.tt==='Đã duyệt'&&!p.link)return 'lich';if(p.tt==='Cần sửa')return 'sua';return ''}
 function ve(){const M=MK();const R=d.getElementById('m5Root');if(!M||!R||!R.parentNode)return;let g=R.parentNode.querySelector(':scope>.oniGal');
- const tuNay=new Date(Date.now()-86400e3*3).toISOString().slice(0,10);
- const P=(M.posts||[]).filter(p=>!p.del&&loai(p)&&(loai(p)!=='lich'||!p.at||p.at>=tuNay));const dem={cho:0,lich:0,sua:0};P.forEach(p=>dem[loai(p)]++);
+ const tuNay=new Date(Date.now()+7*3600e3).toISOString().slice(0,10);  // hôm nay giờ VN: bài ngày cũ coi như đã đăng, không hiện
+ const P=(M.posts||[]).filter(p=>!p.del&&loai(p)&&(!p.at||p.at>=tuNay));const dem={cho:0,lich:0,sua:0};P.forEach(p=>dem[loai(p)]++);
  const ds=P.filter(p=>loai(p)===loc).sort((a,b)=>((a.at||'9')+(a.gio||'')).localeCompare((b.at||'9')+(b.gio||'')));
  const tag={cho:['Chờ duyệt','cho'],lich:['Đã duyệt – chờ đăng','ok'],sua:['Cần sửa','sua']};
  const h='<h3>🖼 Xem bài trước khi đăng</h3><div class="ghi">Mỗi bài hiện hình lớn và đủ nội dung. Bấm vào hình để phóng to toàn màn hình.</div>'+
  '<div class="tab">'+[['cho','Chờ duyệt'],['lich','Đã duyệt – chờ đăng'],['sua','Cần sửa']].map(([k,t])=>'<button data-loc="'+k+'" class="'+(loc===k?'on':'')+'">'+t+' ('+dem[k]+')</button>').join('')+'</div>'+
  (ds.length?'<div class="ds">'+ds.map(p=>{const s=src(p);return '<div class="the">'+
-  (s?'<div class="hinh" data-to="'+Es(s)+'" data-t="'+Es(p.ma+' – '+(p.tieude||''))+'"><img loading="lazy" src="'+Es(s)+'" alt="'+Es(p.tieude||'')+'"><span class="kinh">🔍 Bấm để phóng to</span></div>':'<div class="hinh khong">Chưa có hình'+(p.anh?' (tệp: '+Es(String(p.anh).slice(0,60))+')':'')+'</div>')+
+  (s?'<div class="hinh" data-to="'+Es(s)+'" data-t="'+Es(p.ma+' – '+(p.tieude||''))+'"><img loading="lazy" src="'+Es(s)+'" alt="" data-goc="'+Es(String(p.anh||'').split(/[\s,]+/)[0])+'"><span class="kinh">🔍 Bấm để phóng to</span></div>':'<div class="hinh khong">Chưa có hình'+(p.anh?' (tệp: '+Es(String(p.anh).slice(0,60))+')':'')+'</div>')+
   '<div class="nd"><div><span class="nhan">'+Es(p.kenh||'')+'</span><span class="nhan">'+Es(fD(p.at))+' '+Es(p.gio||'')+'</span><span class="nhan '+tag[loai(p)][1]+'">'+tag[loai(p)][0]+'</span>'+(p.ai?'<span class="nhan">🤖 AI soạn</span>':'')+(p.coGia?'<span class="nhan sua">Có giá/ưu đãi</span>':'')+'</div>'+
   '<h4>'+Es(p.tieude||'(chưa có tiêu đề)')+'</h4><pre>'+Es(p.nd||'')+'</pre>'+
   ((p.gc||p.note)?'<div class="ghichu">Ghi chú: '+Es(String(p.gc||p.note).replace(/https?:\/\/\S+/g,'[link]').slice(0,300))+'</div>':'')+
   '<div class="ghichu">Mã '+Es(p.ma||p.id)+(p.ph?' · 👤 '+Es(p.ph):'')+'</div>'+
-  '<div class="nut">'+(p.tt==='Chờ duyệt'?'<button class="d" data-ac="duyet" data-id="'+Es(p.id)+'">✔ Duyệt</button><button class="s" data-ac="sua" data-id="'+Es(p.id)+'">✎ Cần sửa</button><button class="h" data-ac="huy" data-id="'+Es(p.id)+'">✕ Hủy</button>':
+  '<button class="xemdang" data-xem="'+Es(p.id)+'">👁 Xem như khi đăng lên '+Es(p.kenh||'')+'</button>'+'<div class="nut">'+(p.tt==='Chờ duyệt'?'<button class="d" data-ac="duyet" data-id="'+Es(p.id)+'">✔ Duyệt</button><button class="s" data-ac="sua" data-id="'+Es(p.id)+'">✎ Cần sửa</button><button class="h" data-ac="huy" data-id="'+Es(p.id)+'">✕ Hủy</button>':
    p.tt==='Đã duyệt'?'<button class="s" data-ac="sua" data-id="'+Es(p.id)+'">✎ Cần sửa</button><button class="h" data-ac="huy" data-id="'+Es(p.id)+'">✕ Hủy</button>':'<button class="h" data-ac="huy" data-id="'+Es(p.id)+'">✕ Hủy</button>')+'</div></div></div>'}).join('')+'</div>'
   :'<div class="ghi" style="padding:20px;text-align:center">Không có bài nào ở mục này.</div>');
  if(!g){g=d.createElement('div');g.className='oniGal';R.parentNode.insertBefore(g,R)}
  if(g.__h===h)return;g.__h=h;g.innerHTML=h;
  g.querySelectorAll('[data-loc]').forEach(b=>b.onclick=()=>{loc=b.dataset.loc;ve()});
  g.querySelectorAll('[data-to]').forEach(b=>b.onclick=()=>phong(b.dataset.to,b.dataset.t));
+ g.querySelectorAll('[data-xem]').forEach(b=>b.onclick=()=>xemDang((MK().posts||[]).find(x=>x.id===b.dataset.xem)));
+ g.querySelectorAll('img[data-goc]').forEach(im=>{const loi=()=>{const box=im.parentNode;if(!box)return;const u=im.dataset.goc;box.className='hinh khong';box.onclick=null;box.innerHTML='Hình chưa xem được ở đây (link Canva hoặc tệp riêng tư)'+(/^https?:/.test(u)?' – <a href="'+Es(u)+'" target="_blank">mở hình ↗</a>':'')};im.onerror=loi;if(im.complete&&im.naturalWidth===0&&im.src)loi()});
  g.querySelectorAll('[data-ac]').forEach(b=>b.onclick=()=>{const id=b.dataset.id,a=b.dataset.ac;try{if(a==='duyet')window.mkDuyet(id);else if(a==='sua')window.mkSua(id);else window.mkHuy(id)}catch(e){console.warn(e)}setTimeout(()=>{g.__h='';ve();try{const r=d.getElementById('m5Root');if(r&&window.go)go(r.dataset.p)}catch(e){}},300)})}
 setInterval(()=>{const a=d.querySelector('aside a.on');if(a&&a.dataset.p==='mkd')ve();else{const g=d.querySelector('.oniGal');if(g&&!(d.getElementById('m5Root')||{}).dataset)g.remove()}},1200);
 /* các ảnh nhỏ khác trong trang Marketing: bấm cũng phóng to */

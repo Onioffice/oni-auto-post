@@ -9,7 +9,7 @@ hubB = open(os.path.join(D, 'hub_b.css'), encoding='utf-8').read()
 # CSS lấy từ app thật (hub) để giao diện giống y: phần A đặt ngay sau CSS gốc, phần B nạp sau mã Marketing
 html = re.sub(r'<style id="hubA">[\s\S]*?</style>', '', html)
 i = html.find('</style>') + len('</style>')
-html = html[:i] + '<style id="hubA">' + hubA + '</style>' + html[i:]
+html = html[:i] + '<style id="hubA">' + hubA + '\n' + hubB + '</style>' + html[i:]
 extra = "(function(){var s=document.createElement('style');s.id='hubB';s.textContent=" + json.dumps(hubB) + ";document.head.appendChild(s)})();\n" + extra
 html = re.sub(r'(<script type="text/plain" id="extracode">)[\s\S]*?(</script>)', lambda m: m.group(1) + extra + m.group(2), html, count=1)
 bad = re.findall(r'ONI0\d\d|C[ôo]ng [Tt]y (?:TNHH|C[ổo] [Pp]hần) (?!ONI HUB|một|hai|Oni)|(?<![\d.])(?!0319364530)0\d{9}(?!\d)', html)
