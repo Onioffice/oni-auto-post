@@ -114,7 +114,7 @@ export async function igDangAnh(anhUrl, caption) {
 }
 
 // ---------- Kiểm lỗi chữ (phần máy kiểm được) ----------
-const CAM = [/tư vấn\s+(pháp lý|luật|thuế|kế toán)/i, /dịch vụ tư vấn thành lập/i, /\bsố\s*1\b/i, /100\s*%/, /đắc địa/i, /\bxịn\b/i, /rẻ nhất/i, /tốt nhất/i, /hàng đầu/i, /uy tín nhất/i, /cam kết tuyệt đối/i, /tư vấn\s+pháp luật/i, /dịch vụ pháp lý/i, /hình ảnh minh họa/i, /(?<!(ít|thống|duy|hợp|đồng|thứ|chuyên)\s)\bnhất\b(?!\s*(là|định|quán|thiết|trí))/i, /đảm bảo\s+(được\s+)?(cấp|duyệt|thành công)/i];
+const CAM = [/tư vấn\s+(pháp lý|luật|thuế|kế toán)/i, /\bsố\s*1\b/i, /100\s*%/, /đắc địa/i, /\bxịn\b/i, /rẻ nhất/i, /tốt nhất/i, /hàng đầu/i, /uy tín nhất/i, /cam kết tuyệt đối/i, /tư vấn\s+pháp luật/i, /dịch vụ pháp lý/i, /hình ảnh minh họa/i, /(?<!(ít|thống|duy|hợp|đồng|thứ|chuyên)\s)\bnhất\b(?!\s*(là|định|quán|thiết|trí))/i, /đảm bảo\s+(được\s+)?(cấp|duyệt|thành công)/i];
 const NOI_BO = [/NHÁP/, /chờ chị duyệt/i, /====/, /File nguồn/i, /\bBot\b/];
 export function kiemChu(bai) {
   const loi = [], all = [bai.tieude, bai.nd, JSON.stringify(bai.hinh || {})].join('\n');

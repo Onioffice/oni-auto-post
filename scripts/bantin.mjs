@@ -21,7 +21,7 @@ ${NGUON}
 QUY TẮC BẢN TIN (Giám đốc chốt 09/11/2026):
 - Chỉ tiếng Việt. Ký "Oni Office", không ghi tên Giám đốc.
 - Nội dung: lời chào ngắn; 1–4 bài mới trên website onioffice.vn (tiêu đề + 1–2 câu tóm tắt + link bài); MỘT ô "Nhắc lịch" gom các hạn quan trọng sắp tới của doanh nghiệp: nộp tờ khai/báo cáo thuế (GTGT, TNCN theo tháng/quý), nộp thuế, đóng BHXH, kinh phí công đoàn, lệ phí môn bài, các việc cuối năm (quyết toán, báo cáo tài chính…) – mỗi mốc ghi rõ ngày và nguồn chính thống; nếu có ưu đãi thì là một ô riêng nhưng không bịa giá/ưu đãi.
-- Viết "đồng hành, hỗ trợ thủ tục doanh nghiệp"; KHÔNG viết "tư vấn pháp lý/thuế/kế toán"; không dùng "nhất", "số 1", "100%"; không hứa kết quả thay cơ quan nhà nước; không nêu tên khách.
+- Được viết "đồng hành, hỗ trợ, tư vấn, hướng dẫn thủ tục doanh nghiệp"; KHÔNG viết "tư vấn pháp lý/thuế/kế toán"; không dùng "nhất", "số 1", "100%"; không hứa kết quả thay cơ quan nhà nước; không nêu tên khách.
 - Không tự viết tiêu đề [QC], chân thư, nút Ngừng nhận – app Bản tin email tự thêm theo Nghị định 91/2020.
 - Lời mời liên hệ: Hotline/Zalo 0932 668 642.
 Bài trong tuần:
