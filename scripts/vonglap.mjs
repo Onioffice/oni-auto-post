@@ -5,9 +5,12 @@
 // `node scripts/vonglap.mjs --kiem` chỉ đếm khung trống (không cần cài gói) để GitHub quyết định có chạy tiếp không.
 import { homNay, layMK, opMK, ghiLoi, layCaiDat, ghiNhatKy } from './lib.mjs';
 
-const MXH = [['08:00', 'Threads'], ['10:00', 'Facebook'], ['11:00', 'Threads'], ['12:00', 'LinkedIn'], ['13:00', 'Zalo'],
-  ['14:00', 'Instagram'], ['15:00', 'Facebook'], ['16:00', 'Threads'], ['17:00', 'Instagram'], ['18:00', 'Threads'], ['19:00', 'Threads'], ['09:00', 'Threads'], ['20:00', 'Facebook']];
-// Fanpage Facebook 3 bài/ngày (10:00, 15:00, 20:00), 3 chủ đề khác nhau (chị chốt 09/11/2026)
+// Mỗi kênh mạng xã hội 3 bài/ngày, 3 chủ đề khác nhau (chị chốt 09/11/2026 03:01)
+const MXH = [['08:00', 'Threads'], ['13:00', 'Threads'], ['18:00', 'Threads'],
+  ['09:00', 'LinkedIn'], ['12:00', 'LinkedIn'], ['17:00', 'LinkedIn'],
+  ['10:00', 'Facebook'], ['15:00', 'Facebook'], ['20:00', 'Facebook'],
+  ['11:00', 'Instagram'], ['14:00', 'Instagram'], ['19:00', 'Instagram'],
+  ['08:00', 'Zalo'], ['16:00', 'Zalo'], ['21:00', 'Zalo']];
 // Website: mỗi giờ 1 bài từ 07:00 đến 22:00 (16 bài/ngày) theo từ khóa khách tìm trên Google (chị chốt 09/11/2026 03:00)
 const WEB = Array.from({ length: 16 }, (_, i) => [String(7 + i).padStart(2, '0') + ':00', 'Website']);
 export const LICH = [...WEB, ...MXH].sort((x, y) => x[0].localeCompare(y[0]) || (x[1] === 'Website' ? -1 : 1));
@@ -15,7 +18,7 @@ const MOI_LAN = Number(process.env.MOI_LAN || 3);          // mỗi lần chạy
 const gioVN = () => new Date(Date.now() + 7 * 3600e3);
 
 // Zalo OA gói tiêu chuẩn giới hạn số bài/kỳ → Zalo chỉ ngày lẻ, ngày chẵn khung 13:00 là Threads
-const kenhKhung = (ngay, gio, kenh) => (kenh === 'Zalo' && Number(ngay.slice(8, 10)) % 2 === 0 ? 'Threads' : kenh);
+const kenhKhung = (ngay, gio, kenh) => kenh;
 
 export function khungTrong(posts) {
   const now = gioVN(), tu = new Date(now.getTime() + 2 * 3600e3), den = new Date(now.getTime() + 30 * 3600e3), ra = [];
