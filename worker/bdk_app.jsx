@@ -150,8 +150,32 @@ function TabBoss({S}){const {viec,giao,setToast,nap}=S;
     </The>
   </div>)}
 
+/* Làm sạch HTML bài Website trước khi hiện (bỏ script, iframe, thuộc tính on*, link javascript:) */
+function sach(h){try{const d=new DOMParser().parseFromString(String(h||''),'text/html');d.querySelectorAll('script,style,iframe,object,embed,form,link,meta').forEach(e=>e.remove());
+  d.querySelectorAll('*').forEach(e=>{[...e.attributes].forEach(a=>{if(/^on/i.test(a.name)||/^\s*javascript:/i.test(a.value))e.removeAttribute(a.name)});if(e.tagName==='A'){e.setAttribute('target','_blank');e.setAttribute('rel','noopener')}});return d.body.innerHTML}catch(e){return ''}}
+/* Khung xem đủ bài: hình, tiêu đề, toàn bộ nội dung, hashtag, ghi chú kiểm lỗi + nút Duyệt / Cần sửa */
+function XemBai({b,dong,dat}){const k=TAT_CA.find(x=>x.id===b.ch)||TAT_CA[0];const I=k.I;const laHtml=/<(p|h2|h3|ul|li|br|div)\b/i.test(b.ndGoc);
+  useEffect(()=>{const f=e=>e.key==='Escape'&&dong();addEventListener('keydown',f);document.body.style.overflow='hidden';return()=>{removeEventListener('keydown',f);document.body.style.overflow=''}},[]);
+  return (<div className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center p-2 sm:p-6 overflow-y-auto" onClick={dong}>
+    <div className="in w-full max-w-3xl rounded-2xl bg-zinc-900 border border-zinc-700 overflow-hidden my-auto" onClick={e=>e.stopPropagation()}>
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 px-4 py-3 bg-zinc-900/95 backdrop-blur border-b border-zinc-800">
+        <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded ${k.mau}`}><I className="w-3.5 h-3.5"/>{k.ten} · {b.ma} · đăng {dm(b.at)} {b.gio}</span>
+        <button onClick={dong} className="p-1.5 rounded-lg hover:bg-zinc-800" aria-label="Đóng"><X className="w-5 h-5"/></button></div>
+      {b.anh&&<img src={b.anh} className="w-full max-h-[70vh] object-contain bg-black"/>}
+      <div className="p-4 sm:p-6 space-y-4">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-white leading-snug break-words">{b.tieu}</h2>
+        {laHtml?<div className="bai text-[15px] leading-relaxed text-zinc-200 break-words" dangerouslySetInnerHTML={{__html:sach(b.ndGoc)}}></div>
+          :<div className="text-[15px] leading-relaxed text-zinc-200 whitespace-pre-line break-words">{b.ndGoc}</div>}
+        {b.tag&&<div className="text-sm text-sky-300 break-words">{b.tag}</div>}
+        {b.note&&<div className="text-xs text-zinc-400 rounded-lg bg-black/40 border border-zinc-800 p-3 break-words"><b className="text-zinc-300">Ghi chú kiểm lỗi:</b> {b.note}</div>}
+      </div>
+      {dat&&<div className="sticky bottom-0 flex gap-2 p-3 bg-zinc-900/95 backdrop-blur border-t border-zinc-800">
+        <button onClick={()=>{dat(b,'Đã duyệt');dong()}} className="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold">✓ Duyệt bài này</button>
+        <button onClick={async()=>{await dat(b,'Cần sửa');dong()}} className="flex-1 py-2.5 rounded-lg border border-zinc-600 hover:bg-zinc-800">✏️ Cần sửa</button></div>}
+    </div></div>)}
+
 /* ===== CHỜ BOSS DUYỆT ===== */
-function TabDuyet({S}){const {bai,setToast,nap}=S;const cho=bai.filter(b=>b.tt==='Chờ duyệt');const [xem,setXem]=useState(null);const [dang,setDang]=useState(false);
+function TabDuyet({S}){const {bai,setToast,nap}=S;const cho=bai.filter(b=>b.tt==='Chờ duyệt');const [xem,setXem]=useState(null);const [doc,setDoc]=useState(null);const [dang,setDang]=useState(false);
   const dat=async(b,tt)=>{let ly='';if(tt==='Cần sửa'){ly=prompt('Chị muốn sửa gì ở bài '+b.ma+'?');if(!ly)return}
     try{await op(tt==='Đã duyệt'?{op:'chiDuyet',id:b.id}:{op:'chiSua',id:b.id,ly});setToast({m:(tt==='Đã duyệt'?'Đã duyệt ':'Đã trả về sửa ')+b.ma});nap()}catch(e){setToast({loi:1,m:e.message})}};
   const het=async()=>{if(!confirm('Duyệt tất cả '+cho.length+' bài? Bài đã duyệt sẽ được đăng đúng giờ.'))return;setDang(true);
@@ -163,10 +187,11 @@ function TabDuyet({S}){const {bai,setToast,nap}=S;const cho=bai.filter(b=>b.tt==
     <div className="grid md:grid-cols-2 2xl:grid-cols-3 gap-4">{cho.map(b=>{const k=TAT_CA.find(x=>x.id===b.ch)||TAT_CA[0];const I=k.I;return (<The key={b.id} className="overflow-hidden in flex flex-col">
       {b.anh?<div className="relative bg-black"><img src={b.anh} loading="lazy" className="w-full max-h-72 object-contain cursor-zoom-in" onClick={()=>setXem(b.anh)}/><span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-black/70 ${k.mau.split(' ')[0]}`}><I className="w-3 h-3"/>{k.ten}</span></div>
        :<div className={`h-28 bg-gradient-to-br ${NEN[b.nen]} relative p-3 flex flex-col justify-end`}><span className={`absolute top-3 left-3 inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded ${k.mau}`}><I className="w-3 h-3"/>{k.ten}</span><span className="text-[11px] text-zinc-300">Bài chữ (không hình)</span></div>}
-      <div className="p-3 space-y-2 flex-1 flex flex-col"><b className="leading-snug">{b.tieu}</b><p className="text-sm text-zinc-300 line-clamp-4 whitespace-pre-line">{b.nd}</p>
+      <div className="p-3 space-y-2 flex-1 flex flex-col"><button onClick={()=>setDoc(b)} className="text-left space-y-2 group"><b className="leading-snug block group-hover:text-amber-200">{b.tieu}</b><p className="text-sm text-zinc-300 line-clamp-4 whitespace-pre-line">{b.nd}</p><span className="inline-flex items-center gap-1 text-sm font-bold text-amber-300 group-hover:underline"><Eye className="w-4 h-4"/>Xem đủ bài</span></button>
         <div className="text-xs text-zinc-500">{b.ma} · đăng {dm(b.at)} {b.gio} · {b.loai||'AI soạn'}</div>
         <div className="flex gap-2 mt-auto pt-1"><button onClick={()=>dat(b,'Đã duyệt')} className="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm">✓ Duyệt</button><button onClick={()=>dat(b,'Cần sửa')} className="flex-1 py-2 rounded-lg border border-zinc-700 hover:bg-zinc-800 text-sm">✏️ Cần sửa</button></div></div></The>)})}</div>
     {xem&&<div className="fixed inset-0 z-50 bg-black/90 grid place-items-center p-3" onClick={()=>setXem(null)}><img src={xem} className="max-w-full max-h-full"/></div>}
+    {doc&&<XemBai b={doc} dong={()=>setDoc(null)} dat={dat}/>}
   </div>)}
 
 /* ===== LỊCH ĐĂNG (mỗi ô 1 giờ) ===== */
@@ -230,7 +255,7 @@ function GbTrang({D}){const loc=((D.gsc||{}).gbp||{}).loc||[];
       <div className="flex items-center justify-between rounded-xl bg-zinc-950/60 border border-zinc-800 p-3"><div><span className="text-amber-300 text-lg">★</span> <b>{(s.star||0).toFixed(1)}</b> <span className="text-sm text-zinc-400">· {s.nrev||0} đánh giá</span></div>{s.unrep>0&&<span className="text-xs px-2 py-1 rounded-full bg-red-500/15 text-red-300 font-bold">{s.unrep} chưa trả lời</span>}</div>
       {(s.kw||[]).length>0&&<div className="text-sm text-zinc-400">Khách tìm bằng: {s.kw.join(', ')}</div>}
     </The>)})}</div></div>)}
-function TabKenh({S,id}){const {D,bai}=S;const k=TAT_CA.find(x=>x.id===id);const I=k.I;const so=soKenh(D,id);const ds=bai.filter(b=>b.ch===id).slice(0,30);
+function TabKenh({S,id}){const {D,bai}=S;const [doc,setDoc]=useState(null);const k=TAT_CA.find(x=>x.id===id);const I=k.I;const so=soKenh(D,id);const ds=bai.filter(b=>b.ch===id).slice(0,30);
   return (<div className="space-y-4 in">
     <div className="flex items-center gap-3"><span className={`w-12 h-12 rounded-2xl grid place-items-center ${k.mau}`}><I className="w-6 h-6"/></span><div><h2 className="font-bold text-xl">{k.ten}</h2><div className="text-xs text-zinc-400">{k.bot?(D.cd['bot_'+k.bot]!==false?'Bot '+k.ten+' đang làm việc':'Bot đang nghỉ'):'Chưa có bot tự động cho kênh này'}</div></div></div>
     {id==='web'&&<TrangWeb D={D}/>}
@@ -240,7 +265,8 @@ function TabKenh({S,id}){const {D,bai}=S;const k=TAT_CA.find(x=>x.id===id);const
       <div className="text-xs text-zinc-400">Bản tin có Nhắc lịch, Ưu đãi (khi có), bản tiếng Việt và tiếng Anh riêng. Tuần nào chị chưa duyệt thì không gửi.</div></The>}
     {(id==='tt'||id==='fbcn')&&<The className="p-5 text-sm text-amber-200">{id==='tt'?'TikTok: chưa có quy trình video – kênh đang chờ.':'Facebook không cho máy đăng trang cá nhân – bot soạn, chị đăng tay.'}</The>}
     {so&&<div className="grid grid-cols-3 gap-3">{so.map(([t,v],i)=>t?(<The key={t} className="p-4"><div className="text-xs text-zinc-400">{t}</div><div className="text-2xl md:text-3xl font-extrabold mt-1 text-sky-300">{v==null?'—':<DemSo v={v}/>}</div></The>):<div key={i}></div>)}</div>}
-    <The className="p-5"><h3 className="font-bold mb-3">Bài của kênh</h3>{ds.length?<ul className="space-y-2">{ds.map(b=><li key={b.id} className="flex justify-between gap-2 text-sm rounded-lg bg-zinc-950/60 px-3 py-2 min-w-0"><span className="truncate">{dm(b.at)} {b.gio} · {b.tieu}</span><span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ${b.tt==='Chờ duyệt'?'bg-amber-400/15 text-amber-300':b.tt==='Đã đăng'?'bg-zinc-700':b.tt==='Cần sửa'?'bg-red-500/15 text-red-300':'bg-emerald-500/15 text-emerald-300'}`}>{b.tt}</span></li>)}</ul>:<div className="text-sm text-zinc-500">Chưa có bài.</div>}</The>
+    <The className="p-5"><h3 className="font-bold mb-3">Bài của kênh <span className="text-xs font-normal text-zinc-500">· bấm vào bài để xem đủ</span></h3>{ds.length?<ul className="space-y-2">{ds.map(b=><li key={b.id} onClick={()=>setDoc(b)} className="cursor-pointer hover:bg-zinc-800 flex justify-between gap-2 text-sm rounded-lg bg-zinc-950/60 px-3 py-2 min-w-0"><span className="truncate">{dm(b.at)} {b.gio} · {b.tieu}</span><span className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ${b.tt==='Chờ duyệt'?'bg-amber-400/15 text-amber-300':b.tt==='Đã đăng'?'bg-zinc-700':b.tt==='Cần sửa'?'bg-red-500/15 text-red-300':'bg-emerald-500/15 text-emerald-300'}`}>{b.tt}</span></li>)}</ul>:<div className="text-sm text-zinc-500">Chưa có bài.</div>}</The>
+    {doc&&<XemBai b={doc} dong={()=>setDoc(null)}/>}
   </div>)}
 
 /* ===== QUẢNG CÁO (yêu cầu chị duyệt ngân sách – /api/qc) ===== */
@@ -308,7 +334,7 @@ function App(){
   if(!D)return (<div className="min-h-screen grid place-items-center text-zinc-400 bg-[#070D18]"><div className="flex items-center gap-3">{loiNap?<span className="text-red-300">Không tải được số liệu: {loiNap}</span>:<><Loader className="w-5 h-5 animate-spin"/>Đang tải số liệu thật…</>}</div></div>);
 
   const posts=(D.M.posts||[]).filter(p=>!p.del&&p.tt!=='Hủy'&&p.tt!=='Nháp');
-  const bai=posts.map((p,i)=>({id:p.id,ma:p.ma,tt:p.tt,ch:K2ID[p.kenh]||'web',kenh:p.kenh,tieu:p.tieude||'(chưa có tiêu đề)',nd:txt(p.nd).slice(0,600),anh:p.anh||'',at:p.at||'',gio:p.gio||'',loai:p.loai||'',link:p.link||'',dang:p.dang||'',nen:i%NEN.length})).sort((a,b)=>(b.at+b.gio).localeCompare(a.at+a.gio));
+  const bai=posts.map((p,i)=>({id:p.id,ma:p.ma,tt:p.tt,ch:K2ID[p.kenh]||'web',kenh:p.kenh,tieu:p.tieude||'(chưa có tiêu đề)',nd:txt(p.nd).slice(0,600),ndGoc:p.nd||'',tag:p.tag||'',note:p.note||'',anh:p.anh||'',at:p.at||'',gio:p.gio||'',loai:p.loai||'',link:p.link||'',dang:p.dang||'',nen:i%NEN.length})).sort((a,b)=>(b.at+b.gio).localeCompare(a.at+a.gio));
   const viec=((D.M.ai||{}).lenh||[]).map(l=>({id:l.id,nd:l.nd,kenh:l.kenh||'Mọi kênh',tt:TT_VIEC[l.tt]||l.tt,luc:l.at||'',kq:l.kq||''}));
   const log=[...(D.nk||[]).map(x=>({luc:x.luc,m:(x.viec?x.viec+': ':'')+(x.kq||''),c:/^Lỗi|lỗi:/i.test(x.kq||'')?'text-red-300':/Grok/.test(x.viec||'')?'text-emerald-300':/Vòng lặp|Kiểm bài/.test(x.viec||'')?'text-cyan-200':'text-zinc-200'})),
     ...(((D.M.ai||{}).log)||[]).map(x=>({luc:x.botAt||String(x.at||'').replace(' ','T')+':00+07:00',m:(x.viec||'')+(x.ct?': '+x.ct:''),c:/^Chị|Boss/.test(x.viec||'')?'text-amber-300':'text-zinc-300'}))]
