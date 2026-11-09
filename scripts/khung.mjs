@@ -187,17 +187,17 @@ export async function khungLI(o, photoBuf) {
   const img = photoBuf ? await loadImage(photoBuf) : null;
   // nền: ảnh mờ (thu nhỏ rồi phóng to) + phủ nâu ấm
   x.fillStyle = '#8C6A48'; x.fillRect(0, 0, W, H);
-  if (img) { const t = createCanvas(54, 68), tx = t.getContext('2d'); const sc = Math.max(54 / img.width, 68 / img.height);
-    tx.drawImage(img, (54 - img.width * sc) / 2, (68 - img.height * sc) / 2, img.width * sc, img.height * sc);
-    x.imageSmoothingQuality = 'high'; x.drawImage(t, 0, 0, W, H); }
+  if (img) { const sc = Math.max(W / img.width, H / img.height) * 1.12, iw = img.width * sc, ih = img.height * sc;
+    x.save(); x.filter = 'blur(38px)'; x.drawImage(img, (W - iw) / 2, (H - ih) / 2, iw, ih); x.restore(); }
   x.fillStyle = 'rgba(150,112,74,0.55)'; x.fillRect(0, 0, W, H);
   x.strokeStyle = 'rgba(255,240,220,0.22)'; x.lineWidth = 2; x.strokeRect(26, 26, W - 52, H - 52);
   // ảnh thật sắc nét
-  const PX = 78, PY = 78, PW = W - 156, PH = 560;
+  let s = 50; x.font = F(800, s); while (Math.max(x.measureText(o.t1 || '').width, x.measureText(o.t2 || '').width) > W - 156 - 90 && s > 34) { s -= 2; x.font = F(800, s); }
+  const CHc = Math.round(312 + 2.75 * s - (o.tag ? 0 : 36) - (o.sub ? 0 : 38)), PH = 620, PW = W - 156, PX = 78, PY = Math.round((H - (PH + 30 + CHc)) / 2);
   x.save(); x.shadowColor = 'rgba(40,25,10,0.35)'; x.shadowBlur = 30; x.shadowOffsetY = 10; rr(PX, PY, PW, PH, 8); x.fillStyle = '#ddd'; x.fill(); x.restore();
   if (img) { x.save(); rr(PX, PY, PW, PH, 8); x.clip(); const sc = Math.max(PW / img.width, PH / img.height), iw = img.width * sc, ih = img.height * sc; x.drawImage(img, PX + (PW - iw) / 2, PY + (PH - ih) / 2, iw, ih); x.restore(); }
   // thẻ nâu
-  const CX = PX, CY = PY + PH + 34, CW = PW, CH = H - 78 - CY;
+  const CX = PX, CY = PY + PH + 30, CW = PW, CH = CHc;
   x.save(); x.shadowColor = 'rgba(40,25,10,0.35)'; x.shadowBlur = 30; x.shadowOffsetY = 10; rr(CX, CY, CW, CH, 18); x.fillStyle = 'rgba(118,88,58,0.94)'; x.fill(); x.restore();
   x.textAlign = 'center'; x.textBaseline = 'middle'; const mx = W / 2; let y = CY + 62;
   // logo + chữ ONI OFFICE
@@ -207,7 +207,7 @@ export async function khungLI(o, photoBuf) {
   y += 38; x.fillStyle = VANG; x.fillRect(mx - 36, y, 72, 2);
   if (o.tag) { y += 36; x.font = F(600, 18); x.letterSpacing = '4px'; x.fillStyle = 'rgba(243,233,218,0.85)'; x.fillText(String(o.tag).toUpperCase(), mx, y); x.letterSpacing = '0px'; }
   // tiêu đề 2 dòng
-  let s = 50; x.font = F(800, s); while (Math.max(x.measureText(o.t1 || '').width, x.measureText(o.t2 || '').width) > CW - 90 && s > 34) { s -= 2; x.font = F(800, s); }
+  x.font = F(800, s);
   y += 30 + s * 0.7; x.fillStyle = '#FFFFFF'; x.fillText(o.t1 || '', mx, y);
   y += Math.round(s * 1.3); x.fillStyle = VANG; x.fillText(o.t2 || '', mx, y);
   y += Math.round(s * 0.75) + 6; x.fillStyle = 'rgba(240,198,110,0.7)'; x.fillRect(mx - 36, y, 72, 2);
