@@ -100,6 +100,8 @@ const LICH_G = [...Array.from({ length: 16 }, (_, i) => [String(7 + i).padStart(
 const KENH_G = ['Website', 'Facebook', 'Instagram', 'LinkedIn', 'Threads', 'Zalo'];
 const ngayVN = (d = 0) => new Date(Date.now() + 7 * 3600e3 + d * 864e5).toISOString().slice(0, 10);
 const CAM_G = /tư vấn (pháp lý|luật|pháp luật|thuế|kế toán)|dịch vụ pháp lý|\b(số 1|số một|hàng đầu|tốt nhất|rẻ nhất|100%)/i;
+const DV_G = /văn phòng|trụ sở|địa chỉ (đăng ký|kinh doanh|công ty)|phòng họp|chỗ ngồi|coworking|thành lập (công ty|doanh nghiệp)|doanh nghiệp FDI|vốn nước ngoài|nhà đầu tư nước ngoài|đăng ký (kinh doanh|đầu tư|doanh nghiệp)|giấy chứng nhận đăng ký|giấy phép kinh doanh|thủ tục (doanh nghiệp|thành lập|đổi địa chỉ)|Tân Định|Gò Vấp|CityLand|office space|serviced office|virtual office|registered address|meeting room|coworking|company (setup|formation|registration)|foreign (investor|investment)|business registration|IRC|ERC/i;
+const LAC_G = /\bmacro\b|phishing|mật khẩu|tài khoản thanh toán|bảo mật (máy|email|thông tin)|công cụ AI|dùng AI|ChatGPT|Excel|biên bản họp|chữ ký email/i;
 const ID_G = { Website: 'web', Facebook: 'fb', Instagram: 'ig', LinkedIn: 'li', Threads: 'th', Zalo: 'zl' };
 function gioTrongG(posts, hang, cd) {
   const song = (posts || []).filter(p => !p.del && p.tt !== 'Hủy'), now = new Date(Date.now() + 7 * 3600e3 + 3 * 3600e3), ra = [];
@@ -126,7 +128,14 @@ function kiemNopG(b, kho) {
   if (b.kenh !== 'Website' && /\d[\d.,]*\s*(đồng|vnđ|vnd|đ)(?!\p{L})|\d[\d.,]*\s*(triệu|tr|k)\s*\/\s*(tháng|giờ|ngày|năm)/iu.test(nd)) ly.push('bài mạng xã hội không được ghi giá');
   if (['Facebook', 'Instagram', 'Zalo'].includes(b.kenh)) { const h = b.hinh || {}; if (!h.t1 || !Array.isArray(h.cards) || h.cards.length < 3) ly.push('thiếu "hinh" (cần t1, t2, pill, eyebrow, boxTop, boxTitle, cards 4 thẻ, loc, cta)'); }
   if (b.kenh === 'Website') { if (!/<h2/i.test(nd)) ly.push('bài Website phải là HTML có các mục <h2>'); if (!b.hinhWeb || !Array.isArray(b.hinhWeb.lines)) ly.push('thiếu "hinhWeb" (tag, lines 3 dòng, sub 2 dòng, anhThat)'); }
-  if (b.kenh === 'LinkedIn' && b.anhThat && !kho.includes(b.anhThat)) ly.push('anhThat phải là mã trong khoAnh');
+  // 09/11 (chị bắt lỗi bài lạc đề: macro, email thanh toán, AI…): bài PHẢI bám dịch vụ Oni
+  const toan = td + ' ' + nd;
+  if (!DV_G.test(toan)) ly.push('lạc đề: bài phải nói về dịch vụ Oni (văn phòng chia sẻ/riêng, địa chỉ trụ sở, phòng họp, thủ tục thành lập doanh nghiệp Việt/FDI, Tân Định/Gò Vấp)');
+  if (LAC_G.test(toan)) ly.push('chủ đề ngoài lề Oni (IT, AI, macro, email, bảo mật máy tính, thanh toán…) – không viết');
+  if (b.kenh === 'LinkedIn') { const h = b.hinhLI || {}; if (!h.t1 || !h.t2) ly.push('LinkedIn thiếu "hinhLI" (tag, t1, t2, sub, anhThat) – LinkedIn có khung nâu–kem–chữ vàng'); if (h.anhThat && !kho.includes(h.anhThat)) ly.push('hinhLI.anhThat phải là mã trong khoAnh'); }
+  const it2 = (a, ten) => (a || []).forEach(t => { if (String(t || '').trim().split(/\s+/).length < 2) ly.push(ten + ' có dòng chỉ 1 chữ: "' + t + '" – mỗi dòng ít nhất 2 chữ'); });
+  if (b.kenh === 'Website' && b.hinhWeb) it2(b.hinhWeb.lines, 'hinhWeb.lines');
+  if (b.hinh) { it2([b.hinh.t1, b.hinh.t2], 'hinh.t1/t2'); const tt = [b.hinh.t1, b.hinh.t2, b.hinh.boxTitle].map(x => String(x || '').toLowerCase().trim()); if (tt[2] && (tt[2] === tt[0] || tt[2] === tt[1])) ly.push('hinh.boxTitle lặp lại tiêu đề – phải là câu khác'); if (b.hinh.loc || b.hinh.cta) ly.push('không tự đặt "loc"/"cta" – để trống cho máy dùng câu chuẩn'); }
   return ly;
 }
 async function congGrok(req, env, p) {

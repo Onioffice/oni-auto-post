@@ -55,8 +55,8 @@ export async function khungFB(o) {
   rr(W - L - pw, 76, pw, 44, 22); x.fillStyle = kem ? '#FFFFFF' : 'rgb(12,24,52)'; x.fill(); x.strokeStyle = GOLD; x.lineWidth = 2; x.stroke();
   x.fillStyle = GOLD_L; x.fillText(o.pill, W - L - pw + 22, 86);
   x.font = 'italic ' + F(500, 31); x.fillStyle = GOLD_T; x.fillText(o.eyebrow || '', L, 206);
-  let ts = 78; x.font = F(800, ts); while (Math.max(x.measureText(o.t1).width, x.measureText(o.t2).width) > W - 2 * L && ts > 52) { ts -= 2; x.font = F(800, ts); }
-  x.fillStyle = TXT; x.fillText(o.t1, L, 250); x.fillStyle = kem ? 'rgb(137,100,65)' : GOLD; x.fillText(o.t2, L, 250 + ts * 1.23);
+  let ts = 72; x.font = F(800, ts); while (Math.max(x.measureText(o.t1).width, x.measureText(o.t2).width) > W - 2 * L && ts > 50) { ts -= 2; x.font = F(800, ts); }
+  x.fillStyle = TXT; x.fillText(o.t1, L, 266); x.fillStyle = kem ? 'rgb(137,100,65)' : GOLD; x.fillText(o.t2, L, 266 + Math.round(ts * 1.42));   // giãn dòng 1,42: dấu chữ in hoa (Ể, Ọ…) không sát dòng trên – chị bắt lỗi 09/11
   const by = 475; rr(L, by, W - 2 * L, 150, 22); x.fillStyle = kem ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.055)'; x.fill(); x.strokeStyle = GOLD; x.lineWidth = 2; x.stroke();
   x.textAlign = 'center'; x.font = F(600, 23); x.letterSpacing = '2px'; x.fillStyle = GOLD_T; x.fillText(o.boxTop, W / 2, by + 26); x.letterSpacing = '0px';
   let bs = 48; x.font = F(800, bs); while (x.measureText(o.boxTitle).width > W - 2 * L - 40 && bs > 34) { bs -= 2; x.font = F(800, bs); } x.fillStyle = TXT; x.fillText(o.boxTitle, W / 2, by + 66 + (48 - bs) / 2); x.textAlign = 'left';
@@ -114,7 +114,7 @@ export async function mauA(o, photoBuf) {
   x.fillStyle = GOLD; x.textBaseline = 'middle'; x.fillText(tag, L + 15, 71); x.letterSpacing = '0px';
   const lines = o.lines.map(s => s.toUpperCase()); let size = 48; x.font = F(800, size);
   while (lines.some(s => x.measureText(s).width > 560) && size > 34) { size -= 2; x.font = F(800, size); }
-  const lh = Math.round(size * 1.4); let y = 128;   // giãn dòng đủ cho dấu tiếng Việt chữ in hoa (Ể, Ầ, Ế…)
+  const lh = Math.round(size * 1.55); let y = 146;   // 09/11: tăng từ 1,4 → 1,55 vì chị thấy dấu chữ in hoa sát dòng trên   // giãn dòng đủ cho dấu tiếng Việt chữ in hoa (Ể, Ầ, Ế…)
   lines.forEach((s, i) => { x.fillStyle = i === lines.length - 1 ? GOLD : '#FFFFFF'; x.fillText(s, L, y); y += lh; });
   y += 10; x.font = F(500, 22); x.fillStyle = '#FFFFFF'; (o.sub || []).forEach(s => { x.fillText(s, L, y); y += 33; });
   const PX = 742, PY = 64, PW = 400, PH = 400;
@@ -127,7 +127,7 @@ export async function mauA(o, photoBuf) {
   rr(PX, PY, PW, PH, 14); x.strokeStyle = '#C5AD72'; x.lineWidth = 2; x.stroke();
   x.strokeStyle = '#555955'; x.lineWidth = 1; x.beginPath(); x.moveTo(L, 526.5); x.lineTo(W - L, 526.5); x.stroke();
   x.textBaseline = 'alphabetic'; x.font = F(800, 22); x.letterSpacing = '5px'; x.fillStyle = GOLD; x.fillText('ONI OFFICE', L, 565);
-  x.letterSpacing = '0px'; x.font = F(400, 16); x.fillStyle = 'rgba(255,255,255,0.78)'; x.fillText('Văn phòng ảo • Văn phòng riêng • Phòng họp', L, 590);
+  x.letterSpacing = '0px'; x.font = F(400, 16); x.fillStyle = 'rgba(255,255,255,0.78)'; x.fillText('Văn phòng chia sẻ • Văn phòng riêng • Phòng họp', L, 590);
   x.textAlign = 'right'; x.font = F(700, 20); x.fillStyle = GOLD; const num = '0932 668 642'; x.fillText(num, W - L, 560);
   const nw = x.measureText(num).width; x.font = F(500, 20); x.fillStyle = '#FFFFFF'; x.fillText('Hotline/Zalo ', W - L - nw, 560);
   x.font = F(500, 18); x.fillStyle = '#FFFFFF'; x.fillText('www.onioffice.vn · sales@onioffice.vn', W - L, 589); x.textAlign = 'left';
@@ -172,4 +172,40 @@ export async function infoWeb(o) {
   x.textAlign = 'right'; x.font = F(700, 18); x.fillStyle = GOLD; const num = '0932 668 642'; x.fillText(num, W - L, H - 34);
   const nw = x.measureText(num).width; x.font = F(500, 18); x.fillStyle = '#FFFFFF'; x.fillText('Hotline/Zalo ', W - L - nw, H - 34); x.textAlign = 'left';
   return c.toBuffer('image/jpeg', 90);
+}
+
+
+// Khung LinkedIn (chị chốt: nâu + kem + chữ vàng, ảnh thật trong khung nâu) – 1200×1500 (4:5)
+// o = { tag, t1, t2, sub }  · photoBuf = Buffer ảnh thật cơ sở Oni
+export async function khungLI(o, photoBuf) {
+  await chuanBi();
+  const W = 1200, H = 1500, c = createCanvas(W, H), x = c.getContext('2d'), rr = (...a) => rrect(x, ...a);
+  const F = (w, s) => `${w} ${s}px "Be Vietnam Pro"`;
+  const NAU = '#6F4F31', NAU2 = '#896441', KEM = '#F7F3EC', VANG = '#FFE38A', VANG2 = '#E9B83A';
+  x.fillStyle = NAU; x.fillRect(0, 0, W, H);                       // viền nâu ngoài
+  const M = 36; rr(M, M, W - 2 * M, H - 2 * M, 28); x.fillStyle = KEM; x.fill();
+  // đầu: logo + ONI OFFICE nâu
+  let lx = 92;
+  if (logoImg) { const k = logoImg.width / 426, sw = 109 * k, sh = 132 * k, lh = 62, lw = sw * lh / sh; x.drawImage(logoImg, 10 * k, 8 * k, sw, sh, 92, 82, lw, lh); lx = 92 + lw + 14; }
+  x.textBaseline = 'middle'; x.font = F(800, 34); x.letterSpacing = '4px'; x.fillStyle = NAU; x.fillText('ONI OFFICE', lx, 114); x.letterSpacing = '0px';
+  if (o.tag) { x.font = F(700, 20); x.letterSpacing = '2px'; const t = String(o.tag).toUpperCase(), tw = x.measureText(t).width + 36;
+    rr(W - 92 - tw, 92, tw, 44, 22); x.strokeStyle = NAU2; x.lineWidth = 2; x.stroke(); x.fillStyle = NAU2; x.fillText(t, W - 92 - tw + 18, 115); x.letterSpacing = '0px'; }
+  // ảnh thật trong khung nâu, phủ nâu nhẹ, vạch vàng
+  const PX = 92, PY = 176, PW = W - 184, PH = 700;
+  rr(PX - 12, PY - 12, PW + 24, PH + 24, 22); x.fillStyle = NAU; x.fill();
+  x.save(); rr(PX, PY, PW, PH, 14); x.clip();
+  if (photoBuf) { const img = await loadImage(photoBuf); const sc = Math.max(PW / img.width, PH / img.height), iw = img.width * sc, ih = img.height * sc; x.drawImage(img, PX + (PW - iw) / 2, PY + (PH - ih) / 2, iw, ih); }
+  x.fillStyle = 'rgba(111,79,49,0.16)'; x.fillRect(PX, PY, PW, PH); x.restore();
+  x.fillStyle = VANG2; x.fillRect(PX + 40, PY + PH + 12, 160, 8);
+  // khối nâu chữ vàng
+  const BY = PY + PH + 52, BH = H - M - 120 - BY; rr(PX - 12, BY, PW + 24, BH, 22); x.fillStyle = NAU; x.fill();
+  x.textBaseline = 'top'; let s = 60; x.font = F(800, s);
+  while (Math.max(x.measureText(o.t1 || '').width, x.measureText(o.t2 || '').width) > PW - 80 && s > 40) { s -= 2; x.font = F(800, s); }
+  x.fillStyle = '#FFFFFF'; x.fillText(o.t1 || '', PX + 30, BY + 40);
+  x.fillStyle = VANG; x.fillText(o.t2 || '', PX + 30, BY + 40 + Math.round(s * 1.45));
+  if (o.sub) { let ss = 28; x.font = F(500, ss); while (x.measureText(o.sub).width > PW - 80 && ss > 20) { ss--; x.font = F(500, ss); } x.fillStyle = 'rgba(247,243,236,0.9)'; x.fillText(o.sub, PX + 30, BY + 40 + Math.round(s * 1.45) * 2 + 8); }
+  // chân: liên hệ chữ nâu trên nền kem
+  x.textBaseline = 'middle'; x.textAlign = 'center'; x.font = F(600, 26); x.fillStyle = NAU;
+  x.fillText('0932 668 642  ·  www.onioffice.vn  ·  sales@onioffice.vn', W / 2, H - M - 60); x.textAlign = 'left';
+  return c.toBuffer('image/png');
 }

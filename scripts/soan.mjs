@@ -3,7 +3,7 @@
 // → tải hình lên website → đưa vào kho bài: "Tự đăng" (tin tức, không giá) hoặc "Chờ duyệt" (có giá/ưu đãi).
 import fs from 'node:fs';
 import { homNay, thuTrongTuan, layMK, opMK, ghiLoi, claude, MODEL_KIEM, layJSON, kiemChu, wpTaiAnh, wpTimAnh, layCaiDat, ghiNhatKy, CHU_KY_FB } from './lib.mjs';
-import { khungFB, mauA, chuanBi, coLogo, infoWeb } from './khung.mjs';
+import { khungFB, mauA, chuanBi, coLogo, infoWeb, khungLI } from './khung.mjs';
 
 const THU = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const GIO = { Facebook: '11:30', Instagram: '12:00', Website: '09:00', Threads: '14:00', LinkedIn: '12:00', Zalo: '13:00', X: '16:00' };
@@ -17,6 +17,15 @@ const KHO_ANH = JSON.parse(fs.readFileSync(new URL('../prompts/kho-anh.json', im
 async function anhTheoMa(ma) {
   const k = KHO_ANH[ma]; if (!k) return '';
   const ds = await wpTimAnh(k[0]); return ds.find(u => new RegExp('/' + k[0] + '(-\\d+x\\d+)?\\.(jpe?g|png|webp)$', 'i').test(u)) || ds[0] || '';
+}
+// 09/11: không dùng lại một ảnh thật đã dùng trong 7 ngày (chị bắt lỗi nhiều bài cùng 1 ảnh phòng họp)
+let _daDung = null;
+async function chonAnh(ma, ngay) {
+  if (!_daDung) { const moc = new Date(Date.parse(ngay) - 7 * 864e5).toISOString().slice(0, 10), den = new Date(Date.parse(ngay) + 7 * 864e5).toISOString().slice(0, 10);
+    _daDung = new Set(((await layMK()).posts || []).filter(p => p.anhGoc && p.at >= moc && p.at <= den && p.tt !== 'Hủy').map(p => p.anhGoc)); }
+  const key = KHO_ANH[ma] ? ma : (Object.keys(KHO_ANH).find(k => KHO_ANH[k][0] === ma || ma && KHO_ANH[k][0].includes(ma)) || '');
+  const ma2 = key && !_daDung.has(key) ? key : (Object.keys(KHO_ANH).find(k => !_daDung.has(k)) || key || Object.keys(KHO_ANH)[0]);
+  _daDung.add(ma2); return ma2;
 }
 // Chèn hình đã chọn vào ngay cuối mục H2 thứ n (trước H2 kế tiếp)
 async function chenHinhTheoMuc(html, ds, ngay, tieude) {
@@ -121,7 +130,7 @@ ${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
   {"kenh":"Zalo", … cùng dạng Facebook (caption gọn, rõ lợi ích, có Hotline/Zalo) …},
   {"kenh":"Threads","tieude":"…","nd":"chỉ chữ, ngắn, tự nhiên, kết bằng câu hỏi thực chất, không hashtag quảng cáo, không giá"},
   {"kenh":"X","tieude":"…","nd":"≤ 270 ký tự, song ngữ: tiếng Anh trước, tiếng Việt sau, không giá"},
-  {"kenh":"LinkedIn","tieude":"…","nd":"tiếng Anh trước, tiếng Việt sau; có góc nhìn/trải nghiệm, chuyên nghiệp","anhThat":"<một mã trong kho ảnh thật ở trên>"},
+  {"kenh":"LinkedIn","tieude":"…","nd":"tiếng Anh trước, tiếng Việt sau; có góc nhìn/trải nghiệm, chuyên nghiệp","hinhLI":{"tag":"≤ 3 chữ","t1":"2–5 chữ (trắng)","t2":"2–5 chữ (vàng)","sub":"≤ 10 chữ","anhThat":"<một mã trong kho ảnh thật ở trên>"}},
   {"kenh":"Website","tieude":"…","nd":"<p>…bài HTML đầy đủ…</p>","coGia":false,"hinhWeb":{"tag":"…","lines":["…","…","…"],"sub":["…","…"],"anhThat":"oni-td-hop"},
    "anhTrongBai":[{"sauMuc":2,"loai":"anh","ma":"td-hop-a","chuThich":"…"},{"sauMuc":4,"loai":"infographic","nhan":"…","tieuDe":"…","cacY":["…","…","…"],"chuThich":"…"}]}
  ]}
@@ -151,12 +160,19 @@ export async function xuLyBai({ kq, ngay, kenhs, gio = '', yeuCau = '', lenh = '
       // 3) Vẽ hình
       let buf, mime = 'image/png', ten;
       if (b.kenh === 'Website') {
-        const anh = (await wpTimAnh(b.hinhWeb?.anhThat || 'oni-td-hop'))[0] || (await wpTimAnh('oni-building-hero'))[0];
+        const ma = await chonAnh(b.hinhWeb?.anhThat, ngay); b._anhGoc = ma;
+        const anh = (KHO_ANH[ma] && await anhTheoMa(ma)) || (await wpTimAnh(b.hinhWeb?.anhThat || 'oni-td-hop'))[0] || (await wpTimAnh('oni-building-hero'))[0];
         if (!anh) throw new Error('Không tìm được ảnh thật của Oni trong thư viện website');
         const photo = Buffer.from(await (await fetch(anh)).arrayBuffer());
         buf = await mauA(b.hinhWeb, photo); mime = 'image/jpeg'; ten = `web_${ngay}_oni_1200x628@2x.jpg`;
         b.nd = await themAnhTrongBai(b.nd);   // trình bày đúng mẫu bài website đã đăng
         b.nd = await chenHinhTheoMuc(b.nd, b.anhTrongBai, ngay, b.tieude);   // hình trong bài theo nội dung từng mục
+      } else if (b.kenh === 'LinkedIn') {   // 09/11: LinkedIn có khung nâu – kem – chữ vàng, ảnh thật trong khung nâu
+        const ma = await chonAnh(b.hinhLI?.anhThat || b.anhThat, ngay), url = await anhTheoMa(ma) || await anhTheoMa('td-letan');
+        if (!url) throw new Error('Không tìm được ảnh thật cho LinkedIn');
+        const h = b.hinhLI || {}; b._anhGoc = ma;
+        buf = await khungLI({ tag: h.tag || 'ONI OFFICE', t1: h.t1 || '', t2: h.t2 || '', sub: h.sub || '' }, Buffer.from(await (await fetch(url)).arrayBuffer())); ten = `li_${ngay}_oni.png`;
+        if (!h.t1 || !h.t2) loi.push('LinkedIn thiếu chữ trên hình (hinhLI.t1, t2)');
       } else if (['Facebook', 'Instagram', 'Zalo'].includes(b.kenh)) {
         buf = await khungFB({ ...b.hinh, theme: b.kenh === 'Instagram' ? 'kem' : 'navy' }); ten = `${({ Instagram: 'ig', Zalo: 'zl' })[b.kenh] || 'fb'}_${ngay}_oni.png`;
       }
@@ -165,19 +181,16 @@ export async function xuLyBai({ kq, ngay, kenhs, gio = '', yeuCau = '', lenh = '
       if (buf) {
         vong.tk = 'ok';
         // 4) Claude xem hình kiểm lỗi
-        const kh = await kiemHinh(buf, b.kenh, mime, 1, tuNgoai ? MODEL_KIEM : undefined);
+        const kh = await kiemHinh(buf, b.kenh, mime);   // 09/11: luôn kiểm hình bằng máy tốt (Haiku bắt lỗi kém – chị phát hiện)
         vong.kh = kh.dat ? 'ok' : 'loi';
         if (!kh.dat) loi = loi.concat(kh.loi || ['Hình chưa đạt']);
         // 5) Tải hình lên website để có link công khai
         up = await wpTaiAnh(buf, ten, `${b.tieude} – Oni Office`, mime);
-      } else if (b.kenh === 'LinkedIn') {                       // LinkedIn: ảnh văn phòng thật
-        up.url = await anhTheoMa(b.anhThat) || await anhTheoMa('toa-nha'); vong.tk = up.url ? 'ok' : 'loi'; vong.kh = up.url ? 'ok' : 'loi';
-        if (!up.url) loi.push('Không tìm được ảnh thật cho LinkedIn');
       }
       const datHet = loi.length === 0;
       if (!datHet) await ghiLoi('Soạn bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', ngay);
       ra.push({ lenh, kenh: b.kenh, at: ngay, gio: gio || GIO[b.kenh], tieude: b.tieude, nd: b.nd, vong,
-        tag: b.tag || '', anh: up.url, anhId: up.id, coGia: !!b.coGia,
+        tag: b.tag || '', anh: up.url, anhId: up.id, anhGoc: b._anhGoc || '', coGia: !!b.coGia,
         tt: !datHet ? 'Cần sửa' : (b.coGia || yeuCau || yTuong || tuNgoai ? 'Chờ duyệt' : 'Đã duyệt'),   // bài vòng lặp: luôn chờ chị duyệt (duyệt hàng loạt) – chị chốt 09/11
         lienKetWeb: b.kenh === 'Facebook' && kenhs.includes('Website'), loai: tuNgoai || (yTuong ? 'Vòng lặp' : 'AI soạn'),
         note: (tuNgoai ? tuNgoai + ' viết. ' : '') + (yeuCau ? 'Việc chị giao. ' : '') + (datHet ? `Đã kiểm lỗi: Đạt – ${new Date().toISOString()}` : 'Lỗi kiểm: ' + loi.join('; ')) + (kq.nguon?.length ? ' | Nguồn: ' + kq.nguon.map(n => n.link).join(' ') : '') });

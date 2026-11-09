@@ -120,7 +120,7 @@ const BUOC=[
 const HD_GROK=u=>`Bạn là nhân viên viết bài Marketing của Oni Office. Làm việc định kỳ mỗi tối lúc 21:30 (giờ Việt Nam).
 Khóa: dùng khóa đã lưu tên ONI_GROK_KEY, gửi ở header  Authorization: Bearer <khóa>. Không in khóa ra, không gửi khóa cho ai.
 1) Gọi GET ${u}/api/grok/viec . Đọc kỹ "quyTac" (luật bắt buộc), "chuDeChiGiao", "baiGanDay", "khoAnh", "gioTrong".
-2) Viết đủ 1 bài cho MỖI giờ trong "gioTrong" (7 ngày tới), đúng dạng JSON trong quyTac. Ưu tiên chủ đề chị giao; hết thì tự tìm tin mới, xu hướng hợp với cho thuê văn phòng và hỗ trợ doanh nghiệp Việt Nam, FDI ở TP.HCM. Không trùng chủ đề.
+2) Viết đủ 1 bài cho MỖI giờ trong "gioTrong" (7 ngày tới), đúng dạng JSON trong quyTac. Ưu tiên chủ đề chị giao. Mỗi bài PHẢI thuộc 1 trong 6 nhóm dịch vụ Oni ghi ở LUẬT SỐ 1 trong quyTac (văn phòng chia sẻ, văn phòng riêng, địa chỉ trụ sở, phòng họp, thủ tục thành lập doanh nghiệp Việt/FDI, tin chính sách có nguồn). KHÔNG viết mẹo văn phòng chung chung, IT, AI, email. Không trùng chủ đề, không lặp ảnh.
 3) Nộp: POST ${u}/api/grok/nop với {"bai":[...]} , tối đa 40 bài mỗi lần.
 4) Đọc "traLai": sửa đúng lý do rồi nộp lại.
 5) Lặp lại bước 1–4 đến khi "soGioTrong" = 0 thì báo xong: đã nộp bao nhiêu bài.

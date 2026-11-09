@@ -1,0 +1,17 @@
+name: Vẽ hình mẫu
+on: workflow_dispatch
+permissions: { contents: write }
+jobs:
+  ve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/cache@v4
+        with: { path: fonts, key: fonts-bevietnampro-v1 }
+      - run: npm ci
+      - run: node scripts/mauhinh.mjs
+      - run: |
+          git config user.name "oni-bot"; git config user.email "bot@onioffice.vn"
+          git add demo/mau && git commit -m "Hình mẫu khung mới" && git push || echo "không đổi"

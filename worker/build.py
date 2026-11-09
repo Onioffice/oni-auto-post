@@ -1,4 +1,5 @@
 # Ghép trang Marketing (app.html + web_extra.js) vào Worker → dist.js để dán lên Cloudflare.
+import subprocess, sys as _s; subprocess.run([_s.executable, __import__("os").path.join(__import__("os").path.dirname(__import__("os").path.abspath(__file__)), "build_bdk.py")], check=True)
 # app.html dựng từ mã Marketing của app Oni Hub (KHÔNG có dữ liệu khách). Kiểm bảo mật trước khi ghép.
 import json, re, os, sys
 D = os.path.dirname(os.path.abspath(__file__))
