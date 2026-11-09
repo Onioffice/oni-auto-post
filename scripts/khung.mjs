@@ -175,37 +175,44 @@ export async function infoWeb(o) {
 }
 
 
-// Khung LinkedIn (chị chốt: nâu + kem + chữ vàng, ảnh thật trong khung nâu) – 1200×1500 (4:5)
-// o = { tag, t1, t2, sub }  · photoBuf = Buffer ảnh thật cơ sở Oni
+// Khung LinkedIn – dựng lại 09/11/2026 THEO ĐÚNG CÁC BÀI CHỊ ĐÃ ĐĂNG trên LinkedIn (Yoki Nguyễn):
+// 1080×1350 (4:5) · nền = chính ảnh thật làm mờ + phủ nâu ấm · ảnh thật sắc nét ở trên · thẻ nâu bo góc ở dưới:
+// logo + ONI OFFICE nhỏ, gạch vàng, dòng nhỏ in hoa (eyebrow), tiêu đề tiếng Anh trắng + dòng 2 vàng, gạch, dòng phụ tiếng Việt nghiêng,
+// chân "TÂN ĐỊNH · GÒ VẤP · onioffice.vn".  o = { tag, t1, t2, sub }
 export async function khungLI(o, photoBuf) {
   await chuanBi();
-  const W = 1200, H = 1500, c = createCanvas(W, H), x = c.getContext('2d'), rr = (...a) => rrect(x, ...a);
-  const F = (w, s) => `${w} ${s}px "Be Vietnam Pro"`;
-  const NAU = '#6F4F31', NAU2 = '#896441', KEM = '#F7F3EC', VANG = '#FFE38A', VANG2 = '#E9B83A';
-  x.fillStyle = NAU; x.fillRect(0, 0, W, H);                       // viền nâu ngoài
-  const M = 36; rr(M, M, W - 2 * M, H - 2 * M, 28); x.fillStyle = KEM; x.fill();
-  // đầu: logo + ONI OFFICE nâu
-  let lx = 92;
-  if (logoImg) { const k = logoImg.width / 426, sw = 109 * k, sh = 132 * k, lh = 62, lw = sw * lh / sh; x.drawImage(logoImg, 10 * k, 8 * k, sw, sh, 92, 82, lw, lh); lx = 92 + lw + 14; }
-  x.textBaseline = 'middle'; x.font = F(800, 34); x.letterSpacing = '4px'; x.fillStyle = NAU; x.fillText('ONI OFFICE', lx, 114); x.letterSpacing = '0px';
-  if (o.tag) { x.font = F(700, 20); x.letterSpacing = '2px'; const t = String(o.tag).toUpperCase(), tw = x.measureText(t).width + 36;
-    rr(W - 92 - tw, 92, tw, 44, 22); x.strokeStyle = NAU2; x.lineWidth = 2; x.stroke(); x.fillStyle = NAU2; x.fillText(t, W - 92 - tw + 18, 115); x.letterSpacing = '0px'; }
-  // ảnh thật trong khung nâu, phủ nâu nhẹ, vạch vàng
-  const PX = 92, PY = 176, PW = W - 184, PH = 770;
-  rr(PX - 12, PY - 12, PW + 24, PH + 24, 22); x.fillStyle = NAU; x.fill();
-  x.save(); rr(PX, PY, PW, PH, 14); x.clip();
-  if (photoBuf) { const img = await loadImage(photoBuf); const sc = Math.max(PW / img.width, PH / img.height), iw = img.width * sc, ih = img.height * sc; x.drawImage(img, PX + (PW - iw) / 2, PY + (PH - ih) / 2, iw, ih); }
-  x.fillStyle = 'rgba(111,79,49,0.16)'; x.fillRect(PX, PY, PW, PH); x.restore();
-  x.fillStyle = VANG2; x.fillRect(PX + 40, PY + PH + 12, 160, 8);
-  // khối nâu chữ vàng
-  const BY = PY + PH + 52, BH = H - M - 120 - BY; rr(PX - 12, BY, PW + 24, BH, 22); x.fillStyle = NAU; x.fill();
-  x.textBaseline = 'top'; let s = 60; x.font = F(800, s);
-  while (Math.max(x.measureText(o.t1 || '').width, x.measureText(o.t2 || '').width) > PW - 80 && s > 40) { s -= 2; x.font = F(800, s); }
-  x.fillStyle = '#FFFFFF'; x.fillText(o.t1 || '', PX + 30, BY + 40);
-  x.fillStyle = VANG; x.fillText(o.t2 || '', PX + 30, BY + 40 + Math.round(s * 1.45));
-  if (o.sub) { let ss = 28; x.font = F(500, ss); while (x.measureText(o.sub).width > PW - 80 && ss > 20) { ss--; x.font = F(500, ss); } x.fillStyle = 'rgba(247,243,236,0.9)'; x.fillText(o.sub, PX + 30, BY + 40 + Math.round(s * 1.45) * 2 + 8); }
-  // chân: liên hệ chữ nâu trên nền kem
-  x.textBaseline = 'middle'; x.textAlign = 'center'; x.font = F(600, 26); x.fillStyle = NAU;
-  x.fillText('0932 668 642  ·  www.onioffice.vn  ·  sales@onioffice.vn', W / 2, H - M - 60); x.textAlign = 'left';
+  const W = 1080, H = 1350, c = createCanvas(W, H), x = c.getContext('2d'), rr = (...a) => rrect(x, ...a);
+  const F = (w, s, it) => `${it ? 'italic ' : ''}${w} ${s}px "Be Vietnam Pro"`;
+  const KEM = '#F3E9DA', VANG = '#F0C66E';
+  const img = photoBuf ? await loadImage(photoBuf) : null;
+  // nền: ảnh mờ (thu nhỏ rồi phóng to) + phủ nâu ấm
+  x.fillStyle = '#8C6A48'; x.fillRect(0, 0, W, H);
+  if (img) { const t = createCanvas(54, 68), tx = t.getContext('2d'); const sc = Math.max(54 / img.width, 68 / img.height);
+    tx.drawImage(img, (54 - img.width * sc) / 2, (68 - img.height * sc) / 2, img.width * sc, img.height * sc);
+    x.imageSmoothingQuality = 'high'; x.drawImage(t, 0, 0, W, H); }
+  x.fillStyle = 'rgba(150,112,74,0.55)'; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(255,240,220,0.22)'; x.lineWidth = 2; x.strokeRect(26, 26, W - 52, H - 52);
+  // ảnh thật sắc nét
+  const PX = 78, PY = 78, PW = W - 156, PH = 560;
+  x.save(); x.shadowColor = 'rgba(40,25,10,0.35)'; x.shadowBlur = 30; x.shadowOffsetY = 10; rr(PX, PY, PW, PH, 8); x.fillStyle = '#ddd'; x.fill(); x.restore();
+  if (img) { x.save(); rr(PX, PY, PW, PH, 8); x.clip(); const sc = Math.max(PW / img.width, PH / img.height), iw = img.width * sc, ih = img.height * sc; x.drawImage(img, PX + (PW - iw) / 2, PY + (PH - ih) / 2, iw, ih); x.restore(); }
+  // thẻ nâu
+  const CX = PX, CY = PY + PH + 34, CW = PW, CH = H - 78 - CY;
+  x.save(); x.shadowColor = 'rgba(40,25,10,0.35)'; x.shadowBlur = 30; x.shadowOffsetY = 10; rr(CX, CY, CW, CH, 18); x.fillStyle = 'rgba(118,88,58,0.94)'; x.fill(); x.restore();
+  x.textAlign = 'center'; x.textBaseline = 'middle'; const mx = W / 2; let y = CY + 62;
+  // logo + chữ ONI OFFICE
+  x.font = F(700, 22); const lt = 'ONI OFFICE', ltw = x.measureText(lt).width; let lw = 0;
+  if (logoImg) { const k = logoImg.width / 426, sw = 109 * k, sh = 132 * k, lh = 34; lw = sw * lh / sh; x.drawImage(logoImg, 10 * k, 8 * k, sw, sh, mx - (lw + 10 + ltw) / 2, y - 18, lw, lh); }
+  x.fillStyle = KEM; x.textAlign = 'left'; x.fillText(lt, mx - (lw + 10 + ltw) / 2 + lw + 10, y); x.textAlign = 'center';
+  y += 38; x.fillStyle = VANG; x.fillRect(mx - 36, y, 72, 2);
+  if (o.tag) { y += 36; x.font = F(600, 18); x.letterSpacing = '4px'; x.fillStyle = 'rgba(243,233,218,0.85)'; x.fillText(String(o.tag).toUpperCase(), mx, y); x.letterSpacing = '0px'; }
+  // tiêu đề 2 dòng
+  let s = 50; x.font = F(800, s); while (Math.max(x.measureText(o.t1 || '').width, x.measureText(o.t2 || '').width) > CW - 90 && s > 34) { s -= 2; x.font = F(800, s); }
+  y += 30 + s * 0.7; x.fillStyle = '#FFFFFF'; x.fillText(o.t1 || '', mx, y);
+  y += Math.round(s * 1.3); x.fillStyle = VANG; x.fillText(o.t2 || '', mx, y);
+  y += Math.round(s * 0.75) + 6; x.fillStyle = 'rgba(240,198,110,0.7)'; x.fillRect(mx - 36, y, 72, 2);
+  if (o.sub) { y += 38; let ss = 24; x.font = F(500, ss, true); while (x.measureText(o.sub).width > CW - 90 && ss > 18) { ss--; x.font = F(500, ss, true); } x.fillStyle = KEM; x.fillText(o.sub, mx, y); }
+  x.font = F(600, 17); x.letterSpacing = '3px'; x.fillStyle = 'rgba(243,233,218,0.9)'; x.fillText('TÂN ĐỊNH  ·  GÒ VẤP  ·  onioffice.vn', mx, CY + CH - 46); x.letterSpacing = '0px';
+  x.textAlign = 'left';
   return c.toBuffer('image/png');
 }

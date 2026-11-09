@@ -130,7 +130,7 @@ ${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
   {"kenh":"Zalo", … cùng dạng Facebook (caption gọn, rõ lợi ích, có Hotline/Zalo) …},
   {"kenh":"Threads","tieude":"…","nd":"chỉ chữ, ngắn, tự nhiên, kết bằng câu hỏi thực chất, không hashtag quảng cáo, không giá"},
   {"kenh":"X","tieude":"…","nd":"≤ 270 ký tự, song ngữ: tiếng Anh trước, tiếng Việt sau, không giá"},
-  {"kenh":"LinkedIn","tieude":"…","nd":"tiếng Anh trước, tiếng Việt sau; có góc nhìn/trải nghiệm, chuyên nghiệp","hinhLI":{"tag":"≤ 3 chữ","t1":"2–5 chữ (trắng)","t2":"2–5 chữ (vàng)","sub":"≤ 10 chữ","anhThat":"<một mã trong kho ảnh thật ở trên>"}},
+  {"kenh":"LinkedIn","tieude":"…","nd":"tiếng Anh trước, tiếng Việt sau; có góc nhìn/trải nghiệm, chuyên nghiệp","hinhLI":{"tag":"2–4 chữ tiếng Anh, VD HOW WE WORK","t1":"2–5 chữ tiếng Anh (trắng)","t2":"2–5 chữ tiếng Anh (vàng)","sub":"1 câu tiếng Việt ≤ 12 chữ","anhThat":"<một mã trong kho ảnh thật ở trên>"}},
   {"kenh":"Website","tieude":"…","nd":"<p>…bài HTML đầy đủ…</p>","coGia":false,"hinhWeb":{"tag":"…","lines":["…","…","…"],"sub":["…","…"],"anhThat":"oni-td-hop"},
    "anhTrongBai":[{"sauMuc":2,"loai":"anh","ma":"td-hop-a","chuThich":"…"},{"sauMuc":4,"loai":"infographic","nhan":"…","tieuDe":"…","cacY":["…","…","…"],"chuThich":"…"}]}
  ]}

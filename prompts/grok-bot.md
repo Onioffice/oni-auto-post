@@ -25,8 +25,8 @@ Chung cho mọi kênh: "ngay", "gio", "kenh" (chép đúng từ gioTrong), "tieu
    "cards":[{"icon":"doc","t":"≤ 4 chữ","s":"≤ 8 chữ"}, … đúng 4 thẻ …],"loc":"≤ 8 chữ","cta":"≤ 5 chữ"}
   icon chọn trong: doc, check, clock, people, building, shield, chart, key.
 - Threads: chỉ chữ, 60–150 chữ, tự nhiên, kết bằng một câu hỏi thực chất, không hashtag quảng cáo.
-- LinkedIn: tiếng Anh trước, dòng ———, rồi tiếng Việt; chuyên nghiệp, có góc nhìn. Thêm "hinhLI" (máy vẽ khung nâu – kem – chữ vàng, ảnh thật trong khung nâu):
-  {"tag":"≤ 3 chữ, VD FDI · TP.HCM","t1":"2–5 chữ","t2":"2–5 chữ","sub":"≤ 10 chữ","anhThat":"<mã khoAnh>"}
+- LinkedIn: tiếng Anh trước, dòng ———, rồi tiếng Việt; chuyên nghiệp, có góc nhìn. Thêm "hinhLI" (máy vẽ đúng mẫu LinkedIn chị đã đăng: nền ảnh mờ nâu ấm, ảnh thật ở trên, thẻ nâu ở dưới). Chữ trên hình bằng TIẾNG ANH, dòng phụ tiếng Việt:
+  {"tag":"2–4 chữ tiếng Anh, VD HOW WE WORK / A FOUNDER'S NOTE","t1":"2–5 chữ tiếng Anh (trắng)","t2":"2–5 chữ tiếng Anh (vàng)","sub":"1 câu tiếng Việt ≤ 12 chữ","anhThat":"<mã khoAnh>"}
 - Website: "nd" là bài HTML đầy đủ 900–1.500 chữ, có <h2> đánh số "1. …", <h3>, <ul>, đoạn <p>; nhắm một từ khóa khách hay tìm trên Google, đặt từ khóa trong "tieude" và mục đầu. Không chèn <img>. Thêm:
   "hinhWeb": {"tag":"≤ 3 chữ","lines":["≤ 4 chữ","≤ 4 chữ","≤ 4 chữ"],"sub":["≤ 7 chữ","≤ 7 chữ"],"anhThat":"<mã khoAnh>"},
   "anhTrongBai": 0–3 hình: {"sauMuc":2,"loai":"anh","ma":"<mã khoAnh>","chuThich":"…"} hoặc {"sauMuc":4,"loai":"infographic","nhan":"THỦ TỤC · 2026","tieuDe":"≤ 8 chữ","cacY":["≤ 12 chữ", …3–6 ý],"chuThich":"…"}.

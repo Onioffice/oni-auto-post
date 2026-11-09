@@ -9,5 +9,5 @@ fs.writeFileSync(f + 'mau-facebook.png', await khungFB({ theme: 'navy', pill: '�
 fs.writeFileSync(f + 'mau-instagram.png', await khungFB({ theme: 'kem', pill: 'PHÒNG HỌP · TÂN ĐỊNH', eyebrow: 'Cần chỗ gặp đối tác?', t1: 'PHÒNG HỌP', t2: 'THEO GIỜ', boxTop: 'CS1 TÂN ĐỊNH', boxTitle: 'Đặt trước, đến là họp',
   cards: [{ icon: 'people', t: '6–10 khách', s: 'Bàn họp rộng, ghế êm' }, { icon: 'chart', t: 'Màn hình lớn', s: 'Trình chiếu dễ dàng' }, { icon: 'clock', t: 'Thuê theo giờ', s: 'Linh hoạt theo lịch' }, { icon: 'check', t: 'Lễ tân đón khách', s: 'Chuyên nghiệp từ cửa' }] }));
 fs.writeFileSync(f + 'mau-website.jpg', await mauA({ tag: 'Văn phòng riêng · Gò Vấp', lines: ['Thuê văn phòng', 'Gò Vấp: 7 câu', 'nên hỏi trước'], sub: ['Kinh nghiệm từ khách thuê tại Oni', 'CS2 – KDC CityLand Park Hills'] }, await lay(P + 'oni-td-hop-a-ngang.webp')));
-fs.writeFileSync(f + 'mau-linkedin.png', await khungLI({ tag: 'FDI · TP.HCM', t1: 'Trụ sở đầu tiên', t2: 'cho nhà đầu tư mới', sub: 'Một địa chỉ rõ ràng giúp hồ sơ đi nhanh hơn' }, await lay(P + 'oni-td-letan-a.webp')));
+fs.writeFileSync(f + 'mau-linkedin.png', await khungLI({ tag: 'How we work', t1: 'Your first office', t2: 'in Ho Chi Minh City', sub: 'Trụ sở đầu tiên cho nhà đầu tư mới – rõ ràng ngay từ hồ sơ' }, await lay(P + 'oni-td-letan-a.webp')));
 console.log('Đã vẽ 4 hình mẫu');
