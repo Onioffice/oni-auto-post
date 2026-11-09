@@ -193,7 +193,7 @@ export async function khungLI(o, photoBuf) {
   x.strokeStyle = 'rgba(255,240,220,0.22)'; x.lineWidth = 2; x.strokeRect(26, 26, W - 52, H - 52);
   // ảnh thật sắc nét
   let s = 50; x.font = F(800, s); while (Math.max(x.measureText(o.t1 || '').width, x.measureText(o.t2 || '').width) > W - 156 - 90 && s > 34) { s -= 2; x.font = F(800, s); }
-  const CHc = Math.round(312 + 2.75 * s - (o.tag ? 0 : 36) - (o.sub ? 0 : 38)), PH = 620, PW = W - 156, PX = 78, PY = Math.round((H - (PH + 30 + CHc)) / 2);
+  const CHc = Math.round(345 + 2.85 * s - (o.tag ? 0 : 36) - (o.sub ? 0 : 38)), PH = 620, PW = W - 156, PX = 78, PY = Math.round((H - (PH + 30 + CHc)) / 2);
   x.save(); x.shadowColor = 'rgba(40,25,10,0.35)'; x.shadowBlur = 30; x.shadowOffsetY = 10; rr(PX, PY, PW, PH, 8); x.fillStyle = '#ddd'; x.fill(); x.restore();
   if (img) { x.save(); rr(PX, PY, PW, PH, 8); x.clip(); const sc = Math.max(PW / img.width, PH / img.height), iw = img.width * sc, ih = img.height * sc; x.drawImage(img, PX + (PW - iw) / 2, PY + (PH - ih) / 2, iw, ih); x.restore(); }
   // thẻ nâu
@@ -210,7 +210,7 @@ export async function khungLI(o, photoBuf) {
   x.font = F(800, s);
   y += 30 + s * 0.7; x.fillStyle = '#FFFFFF'; x.fillText(o.t1 || '', mx, y);
   y += Math.round(s * 1.3); x.fillStyle = VANG; x.fillText(o.t2 || '', mx, y);
-  y += Math.round(s * 0.75) + 6; x.fillStyle = 'rgba(240,198,110,0.7)'; x.fillRect(mx - 36, y, 72, 2);
+  y += Math.round(s * 0.85) + 12; x.fillStyle = 'rgba(240,198,110,0.7)'; x.fillRect(mx - 36, y, 72, 2);
   if (o.sub) { y += 38; let ss = 24; x.font = F(500, ss, true); while (x.measureText(o.sub).width > CW - 90 && ss > 18) { ss--; x.font = F(500, ss, true); } x.fillStyle = KEM; x.fillText(o.sub, mx, y); }
   x.font = F(600, 17); x.letterSpacing = '3px'; x.fillStyle = 'rgba(243,233,218,0.9)'; x.fillText('TÂN ĐỊNH  ·  GÒ VẤP  ·  onioffice.vn', mx, CY + CH - 46); x.letterSpacing = '0px';
   x.textAlign = 'left';
