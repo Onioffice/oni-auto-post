@@ -191,7 +191,7 @@ export async function khungLI(o, photoBuf) {
   if (o.tag) { x.font = F(700, 20); x.letterSpacing = '2px'; const t = String(o.tag).toUpperCase(), tw = x.measureText(t).width + 36;
     rr(W - 92 - tw, 92, tw, 44, 22); x.strokeStyle = NAU2; x.lineWidth = 2; x.stroke(); x.fillStyle = NAU2; x.fillText(t, W - 92 - tw + 18, 115); x.letterSpacing = '0px'; }
   // ảnh thật trong khung nâu, phủ nâu nhẹ, vạch vàng
-  const PX = 92, PY = 176, PW = W - 184, PH = 700;
+  const PX = 92, PY = 176, PW = W - 184, PH = 770;
   rr(PX - 12, PY - 12, PW + 24, PH + 24, 22); x.fillStyle = NAU; x.fill();
   x.save(); rr(PX, PY, PW, PH, 14); x.clip();
   if (photoBuf) { const img = await loadImage(photoBuf); const sc = Math.max(PW / img.width, PH / img.height), iw = img.width * sc, ih = img.height * sc; x.drawImage(img, PX + (PW - iw) / 2, PY + (PH - ih) / 2, iw, ih); }
