@@ -83,7 +83,7 @@ function lamOp(M, o) {
     }
     case 'daDang': { const p = timBai(o.ma); if (!p) return { ok: false }; p.tt = 'Đã đăng'; p.dang = o.dang || now.slice(0, 10); p.link = o.link || ''; p.hen = p.hen || { by: AI, at: now }; (p.hist = p.hist || []).push({ at: now, by: AI, t: '🤖 Đã đăng lên ' + p.kenh }); p.botAt = botAt; LOG('Đăng bài ' + p.ma + ' – ' + p.kenh, o.link || ''); return { ok: true }; }
     case 'canSua': { const p = timBai(o.ma); if (!p) return { ok: false }; p.tt = 'Cần sửa'; p.note = ((p.note || '') + ' | ' + (o.ly || '')).slice(0, 1000); (p.hist = p.hist || []).push({ at: now, by: AI, t: '🤖 ' + (o.ly || 'Cần sửa') }); p.botAt = botAt; LOG('Chuyển Cần sửa ' + p.ma, o.ly); return { ok: true }; }
-    case 'suaBai': { const p = timBai(o.ma); if (!p || !p.ai) return { ok: false }; ['tieude', 'nd', 'tag', 'anh', 'anhId', 'note'].forEach(k => { if (o.bai && o.bai[k] != null) p[k] = o.bai[k]; }); p.tt = 'Chờ duyệt'; (p.hist = p.hist || []).push({ at: now, by: AI, t: '🤖 Sửa theo yêu cầu & gửi duyệt lại' }); p.botAt = botAt; LOG('Sửa bài ' + p.ma, ''); return { ok: true }; }
+    case 'suaBai': { const p = timBai(o.ma); if (!p) return { ok: false }; ['tieude', 'nd', 'tag', 'anh', 'anhId', 'note', 'anhGoc', 'loai', 'vong'].forEach(k => { if (o.bai && o.bai[k] != null) p[k] = o.bai[k]; }); p.tt = o.bai && o.bai.tt === 'Cần sửa' ? 'Cần sửa' : 'Chờ duyệt'; p.lanSua = (p.lanSua || 0) + 1; (p.hist = p.hist || []).unshift({ at: now, by: AI, txt: '🤖 Làm lại theo yêu cầu sửa (lần ' + p.lanSua + ')' }); p.botAt = botAt; LOG('Bot làm lại bài ' + p.ma, p.tieude); return { ok: true, ma: p.ma }; }
   }
   return { ok: false, err: 'không có lệnh ' + o.op };
 }

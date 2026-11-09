@@ -91,7 +91,7 @@ Trả lời đúng dạng: \`\`\`json\n{"dat": true|false, "loi": ["…"]}\n\`\`
 }
 
 // yeuCau: việc chị giao (có thì viết đúng yêu cầu, bài luôn vào Chờ duyệt). lenh: mã việc.
-export async function soanBai({ ngay, kenhs, yeuCau = '', lenh = '', yTuong = '', gio = '', timTin = true }) {
+export async function soanBai({ ngay, kenhs, yeuCau = '', lenh = '', yTuong = '', gio = '', timTin = true, thayMa = '' }) {
   await chuanBi();
   if (!coLogo()) throw new Error('Không tải được logo Oni từ website – dừng, không làm hình thiếu logo');
   const cu = ((await layMK()).posts || []).filter(x => x.tt !== 'Hủy');
@@ -137,12 +137,12 @@ ${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
 \`\`\`` }]
   });
   const kq = layJSON(t);
-  return xuLyBai({ kq, ngay, kenhs, gio, yeuCau, lenh, yTuong, timTin });
+  return xuLyBai({ kq, ngay, kenhs, gio, yeuCau, lenh, yTuong, timTin, thayMa });
 }
 
 // Bước 2–7 dùng chung: gắn chữ ký → kiểm chữ → vẽ hình → kiểm hình → tải hình → đưa vào app.
 // tuNgoai = 'Grok Bot' khi bài do bot bên ngoài viết và nộp qua cổng (luôn vào Chờ duyệt).
-export async function xuLyBai({ kq, ngay, kenhs, gio = '', yeuCau = '', lenh = '', yTuong = '', timTin = false, tuNgoai = '' }) {
+export async function xuLyBai({ kq, ngay, kenhs, gio = '', yeuCau = '', lenh = '', yTuong = '', timTin = false, tuNgoai = '', thayMa = '' }) {
   await chuanBi();
   if (!coLogo()) throw new Error('Không tải được logo Oni từ website – dừng, không làm hình thiếu logo');
   const ra = [];
@@ -197,7 +197,9 @@ export async function xuLyBai({ kq, ngay, kenhs, gio = '', yeuCau = '', lenh = '
     } catch (e) { await ghiLoi('Soạn bài ' + b.kenh, '1. Chạy hỏng', e.message, 'Chưa', ngay); }
   }
   let ma = [];
-  if (ra.length) { ma = (await opMK(...ra.map(bai => ({ op: 'taoBai', bai })))).map(k => k.ma).filter(Boolean); console.log('Đã đưa vào app:', ma.join(', ')); }
+  if (ra.length && thayMa) {   // bài chị trả "Cần sửa" → làm lại, ghi đè đúng bài cũ (giữ mã, giờ đăng)
+    const r = await opMK({ op: 'suaBai', ma: thayMa, bai: { ...ra[0], loai: 'Bot sửa theo chị' } }); ma = r[0]?.ok ? [thayMa] : []; console.log('Đã làm lại:', thayMa, r[0]?.ok ? 'xong' : 'lỗi');
+  } else if (ra.length) { ma = (await opMK(...ra.map(bai => ({ op: 'taoBai', bai })))).map(k => k.ma).filter(Boolean); console.log('Đã đưa vào app:', ma.join(', ')); }
   console.log(ra.map(x => `${x.kenh}: ${x.tt} – ${x.tieude}`).join('\n') || 'Không có bài nào.');
   return { ma, ra, chuDe: kq.chuDe || '' };
 }

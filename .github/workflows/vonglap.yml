@@ -37,12 +37,16 @@ jobs:
         id: dem
         run: |
           echo "g=$(node scripts/kiemgrok.mjs --dem | tail -1)" >> "$GITHUB_OUTPUT"
+          echo "s=$(node scripts/suabai.mjs --dem 2>/dev/null | tail -1 || echo 0)" >> "$GITHUB_OUTPUT"
           echo "n=$(node scripts/vonglap.mjs --kiem | tail -1)" >> "$GITHUB_OUTPUT"
-      - if: steps.dem.outputs.n != '0' || steps.dem.outputs.g != '0'
+      - if: steps.dem.outputs.n != '0' || steps.dem.outputs.g != '0' || steps.dem.outputs.s != '0'
         uses: actions/cache@v4
         with: { path: fonts, key: fonts-bevietnampro-v1 }
-      - if: steps.dem.outputs.n != '0' || steps.dem.outputs.g != '0'
+      - if: steps.dem.outputs.n != '0' || steps.dem.outputs.g != '0' || steps.dem.outputs.s != '0'
         run: npm ci
+      - if: steps.dem.outputs.s != '0' && steps.dem.outputs.s != ''
+        name: Sửa bài chị trả về (Cần sửa) → làm lại chữ + hình → Chờ BOSS
+        run: node scripts/suabai.mjs || true
       - if: steps.dem.outputs.g != '0'
         name: Kiểm bài Grok Bot nộp → làm hình → Chờ duyệt
         run: node scripts/kiemgrok.mjs || true
