@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { khungFB, mauA, khungLI } from './khung.mjs';
 const lay = async u => Buffer.from(await (await fetch(u)).arrayBuffer());
 const P = 'https://onioffice.vn/wp-content/uploads/2026/10/';
-const f = 'demo/mau/';
+const f = 'demo/mau/'; fs.mkdirSync(f, { recursive: true });
 fs.writeFileSync(f + 'mau-facebook.png', await khungFB({ theme: 'navy', pill: 'ĐỊA CHỈ TRỤ SỞ', eyebrow: 'Mở công ty ở Gò Vấp?', t1: 'ĐỊA CHỈ TRỤ SỞ', t2: 'ĐÚNG QUY ĐỊNH', boxTop: 'HỒ SƠ ĐĂNG KÝ', boxTitle: 'Chuẩn bị gì trước khi nộp',
   cards: [{ icon: 'doc', t: 'Hợp đồng thuê', s: 'Ký với Oni, đủ thông tin' }, { icon: 'building', t: 'Địa chỉ rõ ràng', s: 'Số nhà, đường, phường' }, { icon: 'key', t: 'Biển tên công ty', s: 'Gắn tại cơ sở Oni' }, { icon: 'check', t: 'Nhận thư hộ', s: 'Báo ngay khi có thư' }] }));
 fs.writeFileSync(f + 'mau-instagram.png', await khungFB({ theme: 'kem', pill: 'PHÒNG HỌP · TÂN ĐỊNH', eyebrow: 'Cần chỗ gặp đối tác?', t1: 'PHÒNG HỌP', t2: 'THEO GIỜ', boxTop: 'CS1 TÂN ĐỊNH', boxTitle: 'Đặt trước, đến là họp',
