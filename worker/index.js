@@ -147,7 +147,7 @@ async function congGrok(req, env, p) {
     const trong = gioTrongG(M.posts, hang, cd);
     const chuDe = ((M.ai || {}).lenh || []).filter(l => ['Chờ AI', 'AI đang làm'].includes(l.tt)).map(l => ({ id: l.id, nd: l.nd, kenh: l.kenh, han: l.han }));
     const ganDay = (M.posts || []).filter(x => x.tt !== 'Hủy').sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 120).map(x => x.at + ' ' + x.kenh + ': ' + x.tieude);
-    await env.DB.put('grok_tinh', JSON.stringify(Object.assign(JSON.parse((await env.DB.get('grok_tinh')) || '{}'), { xem: new Date().toISOString() })));
+    { const t = JSON.parse((await env.DB.get('grok_tinh')) || '{}'); if (!t.xem || Date.now() - Date.parse(t.xem) > 10 * 60e3) { t.xem = new Date().toISOString(); await env.DB.put('grok_tinh', JSON.stringify(t)); } }   // 10/11: ghi tối đa 10 phút/lần – tiết kiệm lượt ghi
     return json({ ok: true, homNay: ngayVN(0), gioTrong: trong, soGioTrong: trong.length, dangCho: hang.length, chuDeChiGiao: chuDe, baiGanDay: ganDay,
       khoAnh: typeof KHO_ANH_G !== 'undefined' ? KHO_ANH_G : {}, quyTac: typeof QUY_TAC_G !== 'undefined' ? QUY_TAC_G : '',
       cachNop: 'POST /api/grok/nop với {"bai":[...]} tối đa 40 bài mỗi lần. Mỗi bài: ngay, gio, kenh (lấy đúng từ gioTrong), tieude, nd, tag, chuDe, nguon[]; Facebook/Instagram/Zalo thêm "hinh"; Website thêm "hinhWeb" + "anhTrongBai"; LinkedIn thêm "anhThat".' });

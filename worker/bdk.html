@@ -405,7 +405,8 @@ function App(){
     const ks=k.keys||{};let M={posts:[],ai:{}},mks={};try{M=JSON.parse(ks.oni_mkt||'null')||M}catch(e){}try{mks=JSON.parse(ks.oni_mks||'null')||{}}catch(e){}
     try{if(ks.oni_mkt)localStorage.setItem('oni_mkt',ks.oni_mkt)}catch(e){}
     setD({M,mks,cd:cd.caidat||{},nk:nk.nhatky||[],qc:qc.qc||[],gk,bc:bc.baocao||[],gsc:g.ok?g:{}});setLoiNap('')}catch(e){setLoiNap(e.message)}};
-  useEffect(()=>{nap();const t=setInterval(nap,30000);const c=setInterval(()=>setTick(x=>x+1),1000);return()=>{clearInterval(t);clearInterval(c)}},[]);
+  // 10/11: tiết kiệm lượt đọc Cloudflare – chỉ tải lại 60 giây/lần và CHỈ khi chị đang mở xem tab (tab ẩn thì nghỉ)
+  useEffect(()=>{nap();const t=setInterval(()=>{if(!document.hidden)nap()},60000);const v=()=>{if(!document.hidden)nap()};document.addEventListener('visibilitychange',v);const c=setInterval(()=>setTick(x=>x+1),1000);return()=>{clearInterval(t);clearInterval(c);document.removeEventListener('visibilitychange',v)}},[]);
   useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(null),5000);return()=>clearTimeout(t)},[toast]);
   if(!D)return (<div className="min-h-screen grid place-items-center text-zinc-400 bg-[#070D18]"><div className="flex items-center gap-3">{loiNap?<span className="text-red-300">Không tải được số liệu: {loiNap}</span>:<><Loader className="w-5 h-5 animate-spin"/>Đang tải số liệu thật…</>}</div></div>);
 
@@ -435,7 +436,7 @@ function App(){
               <I className={`w-[19px] h-[19px] shrink-0 ${on?'text-[#F2D27A]':'text-[#8E9AB3]'} ${k==='auto'&&chay?'animate-spin [animation-duration:4s]':''}`}/><span className="truncate text-left flex-1">{t}</span>
               {so>0&&<span className={`text-[11px] font-bold rounded-full min-w-[26px] px-2 py-0.5 ${k==='duyet'?'bg-gradient-to-r from-[#FFE38A] to-[#E9B83A] text-[#0E1A2E]':'bg-[#1E2E4D] text-[#C7CFDE]'}`}>{so}</span>}
             </button>)})}</div></div>))}</nav>
-      <div className="px-5 py-3 border-t border-[#1E2B44] text-[11px] text-[#5B6884] space-y-1"><div>Số liệu thật · tự cập nhật 30 giây/lần</div><a href="/cu" className="underline">Mở bảng cũ</a> · <a href="/dang-xuat" className="underline">Đăng xuất</a></div>
+      <div className="px-5 py-3 border-t border-[#1E2B44] text-[11px] text-[#5B6884] space-y-1"><div>Số liệu thật · tự cập nhật 1 phút/lần khi đang mở</div><a href="/cu" className="underline">Mở bảng cũ</a> · <a href="/dang-xuat" className="underline">Đăng xuất</a></div>
     </aside>
     <main className="flex-1 min-w-0 p-4 md:p-6 space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">

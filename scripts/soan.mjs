@@ -142,7 +142,7 @@ ${Object.entries(KHO_ANH).map(([k, v]) => '  ' + k + ': ' + v[1]).join('\n')}
 
 // Bước 2–7 dùng chung: gắn chữ ký → kiểm chữ → vẽ hình → kiểm hình → tải hình → đưa vào app.
 // tuNgoai = 'Grok Bot' khi bài do bot bên ngoài viết và nộp qua cổng (luôn vào Chờ duyệt).
-export async function xuLyBai({ kq, ngay, kenhs, gio = '', yeuCau = '', lenh = '', yTuong = '', timTin = false, tuNgoai = '', thayMa = '' }) {
+export async function xuLyBai({ kq, ngay, kenhs, gio = '', yeuCau = '', lenh = '', yTuong = '', timTin = false, tuNgoai = '', thayMa = '', gom = null }) {
   await chuanBi();
   if (!coLogo()) throw new Error('Không tải được logo Oni từ website – dừng, không làm hình thiếu logo');
   const ra = [];
@@ -199,6 +199,7 @@ export async function xuLyBai({ kq, ngay, kenhs, gio = '', yeuCau = '', lenh = '
   let ma = [];
   if (ra.length && thayMa) {   // bài chị trả "Cần sửa" → làm lại, ghi đè đúng bài cũ (giữ mã, giờ đăng)
     const r = await opMK({ op: 'suaBai', ma: thayMa, bai: { ...ra[0], loai: 'Bot sửa theo chị' } }); ma = r[0]?.ok ? [thayMa] : []; console.log('Đã làm lại:', thayMa, r[0]?.ok ? 'xong' : 'lỗi');
+  } else if (ra.length && gom) { gom.push(...ra.map(bai => ({ op: 'taoBai', bai })));   // 10/11: gom lại, người gọi ghi 1 lần cho cả lô (tiết kiệm lượt ghi Cloudflare)
   } else if (ra.length) { ma = (await opMK(...ra.map(bai => ({ op: 'taoBai', bai })))).map(k => k.ma).filter(Boolean); console.log('Đã đưa vào app:', ma.join(', ')); }
   console.log(ra.map(x => `${x.kenh}: ${x.tt} – ${x.tieude}`).join('\n') || 'Không có bài nào.');
   return { ma, ra, chuDe: kq.chuDe || '' };
