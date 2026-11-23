@@ -1,7 +1,7 @@
 // ĐĂNG BÀI – chạy 10:55 sáng (giờ VN) mỗi ngày trên GitHub Actions, khi công tắc "Tự đăng bài" đang bật.
 // Chỉ đăng bài trong app có trạng thái "Đã duyệt", ngày đăng là hôm nay (hoặc trễ tối đa 2 ngày), kênh máy làm được.
 // "Chờ duyệt", "Cần sửa", "Hủy", "Nháp" KHÔNG bao giờ được đăng. Mỗi kênh tối đa 1 bài/ngày.
-import { homNay, layMK, opMK, ghiLoi, kiemChu, fbDangAnh, igDangAnh, wpDangBai, layCaiDat, ghiNhatKy } from './lib.mjs';
+import { homNay, layMK, opMK, ghiLoi, kiemChu, fbDangAnh, igDangAnh, wpDangBai, layCaiDat, ghiNhatKy, giongNhau, wpTieuDeDaDang } from './lib.mjs';
 
 const THU_NGHIEM = process.env.THU_NGHIEM === '1';   // chạy thử: chỉ in ra, không đăng
 const nay = homNay(), som = homNay(-2), gioNay = new Date(Date.now() + 7 * 3600e3).toISOString().slice(11, 16);
@@ -17,8 +17,18 @@ async function main() {
     .sort((a, b) => (a.at !== b.at ? (a.at < b.at ? -1 : 1) : (a.kenh === 'Website' ? -1 : b.kenh === 'Website' ? 1 : 0) || (!!b.lenh - !!a.lenh) || ((a.gio || '') < (b.gio || '') ? -1 : 1)));
   if (!can.length) { console.log('Giờ này không có bài cần đăng.'); return; }
   if (!THU_NGHIEM) await opMK({ op: 'batDau' });
+  const webDaDang = can.some(b => b.kenh === 'Website') ? await wpTieuDeDaDang() : [];
   for (const b of can) {
     if (daDangHomNay.has(b.kenh) && !b.gio) { console.log(`Bỏ ${b.ma}: kênh ${b.kenh} đã có bài hôm nay`); continue; }
+    // 24/11/2026 (Boss duyệt): chống trùng – không đăng bài trùng chủ đề với bài đã đăng trong 30 ngày (kho CRM + website thật)
+    const [kt] = await opMK({ op: 'kiemTrung', kenh: b.kenh, tieude: b.tieude, ngay: b.at, ma: b.ma, chiDaDang: true });
+    let trung = (kt && kt.trung && kt.trung[0]) ? `${kt.trung[0].ma} "${kt.trung[0].tieude}"` : '';
+    if (!trung && b.kenh === 'Website') { const w = webDaDang.find(x => x.tieude !== b.tieude && giongNhau(x.tieude, b.tieude) >= 0.65 && Math.abs(Date.parse(x.ngay) - Date.parse(b.at)) <= 30 * 864e5); if (w) trung = `bài web "${w.tieude}" (${w.ngay})`; }
+    if (!trung && b.kenh === 'Website') { const y = webDaDang.find(x => x.tieude.trim().toLowerCase() === String(b.tieude).trim().toLowerCase()); if (y) trung = `bài web cùng tiêu đề (${y.ngay})`; }
+    if (trung) {
+      if (!THU_NGHIEM) { await opMK({ op: 'canSua', ma: b.ma, ly: 'Trùng chủ đề với ' + trung + ' – máy không đăng, chị đổi góc viết hoặc hủy' }); await ghiLoi('Đăng bài ' + b.kenh, '2. Bot tự bắt được', 'Trùng chủ đề với ' + trung, 'Chưa – chờ chị xem', b.ma); }
+      console.log(`Bỏ ${b.ma}: trùng chủ đề với ${trung}`); continue;
+    }
     const loi = kiemChu(b);                                        // kiểm lỗi lần 2 ngay trước khi đăng
     if (!b.anh) loi.push('Thiếu hình');
     if (loi.length) { if (!THU_NGHIEM) { await opMK({ op: 'canSua', ma: b.ma, ly: 'Kiểm lần 2 trước khi đăng: ' + loi.join('; ') }); await ghiLoi('Đăng bài ' + b.kenh, '2. Bot tự bắt được', loi.join('; '), 'Chưa – chờ chị xem', b.ma); } else console.log('[Thử] Lỗi', b.ma, loi); continue; }

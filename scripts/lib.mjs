@@ -21,7 +21,7 @@ Giải pháp tối ưu chi phí cho doanh nghiệp hiện đại.
 // Các thứ khác (công tắc, cổng Grok, nhật ký, Sổ lỗi web) vẫn ở Cloudflare Worker.
 // Máy tự xin mã OIDC của GitHub cho đúng repo này → không có khóa bí mật nào cho kho CRM.
 export const CRM_URL = 'https://vlhwncwycicuyxpvrzyo.supabase.co/functions/v1/mkt-api';
-const DUNG_CRM = false;
+const DUNG_CRM = true;
 let _oidc = '', _oidcHet = 0;
 export async function maOIDC() {
   if (_oidc && Date.now() < _oidcHet) return _oidc;
@@ -49,6 +49,14 @@ async function kho(duong, opt = {}, lan = 1) {
   if (!r.ok && [429, 500, 503].includes(r.status) && lan < 4) return kho(duong, opt, lan + 1);
   if (!r.ok) throw new Error(`Kho bài lỗi ${r.status}: ${j.loi || ''}`);
   return j;
+}
+// Kiểm trùng chủ đề (24/11/2026): bỏ chữ khuôn mẫu, so tỉ lệ từ khóa chung (giống hàm mkt_khoa/mkt_jac trong CRM)
+const TU_BO = new Set('viec can nen chuan bi truoc sau khi dieu buoc cau hoi nhanh cho tai o oni office va cua de hay gap the nao tp hcm tphcm gi la mot nhung cac voi ve tu den trong ngay biet xem lam theo thu su that hieu ra soat kiem tra quyet dinh cong ty story fb ig carousel moi gom bao lau nhieu khong ban minh nguoi gon dien duoc luu y meo tham quan buoi nhu nay neu vi sao ma'.split(' '));
+export const tuKhoa = s => String(s || '').replace(/đ/g, 'd').replace(/Đ/g, 'D').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(w => w && !/^\d+$/.test(w) && !TU_BO.has(w));
+export function giongNhau(a, b) { const A = new Set(tuKhoa(a)), B = new Set(tuKhoa(b)); if (!A.size || !B.size) return 0; let c = 0; A.forEach(w => { if (B.has(w)) c++; }); return c / new Set([...A, ...B]).size; }
+// Tiêu đề bài đã lên website (100 bài gần nhất) – để không đăng lại chủ đề đã có trên web, kể cả bài đăng tay
+export async function wpTieuDeDaDang() {
+  try { const r = await fetch(env('WP_URL').replace(/\/$/, '') + '/wp-json/wp/v2/posts?per_page=100&status=publish&_fields=id,date,link,title'); if (!r.ok) return []; return (await r.json()).map(x => ({ tieude: String(x.title?.rendered || '').replace(/<[^>]+>/g, '').replace(/&#8211;/g, '–').replace(/&amp;/g, '&'), ngay: String(x.date || '').slice(0, 10), link: x.link })); } catch { return []; }
 }
 export const layBai = async () => (await kho('/api/posts')).posts || [];
 export const themBai = posts => kho('/api/posts', { method: 'POST', body: JSON.stringify({ posts }) });

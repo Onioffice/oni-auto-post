@@ -11,14 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      - uses: actions/checkout@v4
       - name: Có việc mới không?
         id: co
         run: |
-          n=$(curl -sf -H "authorization: Bearer $K" "${U%/}/api/mk" | grep -o '"tt":"Chờ AI"' | wc -l || echo 0)
-          echo "Việc chờ làm: $n"; echo "n=$n" >> "$GITHUB_OUTPUT"
-        env: { U: '${{ secrets.ONI_API_URL }}', K: '${{ secrets.ONI_API_KEY }}' }
-      - if: steps.co.outputs.n != '0'
-        uses: actions/checkout@v4
+          n=$(node --input-type=module -e "import { layMK } from './scripts/lib.mjs'; const M = await layMK(); console.log(((M.ai || {}).lenh || []).filter(l => l.tt === 'Chờ AI').length)" | tail -1 || echo 0)
+          echo "Việc chờ làm: $n"; echo "n=${n:-0}" >> "$GITHUB_OUTPUT"
+        env: { ONI_API_URL: '${{ secrets.ONI_API_URL }}', ONI_API_KEY: '${{ secrets.ONI_API_KEY }}' }
       - if: steps.co.outputs.n != '0'
         uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }

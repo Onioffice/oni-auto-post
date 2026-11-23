@@ -10,6 +10,7 @@ const ngayTrong = (cu, kenhs) => {               // ngày gần nhất (từ mai
 };
 
 async function main() {
+  if (process.argv.includes('--dem')) { const M = await layMK(); console.log(((M.ai || {}).lenh || []).filter(l => l.tt === 'Chờ AI').length); return; }
   if ((await layCaiDat()).nhan === false) { console.log('Chị đang tắt máy "Nhận việc chị giao".'); return; }
   const M = await layMK();
   const viec = ((M.ai || {}).lenh || []).filter(l => l.tt === 'Chờ AI').reverse();   // việc cũ trước
