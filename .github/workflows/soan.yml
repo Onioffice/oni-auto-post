@@ -8,6 +8,7 @@ on:
         description: "Ngày đăng (yyyy-mm-dd), để trống = ngày kia"
         required: false
 concurrency: { group: oni-soan, cancel-in-progress: false }
+permissions: { contents: read, id-token: write }
 jobs:
   chay:
     # Lịch chạy mỗi ngày, nhưng chỉ làm khi chị bật công tắc trên Bảng điều khiển (trang duyệt bài)

@@ -7,6 +7,7 @@ on:
         required: false
         default: "1"
 concurrency: { group: oni-dang, cancel-in-progress: false }
+permissions: { contents: read, id-token: write }
 jobs:
   chay:
     # Lịch chạy mỗi ngày, nhưng chỉ làm khi chị bật công tắc trên Bảng điều khiển (trang duyệt bài)

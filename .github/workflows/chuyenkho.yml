@@ -1,0 +1,14 @@
+name: Chép kho bài sang CRM (chạy tay)
+on: workflow_dispatch
+permissions: { contents: read, id-token: write }
+jobs:
+  chep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/chuyenkho.mjs
+        env:
+          ONI_API_URL: ${{ secrets.ONI_API_URL }}
+          ONI_API_KEY: ${{ secrets.ONI_API_KEY }}

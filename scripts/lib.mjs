@@ -16,8 +16,32 @@ Giải pháp tối ưu chi phí cho doanh nghiệp hiện đại.
 📧 sales@onioffice.vn
 📞 Hotline & Zalo: 0932 668 642`;
 
-// ---------- Kho bài (Cloudflare Worker) ----------
+// ---------- Kho bài ----------
+// 24/11/2026 (Boss duyệt): bài + việc chị giao nằm ở kho CRM (Supabase, hàm mkt-api) – 1 kho duy nhất.
+// Các thứ khác (công tắc, cổng Grok, nhật ký, Sổ lỗi web) vẫn ở Cloudflare Worker.
+// Máy tự xin mã OIDC của GitHub cho đúng repo này → không có khóa bí mật nào cho kho CRM.
+export const CRM_URL = 'https://vlhwncwycicuyxpvrzyo.supabase.co/functions/v1/mkt-api';
+const DUNG_CRM = false;
+let _oidc = '', _oidcHet = 0;
+export async function maOIDC() {
+  if (_oidc && Date.now() < _oidcHet) return _oidc;
+  const u = process.env.ACTIONS_ID_TOKEN_REQUEST_URL, t = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
+  if (!u || !t) throw new Error('Thiếu quyền id-token (file workflow cần "permissions: id-token: write")');
+  const r = await fetch(u + '&audience=oni-crm-mkt', { headers: { authorization: 'bearer ' + t } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.value) throw new Error('Không xin được mã OIDC của GitHub: ' + r.status);
+  _oidc = j.value; _oidcHet = Date.now() + 4 * 60e3; return _oidc;
+}
+export async function crm(duong, opt = {}, lan = 1) {
+  if (lan > 1) await new Promise(s => setTimeout(s, 1500 * lan));
+  const r = await fetch(CRM_URL + duong, { ...opt, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + await maOIDC(), ...(opt.headers || {}) } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok && [429, 500, 502, 503, 504].includes(r.status) && lan < 4) return crm(duong, opt, lan + 1);
+  if (!r.ok) throw new Error(`Kho CRM lỗi ${r.status}: ${j.loi || ''}`);
+  return j;
+}
 async function kho(duong, opt = {}, lan = 1) {
+  if (DUNG_CRM && duong.startsWith('/api/mk')) return crm(duong, opt);
   // Cloudflare KV chỉ cho ghi 1 lần/giây vào cùng một khóa → ghi dồn dập bị lỗi 500/429: đợi rồi thử lại
   if (lan > 1) await new Promise(s => setTimeout(s, 1500 * lan));
   const r = await fetch(env('ONI_API_URL').replace(/\/$/, '') + duong, { ...opt, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env('ONI_API_KEY'), ...(opt.headers || {}) } });

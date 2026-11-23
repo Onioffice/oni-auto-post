@@ -8,6 +8,7 @@ on:
         description: "Số bài tối đa mỗi lần (mặc định 3)"
         required: false
 concurrency: { group: oni-vonglap, cancel-in-progress: false }
+permissions: { contents: read, id-token: write }
 jobs:
   chay:
     runs-on: ubuntu-latest

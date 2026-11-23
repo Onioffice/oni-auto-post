@@ -1,6 +1,6 @@
 name: Vẽ hình mẫu
 on: workflow_dispatch
-permissions: { contents: write }
+permissions: { contents: write, id-token: write }
 jobs:
   ve:
     runs-on: ubuntu-latest

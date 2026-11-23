@@ -4,6 +4,7 @@ on:
     - cron: '5 0-15 * * *'
   workflow_dispatch:
 concurrency: { group: oni-lenh, cancel-in-progress: false }
+permissions: { contents: read, id-token: write }
 jobs:
   chay:
     # Mỗi giờ hỏi kho xem chị có giao việc mới không; không có thì dừng ngay (vài giây)

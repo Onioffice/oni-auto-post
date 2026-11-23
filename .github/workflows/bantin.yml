@@ -4,6 +4,7 @@ on:
     - cron: '0 2 * * 5'
   workflow_dispatch:
 concurrency: { group: oni-bantin, cancel-in-progress: false }
+permissions: { contents: read, id-token: write }
 jobs:
   chay:
     runs-on: ubuntu-latest
