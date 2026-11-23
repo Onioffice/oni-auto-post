@@ -5,7 +5,8 @@ import { homNay, layMK, opMK, ghiLoi, kiemChu, fbDangAnh, igDangAnh, wpDangBai, 
 
 const THU_NGHIEM = process.env.THU_NGHIEM === '1';   // chạy thử: chỉ in ra, không đăng
 const nay = homNay(), som = homNay(-2), gioNay = new Date(Date.now() + 7 * 3600e3).toISOString().slice(11, 16);
-const MAY_DANG = ['Facebook', 'Website'];             // Instagram chờ mẫu carousel; kênh khác đăng tay
+// 24/11/2026: Facebook chỉ do máy GitHub đăng khi đã có mã FB_PAGE_ACCESS_TOKEN; chưa có thì bot Claude (Composio) đăng – tránh báo lỗi và đánh dấu Cần sửa oan
+const MAY_DANG = ['Website', ...(process.env.FB_PAGE_ACCESS_TOKEN ? ['Facebook'] : [])];   // Instagram chờ mẫu carousel; kênh khác bot Claude đăng
 
 async function main() {
   if (process.env.SU_KIEN === 'schedule' && !(await layCaiDat()).dang) { console.log('Công tắc "Tự đăng bài" đang tắt.'); return; }
