@@ -1,7 +1,7 @@
 // BÁO CÁO TUẦN – sáng thứ Hai 8:05 (giờ VN) trên GitHub Actions.
 // Tổng hợp từ dữ liệu Marketing của app: bài đã đăng 7 ngày qua theo kênh, kênh thiếu bài, việc tồn, lỗi máy.
 // Không dùng AI (con số lấy thẳng từ dữ liệu, không bịa). Kết quả hiện ở Bảng điều khiển.
-import { homNay, layMK, layCaiDat, ghiNhatKy, ghiLoi } from './lib.mjs';
+import { homNay, layMK, layCaiDat, ghiNhatKy, ghiLoi, crm } from './lib.mjs';
 
 const U = () => process.env.ONI_API_URL.replace(/\/$/, '');
 const H = () => ({ 'content-type': 'application/json', authorization: 'Bearer ' + process.env.ONI_API_KEY });
@@ -13,7 +13,7 @@ async function main() {
   const tu = homNay(-7), den = homNay(-1), hn = homNay();
   const keys = (await lay('/api/app/keys')).keys || {};
   let mks = {}; try { mks = JSON.parse(keys.oni_mks || '{}'); } catch (e) {}
-  const nk = (await lay('/api/nhatky')).nhatky || [], sl = (await lay('/api/soloi')).soloi || [];
+  const nk = (await crm('/api/nhatky')).nhatky || [], sl = (await crm('/api/soloi')).soloi || [];   // 25/11: nhật ký + Sổ lỗi ở CRM
 
   const daDang = P.filter(p => p.tt === 'Đã đăng' && (p.dang || p.at || '').slice(0, 10) >= tu && (p.dang || p.at || '').slice(0, 10) <= den);
   const theoKenh = {}; daDang.forEach(p => theoKenh[p.kenh] = (theoKenh[p.kenh] || 0) + 1);
@@ -51,8 +51,7 @@ async function main() {
   L.push('', '5. Đề xuất tuần này:'); (de.length ? de : ['Giữ nhịp đăng như tuần trước']).forEach((x, i) => L.push(`   ${i + 1}) ${x}`));
 
   const nd = L.join('\n'); console.log(nd);
-  const r = await fetch(U() + '/api/baocao', { method: 'POST', headers: H(), body: JSON.stringify({ nd }) });
-  if (!r.ok) throw new Error('Không lưu được báo cáo: ' + r.status);
+  await crm('/api/baocao', { method: 'POST', body: JSON.stringify({ nd }) });   // 25/11: báo cáo lưu ở CRM
   await ghiNhatKy('Báo cáo tuần', `${daDang.length} bài đã đăng, ${de.length} đề xuất`);
 }
 main().catch(async e => { await ghiLoi('Báo cáo tuần', '1. Chạy hỏng', e.message); await ghiNhatKy('Báo cáo tuần', 'Lỗi: ' + e.message); process.exit(1); });

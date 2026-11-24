@@ -22,6 +22,9 @@ Giải pháp tối ưu chi phí cho doanh nghiệp hiện đại.
 // Máy tự xin mã OIDC của GitHub cho đúng repo này → không có khóa bí mật nào cho kho CRM.
 export const CRM_URL = 'https://vlhwncwycicuyxpvrzyo.supabase.co/functions/v1/mkt-api';
 const DUNG_CRM = true;
+// 25/11/2026 (Boss duyệt gộp bảng điều khiển vào CRM): công tắc, nhật ký máy, Sổ lỗi, báo cáo tuần cũng đọc/ghi ở CRM.
+// Còn ở Cloudflare: cổng Grok Bot (/api/grok/*), số các kênh (/api/app/drv, /api/app/keys).
+const VE_CRM = ['/api/caidat', '/api/nhatky', '/api/soloi', '/api/baocao'];
 let _oidc = '', _oidcHet = 0;
 export async function maOIDC() {
   if (_oidc && Date.now() < _oidcHet) return _oidc;
@@ -41,7 +44,7 @@ export async function crm(duong, opt = {}, lan = 1) {
   return j;
 }
 async function kho(duong, opt = {}, lan = 1) {
-  if (DUNG_CRM && duong.startsWith('/api/mk')) return crm(duong, opt);
+  if (DUNG_CRM && (duong.startsWith('/api/mk') || VE_CRM.includes(duong))) return crm(duong, opt);
   // Cloudflare KV chỉ cho ghi 1 lần/giây vào cùng một khóa → ghi dồn dập bị lỗi 500/429: đợi rồi thử lại
   if (lan > 1) await new Promise(s => setTimeout(s, 1500 * lan));
   const r = await fetch(env('ONI_API_URL').replace(/\/$/, '') + duong, { ...opt, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env('ONI_API_KEY'), ...(opt.headers || {}) } });
