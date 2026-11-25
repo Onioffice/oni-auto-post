@@ -191,28 +191,31 @@ export async function khungLI(o, photoBuf) {
     x.save(); x.filter = 'blur(38px)'; x.drawImage(img, (W - iw) / 2, (H - ih) / 2, iw, ih); x.restore(); }
   x.fillStyle = 'rgba(150,112,74,0.55)'; x.fillRect(0, 0, W, H);
   x.strokeStyle = 'rgba(255,240,220,0.22)'; x.lineWidth = 2; x.strokeRect(26, 26, W - 52, H - 52);
+  // 25/11/2026 (Rà soát trả 100% bài LinkedIn vì chữ nhỏ, mờ, thiếu liên hệ): chữ to hơn, thẻ đặc hơn, chân có Hotline/Zalo.
   // ảnh thật sắc nét
-  let s = 50; x.font = F(800, s); while (Math.max(x.measureText(o.t1 || '').width, x.measureText(o.t2 || '').width) > W - 156 - 90 && s > 34) { s -= 2; x.font = F(800, s); }
-  const CHc = Math.round(345 + 2.85 * s - (o.tag ? 0 : 36) - (o.sub ? 0 : 38)), PH = 620, PW = W - 156, PX = 78, PY = Math.round((H - (PH + 30 + CHc)) / 2);
+  let s = 56; x.font = F(800, s); while (Math.max(x.measureText(o.t1 || '').width, x.measureText(o.t2 || '').width) > W - 156 - 80 && s > 40) { s -= 2; x.font = F(800, s); }
+  const CHc = Math.round(400 + 2.85 * s - (o.tag ? 0 : 44) - (o.sub ? 0 : 50)), PH = 540, PW = W - 156, PX = 78, PY = Math.round((H - (PH + 28 + CHc)) / 2);
   x.save(); x.shadowColor = 'rgba(40,25,10,0.35)'; x.shadowBlur = 30; x.shadowOffsetY = 10; rr(PX, PY, PW, PH, 8); x.fillStyle = '#ddd'; x.fill(); x.restore();
   if (img) { x.save(); rr(PX, PY, PW, PH, 8); x.clip(); const sc = Math.max(PW / img.width, PH / img.height), iw = img.width * sc, ih = img.height * sc; x.drawImage(img, PX + (PW - iw) / 2, PY + (PH - ih) / 2, iw, ih); x.restore(); }
-  // thẻ nâu
-  const CX = PX, CY = PY + PH + 30, CW = PW, CH = CHc;
-  x.save(); x.shadowColor = 'rgba(40,25,10,0.35)'; x.shadowBlur = 30; x.shadowOffsetY = 10; rr(CX, CY, CW, CH, 18); x.fillStyle = 'rgba(118,88,58,0.94)'; x.fill(); x.restore();
-  x.textAlign = 'center'; x.textBaseline = 'middle'; const mx = W / 2; let y = CY + 62;
+  // thẻ nâu (đặc hơn cho chữ rõ)
+  const CX = PX, CY = PY + PH + 28, CW = PW, CH = CHc;
+  x.save(); x.shadowColor = 'rgba(40,25,10,0.35)'; x.shadowBlur = 30; x.shadowOffsetY = 10; rr(CX, CY, CW, CH, 18); x.fillStyle = 'rgba(104,76,48,0.98)'; x.fill(); x.restore();
+  x.textAlign = 'center'; x.textBaseline = 'middle'; const mx = W / 2; let y = CY + 60;
   // logo + chữ ONI OFFICE
-  x.font = F(700, 22); const lt = 'ONI OFFICE', ltw = x.measureText(lt).width; let lw = 0;
-  if (logoImg) { const k = logoImg.width / 426, sw = 109 * k, sh = 132 * k, lh = 34; lw = sw * lh / sh; x.drawImage(logoImg, 10 * k, 8 * k, sw, sh, mx - (lw + 10 + ltw) / 2, y - 18, lw, lh); }
-  x.fillStyle = KEM; x.textAlign = 'left'; x.fillText(lt, mx - (lw + 10 + ltw) / 2 + lw + 10, y); x.textAlign = 'center';
-  y += 38; x.fillStyle = VANG; x.fillRect(mx - 36, y, 72, 2);
-  if (o.tag) { y += 36; x.font = F(600, 18); x.letterSpacing = '4px'; x.fillStyle = 'rgba(243,233,218,0.85)'; x.fillText(String(o.tag).toUpperCase(), mx, y); x.letterSpacing = '0px'; }
+  x.font = F(800, 28); const lt = 'ONI OFFICE', ltw = x.measureText(lt).width; let lw = 0;
+  if (logoImg) { const k = logoImg.width / 426, sw = 109 * k, sh = 132 * k, lh = 42; lw = sw * lh / sh; x.drawImage(logoImg, 10 * k, 8 * k, sw, sh, mx - (lw + 12 + ltw) / 2, y - 22, lw, lh); }
+  x.fillStyle = KEM; x.textAlign = 'left'; x.fillText(lt, mx - (lw + 12 + ltw) / 2 + lw + 12, y); x.textAlign = 'center';
+  y += 42; x.fillStyle = VANG; x.fillRect(mx - 40, y, 80, 3);
+  if (o.tag) { y += 40; x.font = F(700, 24); x.letterSpacing = '3px'; x.fillStyle = KEM; x.fillText(String(o.tag).toUpperCase(), mx, y); x.letterSpacing = '0px'; }
   // tiêu đề 2 dòng
   x.font = F(800, s);
-  y += 30 + s * 0.7; x.fillStyle = '#FFFFFF'; x.fillText(o.t1 || '', mx, y);
-  y += Math.round(s * 1.3); x.fillStyle = VANG; x.fillText(o.t2 || '', mx, y);
-  y += Math.round(s * 0.85) + 12; x.fillStyle = 'rgba(240,198,110,0.7)'; x.fillRect(mx - 36, y, 72, 2);
-  if (o.sub) { y += 38; let ss = 24; x.font = F(500, ss, true); while (x.measureText(o.sub).width > CW - 90 && ss > 18) { ss--; x.font = F(500, ss, true); } x.fillStyle = KEM; x.fillText(o.sub, mx, y); }
-  x.font = F(600, 17); x.letterSpacing = '3px'; x.fillStyle = 'rgba(243,233,218,0.9)'; x.fillText('TÂN ĐỊNH  ·  GÒ VẤP  ·  onioffice.vn', mx, CY + CH - 46); x.letterSpacing = '0px';
+  y += 34 + s * 0.7; x.fillStyle = '#FFFFFF'; x.fillText(o.t1 || '', mx, y);
+  y += Math.round(s * 1.25); x.fillStyle = VANG; x.fillText(o.t2 || '', mx, y);
+  y += Math.round(s * 0.8) + 14; x.fillStyle = VANG; x.fillRect(mx - 40, y, 80, 3);
+  if (o.sub) { y += 44; let ss = 30; x.font = F(500, ss, true); while (x.measureText(o.sub).width > CW - 80 && ss > 24) { ss--; x.font = F(500, ss, true); } x.fillStyle = '#FFFFFF'; x.fillText(o.sub, mx, y); }
+  // chân: liên hệ rõ, đủ tương phản
+  x.fillStyle = 'rgba(240,198,110,0.18)'; rr(CX + 40, CY + CH - 88, CW - 80, 56, 28); x.fill();
+  x.font = F(700, 24); x.fillStyle = '#FFFFFF'; x.fillText('Tân Định · Gò Vấp  |  0932 668 642  |  onioffice.vn', mx, CY + CH - 60);
   x.textAlign = 'left';
   return c.toBuffer('image/png');
 }

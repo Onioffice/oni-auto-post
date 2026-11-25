@@ -17,8 +17,10 @@ export const LICH = [...WEB, ...MXH].sort((x, y) => x[0].localeCompare(y[0]) || 
 const MOI_LAN = Number(process.env.MOI_LAN || 3);          // mỗi lần chạy làm tối đa 3 bài (giữ chi phí và thời gian)
 const gioVN = () => new Date(Date.now() + 7 * 3600e3);
 
-// Zalo OA gói tiêu chuẩn giới hạn số bài/kỳ → Zalo chỉ ngày lẻ, ngày chẵn khung 13:00 là Threads
-const kenhKhung = (ngay, gio, kenh) => kenh;
+// Zalo OA gói Tiêu chuẩn tối đa 15 bài/tháng và máy đăng 10:53 chỉ đăng Zalo thứ Ba, Năm, Bảy (25/11/2026: Rà soát phát hiện
+// vòng lặp soạn Zalo 3 bài/ngày mà gần hết không được đăng) → Zalo chỉ soạn 1 bài khung 08:00 các ngày thứ Ba, Năm, Bảy (~13 bài/tháng).
+const ZALO_NGAY = [2, 4, 6];
+const kenhKhung = (ngay, gio, kenh) => (kenh === 'Zalo' && (gio !== '08:00' || !ZALO_NGAY.includes(new Date(ngay + 'T00:00:00Z').getUTCDay())) ? null : kenh);
 
 // han = chỉ lấy khung trong bao nhiêu giờ tới (25/11: bỏ hàng Grok Bot – Grok thôi dùng)
 export function khungTrong(posts, hang = [], han = 30) {
@@ -28,6 +30,7 @@ export function khungTrong(posts, hang = [], han = 30) {
     const ngay = homNay(d), dem = {};
     for (const [gio, k] of LICH) {
       const kenh = kenhKhung(ngay, gio, k);
+      if (!kenh) continue;
       const thu = dem[kenh] = (dem[kenh] || 0) + 1;            // khung thứ mấy của kênh này trong ngày
       const co = song.filter(p => p.at === ngay && p.kenh === kenh).length;   // bài đã có (kể cả lịch cũ) chiếm khung trước
       const t = new Date(ngay + 'T' + gio + ':00Z');           // giờ VN biểu diễn như UTC để so với now (đã +7)
