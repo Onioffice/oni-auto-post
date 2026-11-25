@@ -24,7 +24,7 @@ async function main() {
     system: `Em là "Agent Thu thập tin" của Oni Office (cho thuê văn phòng trọn gói, văn phòng ảo, chỗ ngồi cố định, văn phòng chia sẻ, phòng họp tại TP.HCM – CS1 01 Nguyễn Văn Nguyễn, P. Tân Định; CS2 70 Đường số 8, KDC CityLand Park Hills, P. Gò Vấp; hỗ trợ thủ tục thành lập doanh nghiệp, FDI, giấy phép cho khách).
 Việc của em: TÌM và TÓM TẮT tin thật để các agent khác lên ý tưởng và soạn bài. Em không viết bài.
 Luật bắt buộc:
-- Chỉ ghi tin em đã thật sự mở/đọc được qua công cụ tìm kiếm, có link nguồn. Không bịa số liệu, số hiệu văn bản, ngày hiệu lực.
+- Chỉ ghi tin em đã thật sự mở/đọc được qua công cụ tìm kiếm, có link tới ĐÚNG bài viết (không ghi link trang chủ). Số hiệu văn bản nêu trong tin phải có trong chính trang đó – máy sẽ mở link đối chiếu, sai là bị loại. Không bịa số liệu, số hiệu văn bản, ngày hiệu lực.
 - Tin chính sách, thủ tục: ưu tiên nguồn Nhà nước (chinhphu.vn, baochinhphu.vn, vanban.chinhphu.vn, congbao.chinhphu.vn, mof.gov.vn, gdt.gov.vn, dangkykinhdoanh.gov.vn, cổng Bộ/Sở .gov.vn). Ghi đúng số hiệu như nguồn ghi. Từ 01/7/2025 TP.HCM không còn cấp quận – không viết "Quận 1".
 - Tin trong 7 ngày gần nhất (trừ nhóm "seo"). Không chính trị, tai nạn, tin đồn, giật gân, meme không hợp hình ảnh công ty.
 - Không nhắc tên khách hàng, đối thủ cụ thể theo cách chê bai.`,
@@ -60,9 +60,27 @@ Trong chữ không dùng dấu ngoặc kép " (dùng « » nếu cần trích). 
   const ds = (J.tin || [])
     .filter(x => x && x.tieuDe && LOAI.includes(x.loai) && (x.loai === 'seo' || /^https?:\/\//.test(x.nguon || '')))
     .map(x => ({ ...x, kenh: (x.kenh || []).filter(k => KENH.includes(k)), diem: Math.max(0, Math.min(10, Math.round(+x.diem || 5))) }));
+  // Tự kiểm nguồn: link phải trỏ tới bài cụ thể (không phải trang chủ); số hiệu văn bản nêu trong tin phải có trong trang nguồn
+  const SO_HIEU = /\b\d{1,5}\/(?:\d{4}\/)?[A-ZĐ]{1,5}(?:-[A-ZĐ]{1,8})*\b/g;
+  const bo = [];
+  for (const x of [...ds]) {
+    if (x.loai === 'seo' && !x.nguon) continue;
+    let u; try { u = new URL(x.nguon); } catch { u = null; }
+    if (!u || u.pathname.replace(/\//g, '').length < 8) { bo.push(`${x.tieuDe.slice(0, 50)} (link chỉ là trang chủ)`); ds.splice(ds.indexOf(x), 1); continue; }
+    const so = [...new Set(((x.tieuDe || '') + ' ' + (x.tomTat || '')).match(SO_HIEU) || [])];
+    if (!so.length) continue;
+    try {
+      const r = await fetch(x.nguon, { signal: AbortSignal.timeout(15000), headers: { 'user-agent': 'Mozilla/5.0 (Oni Office bot kiểm nguồn)' } });
+      const html = r.ok ? (await r.text()).replace(/\s+/g, ' ') : '';
+      const thieu = so.filter(v => !html.includes(v));
+      if (!html) x.diem = Math.max(0, x.diem - 2), x.tomTat += ' (Chưa mở được trang nguồn để đối chiếu số hiệu – cần kiểm.)';
+      else if (thieu.length) { bo.push(`${x.tieuDe.slice(0, 50)} (số hiệu ${thieu.join(', ')} không có trong trang nguồn)`); ds.splice(ds.indexOf(x), 1); }
+    } catch { x.diem = Math.max(0, x.diem - 2); x.tomTat += ' (Chưa mở được trang nguồn để đối chiếu số hiệu – cần kiểm.)'; }
+  }
+  if (bo.length) await ghiLoi('Agent Thu thập tin – kiểm nguồn', '2. Tin bị loại', bo.join('; '), 'Đã tự loại');
   if (!ds.length) throw new Error('Không thu được tin nào hợp lệ (thiếu nguồn hoặc sai nhóm)');
   const dem = LOAI.map(l => [l, ds.filter(x => x.loai === l).length]).filter(x => x[1]).map(x => x.join(' ')).join(', ');
-  const r = await ghiTin(ds, `Thu ${ds.length} tin (${dem})`);
+  const r = await ghiTin(ds, `Thu ${ds.length} tin (${dem})${bo.length ? `, tự loại ${bo.length} tin sai nguồn` : ''}`);
   console.log(`Ghi kho: ${r.n} tin mới, bỏ ${r.bo} tin trùng – ${dem}`);
 }
 
