@@ -65,8 +65,8 @@ async function raSoat(kb) {
   if ((kb.phan_canh || []).some(c => !/^[\x00-\x7F\s]+$/.test(String(c.prompt || 'x').replace(/[–—’“”]/g, '')))) loi.push('Prompt cảnh phải viết tiếng Anh');
   const t = await claude({
     model: MODEL_KIEM, max_tokens: 6000, system: LUAT_VIDEO,
-    messages: [{ role: 'user', content: `Em là Agent Rà soát của phòng Marketing Oni Office. Kiểm kịch bản video sau theo LUẬT VIDEO. Chỉ nêu lỗi THẬT (vi phạm luật, sai địa chỉ, nhân vật AI đóng vai khách thật/lời chứng thực, hứa hẹn quá mức, sai chính tả tiếng Việt, hook 1 (0–3 giây) hoặc hook 2 (giữa video) yếu, không gây tò mò, cảnh không khớp lời thoại). Không bắt bẻ văn phong.
-${JSON.stringify(kb).slice(0, 7000)}
+    messages: [{ role: 'user', content: `Em là Agent Rà soát của phòng Marketing Oni Office. Kiểm kịch bản video sau theo LUẬT VIDEO. Kịch bản dưới đây là ĐẦY ĐỦ (không bị cắt). Chỉ nêu lỗi THẬT (vi phạm luật, sai địa chỉ, nhân vật AI đóng vai khách thật/lời chứng thực, hứa hẹn quá mức, sai chính tả tiếng Việt, hook 1 (0–3 giây) hoặc hook 2 (giữa video) yếu, không gây tò mò, cảnh không khớp lời thoại). Không bắt bẻ văn phong.
+${JSON.stringify(kb)}
 Trả lời DUY NHẤT: \`\`\`json
 {"dat":true,"loi":["…"]}
 \`\`\`` }]
@@ -76,7 +76,7 @@ Trả lời DUY NHẤT: \`\`\`json
 }
 
 async function lamMot(v, tin) {
-  let ban = v, lan = v.lan_sua || 0, lich = [];
+  let ban = v, lan = v._lamLai ? 0 : (v.lan_sua || 0), lich = [];
   while (true) {
     const kb = await vietKichBan(ban, tin);
     const loi = await raSoat(kb);
@@ -103,7 +103,10 @@ async function main() {
     ...ds.filter(v => v.trang_thai === 'can_sua' && (v.lan_sua || 0) < TOI_DA_SUA && !/Rà soát/.test((v.lich_su || []).slice(-1)[0]?.boi || '')),   // Giám đốc trả lại
   ].slice(0, MOI_LAN);
   const iLL = process.argv.indexOf('--lam-lai');   // node scripts/video.mjs --lam-lai 12 → làm lại đúng video #12 (VD áp luật mới)
-  if (iLL > 0) { const v = ds.find(x => String(x.id) === process.argv[iLL + 1]); if (v && !viec.includes(v)) viec.unshift({ ...v, loi_ra_soat: v.loi_ra_soat || 'Áp luật mới: video phải có ít nhất 2 hook (0–3 giây và giữa video).' }); }
+  if (iLL > 0) for (const id of String(process.argv[iLL + 1] || '').split(',').reverse()) {
+    const v = ds.find(x => String(x.id) === id.trim());
+    if (v) { const i = viec.findIndex(x => x.id === v.id); if (i >= 0) viec.splice(i, 1); viec.unshift({ ...v, _lamLai: true, loi_ra_soat: 'Làm lại: đủ 5–8 cảnh, ≥2 hook (0–3 giây và giữa video), cảnh cuối có logo + Hotline/Zalo 0932 668 642 + onioffice.vn, caption có "Nội dung do AI tạo." và 3–5 hashtag.' }); }
+  }
   const ket = [];
   // Hàng đang ít → tự lấy tin trong kho làm 1 video mới (hợp kênh TikTok/video ngắn)
   const dangLam = ds.filter(v => ['kich_ban', 'ra_soat', 'can_sua', 'cho_duyet'].includes(v.trang_thai)).length;
