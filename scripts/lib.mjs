@@ -23,8 +23,10 @@ Giải pháp tối ưu chi phí cho doanh nghiệp hiện đại.
 export const CRM_URL = 'https://vlhwncwycicuyxpvrzyo.supabase.co/functions/v1/mkt-api';
 const DUNG_CRM = true;
 // 25/11/2026 (Boss duyệt gộp bảng điều khiển vào CRM): công tắc, nhật ký máy, Sổ lỗi, báo cáo tuần cũng đọc/ghi ở CRM.
-// Còn ở Cloudflare: cổng Grok Bot (/api/grok/*), số các kênh (/api/app/drv, /api/app/keys).
-const VE_CRM = ['/api/caidat', '/api/nhatky', '/api/soloi', '/api/baocao'];
+// 25/11 chiều: bỏ Grok Bot (chị không dùng nữa) → Agent Thu thập tin ghi kho tin ở CRM (/api/tin);
+// số các kênh (Search Console…) do máy chủ Apps Script gửi thẳng về CRM (/api/gsc).
+// Còn ở Cloudflare: chỉ /api/app/keys (số sức khỏe kênh oni_mks cho báo cáo tuần).
+const VE_CRM = ['/api/caidat', '/api/nhatky', '/api/soloi', '/api/baocao', '/api/gsc', '/api/tin', '/api/tin/dung'];
 let _oidc = '', _oidcHet = 0;
 export async function maOIDC() {
   if (_oidc && Date.now() < _oidcHet) return _oidc;
@@ -44,7 +46,7 @@ export async function crm(duong, opt = {}, lan = 1) {
   return j;
 }
 async function kho(duong, opt = {}, lan = 1) {
-  if (DUNG_CRM && (duong.startsWith('/api/mk') || VE_CRM.includes(duong))) return crm(duong, opt);
+  if (DUNG_CRM && (duong.startsWith('/api/mk') || VE_CRM.includes(duong.split('?')[0]))) return crm(duong, opt);
   // Cloudflare KV chỉ cho ghi 1 lần/giây vào cùng một khóa → ghi dồn dập bị lỗi 500/429: đợi rồi thử lại
   if (lan > 1) await new Promise(s => setTimeout(s, 1500 * lan));
   const r = await fetch(env('ONI_API_URL').replace(/\/$/, '') + duong, { ...opt, headers: { 'content-type': 'application/json', authorization: 'Bearer ' + env('ONI_API_KEY'), ...(opt.headers || {}) } });
@@ -69,9 +71,12 @@ export const layMK = async () => (await kho('/api/mk')).mk || { posts: [], ai: {
 export const opMK = async (...ops) => (await kho('/api/mk/op', { method: 'POST', body: JSON.stringify({ ops }) })).kq || [];
 export const layLenh = async () => (await kho('/api/lenh')).lenh || [];
 export const suaLenh = (id, o) => kho('/api/lenh/' + id, { method: 'PUT', body: JSON.stringify(o) });
-// Cổng Grok Bot: hàng bài bot ngoài đã nộp, chờ máy kiểm lỗi + làm hình
-export const layHangGrok = async () => (await kho('/api/grok/hang')).hang || [];
-export const xongGrok = ids => kho('/api/grok/xong', { method: 'POST', body: JSON.stringify({ ids }) });
+// Kho tin của Agent Thu thập tin (CRM): tin chưa dùng → bước Ý tưởng chọn → đánh dấu đã dùng
+export const layTin = async (n = 40) => (await kho('/api/tin?n=' + n)).tin || [];
+export const ghiTin = (tin, kq) => kho('/api/tin', { method: 'POST', body: JSON.stringify({ tin, kq }) });
+export const dungTin = dung => dung.length ? kho('/api/tin/dung', { method: 'POST', body: JSON.stringify({ dung }) }) : null;
+// Số các kênh (Search Console, Google Business, Zalo, Meta, Threads) – máy chủ Apps Script gửi về CRM mỗi sáng 6:45
+export const laySoKenh = async () => (await kho('/api/gsc')).gsc || {};
 export const layCaiDat = async () => (await kho('/api/caidat')).caidat || {};
 export async function ghiNhatKy(viec, kq) { try { await kho('/api/nhatky', { method: 'POST', body: JSON.stringify({ viec, kq }) }); } catch (e) { console.error('Không ghi được nhật ký:', e.message); } }
 export async function ghiLoi(viec, loai, loi, sua = 'Chưa', ma = '') {

@@ -33,24 +33,20 @@ jobs:
       # Công nhân đăng bài: tới giờ thì đăng (không cần cài gói, chạy vài giây)
       - name: Đăng bài tới giờ
         run: node scripts/dang.mjs || true
-      # Đếm bài Grok Bot nộp đang chờ kiểm + khung trống; không có việc thì dừng ngay
+      # Đếm bài cần sửa + khung trống; không có việc thì dừng ngay (25/11: bỏ Grok Bot)
       - name: Đếm việc
         id: dem
         run: |
-          echo "g=$(node scripts/kiemgrok.mjs --dem | tail -1)" >> "$GITHUB_OUTPUT"
           echo "s=$(node scripts/suabai.mjs --dem 2>/dev/null | tail -1 || echo 0)" >> "$GITHUB_OUTPUT"
           echo "n=$(node scripts/vonglap.mjs --kiem | tail -1)" >> "$GITHUB_OUTPUT"
-      - if: steps.dem.outputs.n != '0' || steps.dem.outputs.g != '0' || steps.dem.outputs.s != '0'
+      - if: steps.dem.outputs.n != '0' || steps.dem.outputs.s != '0'
         uses: actions/cache@v4
         with: { path: fonts, key: fonts-bevietnampro-v1 }
-      - if: steps.dem.outputs.n != '0' || steps.dem.outputs.g != '0' || steps.dem.outputs.s != '0'
+      - if: steps.dem.outputs.n != '0' || steps.dem.outputs.s != '0'
         run: npm ci
       - if: steps.dem.outputs.s != '0' && steps.dem.outputs.s != ''
         name: Sửa bài chị trả về (Cần sửa) → làm lại chữ + hình → Chờ BOSS
         run: node scripts/suabai.mjs || true
-      - if: steps.dem.outputs.g != '0'
-        name: Kiểm bài Grok Bot nộp → làm hình → Chờ duyệt
-        run: node scripts/kiemgrok.mjs || true
       - if: steps.dem.outputs.n != '0'
-        name: Viết bù khung còn trống – Tìm tin → ý tưởng → viết → kiểm → thiết kế → kiểm hình → xếp lịch
+        name: Viết bù khung còn trống – Kho tin → ý tưởng → viết → kiểm → thiết kế → kiểm hình → xếp lịch
         run: node scripts/vonglap.mjs

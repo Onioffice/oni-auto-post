@@ -2,7 +2,7 @@
 // Nguồn: tin chính thống về doanh nghiệp, thuế, FDI, thị trường văn phòng + xu hướng nội dung trên mạng xã hội,
 // chỉ chọn cái hợp phong cách Oni Office: cho thuê văn phòng / văn phòng ảo / phòng họp và hỗ trợ thủ tục cho doanh nghiệp Việt và FDI.
 import fs from 'node:fs';
-import { homNay, claude, layJSON } from './lib.mjs';
+import { homNay, claude, layJSON, laySoKenh, layTin } from './lib.mjs';
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 
 export const NGUON = `NGUỒN TIN ƯU TIÊN (tìm trong 72 giờ qua):
@@ -13,23 +13,27 @@ export const NGUON = `NGUỒN TIN ƯU TIÊN (tìm trong 72 giờ qua):
 - Xu hướng mạng xã hội: chủ đề doanh nhân/người làm tự do đang bàn (làm việc linh hoạt, khởi nghiệp nhỏ, hóa đơn điện tử, thuế hộ kinh doanh chuyển sang công ty, nhà đầu tư nước ngoài vào VN), định dạng đang hiệu quả (mẹo ngắn, checklist, câu hỏi thảo luận, hậu trường văn phòng).
 KHÔNG DÙNG: tin giật gân, chính trị, tai nạn, tin đồn, chủ đề không liên quan văn phòng/doanh nghiệp, trend nhảy múa hay meme không hợp hình ảnh công ty.`;
 
-async function tuKhoa() {               // từ khóa khách đang tìm trên Google (Search Console) – cho bài Website
+async function tuKhoa() {               // từ khóa khách đang tìm trên Google (Search Console) – máy chủ Apps Script gửi về CRM mỗi sáng
   try {
-    const r = await fetch(process.env.ONI_API_URL.replace(/\/$/, '') + '/api/app/drv', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + process.env.ONI_API_KEY }, body: JSON.stringify({ action: 'gsc_get' }) });
-    const g = (await r.json()).gsc || {};
+    const g = (await laySoKenh()).gsc || {};
     const ds = g.q || g.queries || g.kw || g.rows || [];
     return JSON.stringify(ds).slice(0, 3500);
   } catch (e) { return ''; }
 }
+// 25/11/2026: ý tưởng lấy từ KHO TIN do Agent Thu thập tin gom sẵn (thay Grok Bot); kho ít tin thì mới tự tìm thêm.
 export async function yTuongCho(khung, posts) {
   const kw = khung.some(k => k.kenh === 'Website') ? await tuKhoa() : '';
+  const kho = await layTin(40).catch(() => []);
+  const khoTxt = kho.map(t => `#${t.id} [${t.loai}${t.kenh?.length ? ' · ' + t.kenh.join('/') : ''}${t.tuKhoa ? ' · từ khóa: ' + t.tuKhoa : ''}] ${t.tieuDe} – ${t.tomTat}${t.yTuong ? ' Gợi ý: ' + t.yTuong : ''}${t.nguon ? ' (' + t.nguon + ')' : ''}`).join('\n');
   const ganDay = posts.slice().filter(p => !p.del && p.tt !== 'Hủy').sort((a, b) => (b.at || '').localeCompare(a.at || '')).slice(0, 60)
     .map(p => `- ${p.at} ${p.kenh}: ${p.tieude}`).join('\n');
   const t = await claude({
     max_tokens: 6000, system: QUY_TAC,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: kho.length >= 6 ? 2 : 5 }],
     messages: [{ role: 'user', content: `Hôm nay ${homNay()}. Em là công nhân "Ý tưởng" của Oni Office (cho thuê văn phòng, văn phòng ảo, phòng họp tại TP.HCM – CS1 Tân Định, CS2 Gò Vấp; hỗ trợ thủ tục doanh nghiệp cho doanh nghiệp Việt và nhà đầu tư FDI).
-${NGUON}
+${kho.length ? `KHO TIN do Agent Thu thập tin đã tìm và kiểm nguồn – ƯU TIÊN dùng, mỗi tin chỉ dùng cho 1 bài, ghi số #id vào "tin":
+${khoTxt}
+Chỉ tự tìm thêm trên mạng khi kho không có tin hợp khung đó.` : NGUON}
 
 Cần ý tưởng cho các khung giờ sau (mỗi khung một bài, KHÁC CHỦ ĐỀ nhau, không trùng các bài gần đây). Cùng một kênh trong cùng một ngày (VD Facebook 3 bài/ngày) phải là 3 chủ đề khác hẳn nhau, không chỉ đổi góc viết:
 ${khung.map(k => `- ${k.ngay} ${k.gio} – ${k.kenh}`).join('\n')}
@@ -43,7 +47,7 @@ Hợp giọng từng kênh: Threads = câu hỏi/trao đổi ngắn; LinkedIn = 
 Không bịa số liệu, giá, ưu đãi. Tin có số liệu phải ghi nguồn.
 Trả lời DUY NHẤT khối:
 \`\`\`json
-{"ytuong":[{"ngay":"YYYY-MM-DD","gio":"HH:MM","kenh":"…","yTuong":"1–2 câu nói rõ bài viết gì, cho ai","goc":"góc viết / định dạng","nguon":["https://…"]}]}
+{"ytuong":[{"ngay":"YYYY-MM-DD","gio":"HH:MM","kenh":"…","yTuong":"1–2 câu nói rõ bài viết gì, cho ai","goc":"góc viết / định dạng","nguon":["https://…"],"tin":123}]}
 \`\`\`` }]
   });
   return layJSON(t).ytuong || [];

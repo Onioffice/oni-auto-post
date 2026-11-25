@@ -1,0 +1,22 @@
+name: Agent Thu thập tin (5:37 và 12:37 giờ VN)
+# Thay Grok Bot (chị chốt 25/11/2026): tìm tin chính sách, FDI, kinh doanh, thị trường văn phòng, xu hướng MXH, từ khóa SEO
+# → ghi KHO TIN trong CRM; bước Ý tưởng của vòng lặp lấy tin trong kho để bot soạn bài. Tắt/bật ở CRM → Điều khiển bot Marketing.
+on:
+  schedule:
+    - cron: '37 22 * * *'
+    - cron: '37 5 * * *'
+  workflow_dispatch:
+concurrency: { group: oni-thutin, cancel-in-progress: false }
+permissions: { contents: read, id-token: write }
+jobs:
+  chay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/thutin.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ONI_MODEL: ${{ vars.ONI_MODEL }}
