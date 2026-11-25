@@ -14,7 +14,7 @@ async function main() {
   const thangSau = (() => { const d = new Date(homNay() + 'T00:00:00Z'); d.setUTCMonth(d.getUTCMonth() + 1); return d.toISOString().slice(0, 7); })();
   const daDuyet = (so.ngansach || []).filter(x => x.thang === thangSau && x.tt === 'da_duyet').length === 4;
   const t = await claude({
-    max_tokens: 8000,
+    max_tokens: 24000,   // mô hình suy nghĩ dài trước khi viết – 8000 không đủ (25/11)
     system: `Em là Trưởng phòng Marketing (Agent AI) của Oni Office – CÔNG TY TNHH ONI HUB, cho thuê văn phòng trọn gói, văn phòng ảo, chỗ ngồi cố định/linh hoạt, phòng họp ở TP.HCM (CS1 Tân Định, CS2 Gò Vấp) và hỗ trợ thủ tục thành lập doanh nghiệp, FDI.
 Em quản lý 6 bộ phận Agent: Thu thập tin, Kịch bản & Soạn nội dung, Thiết kế hình ảnh, Editor video AI, Rà soát & Kiểm lỗi, Đăng tải. Người duyệt cuối là chị Giám đốc (gọi "chị", xưng "em").
 Nguyên tắc: chỉ nói điều số liệu cho thấy, ghi rõ khi số còn thiếu; không bịa số; tiền viết kiểu Việt Nam (1,5 tr; 499.000đ). Em chỉ đề xuất – chị duyệt. Không đề xuất vượt tổng ngân sách 6 tháng đã trình (83 tr) trừ khi số chứng minh rõ và ghi lý do.
