@@ -17,17 +17,22 @@ async function main() {
   const ket = [];
   for (const p of ds.slice(0, MOI_LAN)) {
     const lyChi = (String(p.note || '').match(/Chị: ([^|]+)/g) || []).map(s => s.slice(5).trim());
+    // Chị dặn kiểm trùng: máy đã kiểm trùng trước khi soạn; bài tới được bước này là KHÔNG trùng → viết lại cho đạt, không bỏ trống
     const lyMay = (String(p.note || '').match(/Lỗi kiểm: ([^|]+)/) || [])[1] || '';
     const yeuCau = `LÀM LẠI bài ${p.ma} kênh ${p.kenh} đăng ${p.at} ${p.gio}. Bài cũ CHƯA ĐẠT, phải viết lại từ đầu cho đạt.
 LÝ DO PHẢI SỬA (làm đúng từng ý, đây là ưu tiên số 1):
 ${lyChi.length ? lyChi.map(s => '- Chị Giám đốc: ' + s).join('\n') : ''}${lyMay ? '\n- Máy kiểm lỗi: ' + lyMay.slice(0, 600) : ''}
+- Nếu chị dặn "kiểm trùng / trùng thì xóa": máy đã kiểm trong kho, bài này KHÔNG trùng bài nào → vẫn phải viết ra bài hoàn chỉnh (đổi góc nhìn cho khác hẳn bài cũ nếu cần).
 - Bài phải bám đúng dịch vụ Oni theo LUẬT SỐ 1 (nếu bài cũ lạc đề thì đổi sang chủ đề dịch vụ Oni gần nhất).
 BÀI CŨ (để biết chỗ sai, không chép lại phần sai):
 Tiêu đề: ${p.tieude}
 Nội dung: ${txt(p.nd).slice(0, 2500)}`;
     try {
       const r = await soanBai({ ngay: p.at, kenhs: [p.kenh], yeuCau, gio: p.gio, timTin: false, thayMa: p.ma });
-      ket.push(`${p.ma} ${p.kenh}: ${r.ra[0]?.tt || 'chưa ra bài'}`);
+      if (!r.ra?.length) {   // 25/11: không ra bài (VD Claude cho là trùng) → vẫn tính 1 lần sửa để không lặp mãi; đủ 3 lần thì báo chị
+        await opMK({ op: 'canSua', ma: p.ma, tang: '1', ly: `Rà soát: lần ${(p.lanSua || 0) + 1} làm lại không ra bài (có thể trùng chủ đề) – chị xem: giữ thì sửa yêu cầu, trùng thì bấm Hủy` });
+      }
+      ket.push(`${p.ma} ${p.kenh}: ${r.ra[0]?.tt || 'chưa ra bài (tính 1 lần sửa)'}`);
     } catch (e) { await ghiLoi('Sửa bài ' + p.ma, '1. Chạy hỏng', e.message, 'Chưa', p.at); ket.push(`${p.ma}: lỗi`); }
   }
   const ket3 = (M.posts || []).filter(p => !p.del && p.tt === 'Cần sửa' && (p.lanSua || 0) >= 3 && (p.at || '') >= homNay());
