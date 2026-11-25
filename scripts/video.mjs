@@ -11,7 +11,12 @@ const TOI_DA_SUA = 3, MOI_LAN = Number(process.env.VIDEO_MOI_LAN || 3), HANG_TOI
 const ghiVideo = p => crm('/api/video', { method: 'POST', body: JSON.stringify(p) });
 
 const LUAT_VIDEO = `LUẬT VIDEO ONI OFFICE (bắt buộc):
-- Video dọc 9:16, dài 20–35 giây, 5–8 cảnh; 3 giây đầu có câu móc nói trúng nỗi lo của người xem.
+- Video dọc 9:16, dài 20–35 giây, 5–8 cảnh.
+- BẮT BUỘC ÍT NHẤT 2 HOOK (điểm móc giữ người xem) – chị chốt 25/11/2026:
+  · Hook 1 ở giây 0–3: câu hỏi/khẳng định gây tò mò nói trúng nỗi lo người xem (không chào hỏi, không giới thiệu công ty trước).
+  · Hook 2 (móc lại) ở khoảng giây 8–18: bất ngờ, con số, "nhưng…", lật vấn đề hoặc hứa hẹn điều sắp tiết lộ – để người xem không lướt qua giữa video.
+  · Có thể thêm Hook 3 trước lời kêu gọi cuối. Mỗi hook phải hiện cả ở lời thoại và chữ trên hình của cảnh đó.
+  · Ghi rõ trong "hooks": [{"giay":"0–3","cau":"…","kieu":"câu hỏi|con số|bất ngờ|lật vấn đề|hứa hẹn"}] và đánh dấu "hook": true ở cảnh chứa hook.
 - Nhân vật và bối cảnh đều do AI tạo. Nhân vật chỉ là người dẫn hoặc nhân viên tư vấn minh họa; KHÔNG đóng vai khách hàng thật, KHÔNG nói lời khen/đánh giá như khách, KHÔNG dùng tên, mặt, logo người/công ty có thật.
 - Caption phải có dòng "Nội dung do AI tạo." và 3–5 hashtag; cuối video có logo Oni Office + Hotline/Zalo 0932 668 642 + onioffice.vn.
 - Địa chỉ: CS1 01 Nguyễn Văn Nguyễn, P. Tân Định; CS2 70 Đường số 8, KDC CityLand Park Hills, P. Gò Vấp, TP.HCM. Không ghi "Quận".
@@ -29,7 +34,7 @@ Viết kịch bản video ${v.kenh || 'TikTok'}:
 ${v.muc_tieu ? '- Mục tiêu: ' + v.muc_tieu + '\n' : ''}${v.ghi_chu ? '- Ghi chú của Giám đốc: ' + v.ghi_chu + '\n' : ''}${tin ? `- Dựa trên tin (đã kiểm nguồn): ${tin.tieuDe} – ${tin.tomTat} (${tin.nguon || 'không có link'})\n` : ''}${v.loi_ra_soat ? `- BẢN TRƯỚC BỊ TRẢ LẠI vì: ${v.loi_ra_soat}\n  → Sửa đúng từng lỗi này.\n` : ''}${v.kich_ban ? '- Kịch bản cũ (không chép phần sai):\n' + String(v.kich_ban).slice(0, 2000) + '\n' : ''}
 Trả lời DUY NHẤT khối:
 \`\`\`json
-{"tieu_de":"…","muc_tieu":"…","doi_tuong":"…","kich_ban":"đoạn văn kể diễn biến video","phan_canh":[{"giay":"0–3","canh":"…","nhan_vat_ai":"…","boi_canh_ai":"…","chu_tren_hinh":"…","loi_thoai":"…","prompt":"English prompt…"}],"caption":"… Nội dung do AI tạo. #…","nhac":"thể loại nhạc nền, nhịp"}
+{"tieu_de":"…","muc_tieu":"…","doi_tuong":"…","kich_ban":"đoạn văn kể diễn biến video","hooks":[{"giay":"0–3","cau":"…","kieu":"…"},{"giay":"10–13","cau":"…","kieu":"…"}],"phan_canh":[{"giay":"0–3","canh":"…","hook":true,"nhan_vat_ai":"…","boi_canh_ai":"…","chu_tren_hinh":"…","loi_thoai":"…","prompt":"English prompt…"}],"caption":"… Nội dung do AI tạo. #…","nhac":"thể loại nhạc nền, nhịp"}
 \`\`\`` }]
   });
   const j = layJSON(t);
@@ -48,10 +53,19 @@ async function raSoat(kb) {
   if (!/Nội dung do AI tạo/i.test(kb.caption || '')) loi.push('Caption thiếu dòng "Nội dung do AI tạo."');
   if (!/0932\s?668\s?642/.test(chu)) loi.push('Thiếu Hotline/Zalo 0932 668 642 ở cảnh cuối');
   const n = (kb.phan_canh || []).length; if (n < 5 || n > 8) loi.push(`Cần 5–8 cảnh (đang ${n})`);
+  // Luật 2 hook (25/11): hook 1 bắt đầu ở giây 0, hook 2 từ giây 6 trở đi; mỗi hook phải có trong lời thoại hoặc chữ trên hình
+  const giay0 = g => Number(String(g || '').match(/\d+/)?.[0] ?? NaN);
+  const hooks = Array.isArray(kb.hooks) ? kb.hooks.filter(h => h && h.cau) : [];
+  if (hooks.length < 2) loi.push(`Video phải có ít nhất 2 hook (đang ${hooks.length})`);
+  else {
+    if (giay0(hooks[0].giay) !== 0) loi.push('Hook 1 phải nằm ở giây 0–3');
+    if (!hooks.slice(1).some(h => giay0(h.giay) >= 6)) loi.push('Thiếu hook móc lại ở giữa video (từ giây 6 trở đi)');
+  }
+  if ((kb.phan_canh || []).filter(c => c.hook).length < 2) loi.push('Phải đánh dấu "hook" ở ít nhất 2 cảnh');
   if ((kb.phan_canh || []).some(c => !/^[\x00-\x7F\s]+$/.test(String(c.prompt || 'x').replace(/[–—’“”]/g, '')))) loi.push('Prompt cảnh phải viết tiếng Anh');
   const t = await claude({
     model: MODEL_KIEM, max_tokens: 6000, system: LUAT_VIDEO,
-    messages: [{ role: 'user', content: `Em là Agent Rà soát của phòng Marketing Oni Office. Kiểm kịch bản video sau theo LUẬT VIDEO. Chỉ nêu lỗi THẬT (vi phạm luật, sai địa chỉ, nhân vật AI đóng vai khách thật/lời chứng thực, hứa hẹn quá mức, sai chính tả tiếng Việt, câu móc 3 giây đầu yếu, cảnh không khớp lời thoại). Không bắt bẻ văn phong.
+    messages: [{ role: 'user', content: `Em là Agent Rà soát của phòng Marketing Oni Office. Kiểm kịch bản video sau theo LUẬT VIDEO. Chỉ nêu lỗi THẬT (vi phạm luật, sai địa chỉ, nhân vật AI đóng vai khách thật/lời chứng thực, hứa hẹn quá mức, sai chính tả tiếng Việt, hook 1 (0–3 giây) hoặc hook 2 (giữa video) yếu, không gây tò mò, cảnh không khớp lời thoại). Không bắt bẻ văn phong.
 ${JSON.stringify(kb).slice(0, 7000)}
 Trả lời DUY NHẤT: \`\`\`json
 {"dat":true,"loi":["…"]}
@@ -88,6 +102,8 @@ async function main() {
     ...ds.filter(v => v.trang_thai === 'y_tuong'),
     ...ds.filter(v => v.trang_thai === 'can_sua' && (v.lan_sua || 0) < TOI_DA_SUA && !/Rà soát/.test((v.lich_su || []).slice(-1)[0]?.boi || '')),   // Giám đốc trả lại
   ].slice(0, MOI_LAN);
+  const iLL = process.argv.indexOf('--lam-lai');   // node scripts/video.mjs --lam-lai 12 → làm lại đúng video #12 (VD áp luật mới)
+  if (iLL > 0) { const v = ds.find(x => String(x.id) === process.argv[iLL + 1]); if (v && !viec.includes(v)) viec.unshift({ ...v, loi_ra_soat: v.loi_ra_soat || 'Áp luật mới: video phải có ít nhất 2 hook (0–3 giây và giữa video).' }); }
   const ket = [];
   // Hàng đang ít → tự lấy tin trong kho làm 1 video mới (hợp kênh TikTok/video ngắn)
   const dangLam = ds.filter(v => ['kich_ban', 'ra_soat', 'can_sua', 'cho_duyet'].includes(v.trang_thai)).length;

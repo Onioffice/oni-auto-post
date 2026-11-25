@@ -3,6 +3,8 @@ on:
   schedule:
     - cron: '7 2 * * *'
   workflow_dispatch:
+    inputs:
+      lam_lai: { description: "Số video cần làm lại (VD 1)", required: false }
 concurrency: { group: oni-video, cancel-in-progress: false }
 permissions: { contents: read, id-token: write }
 jobs:
@@ -13,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - run: node scripts/video.mjs
+      - run: node scripts/video.mjs ${{ inputs.lam_lai && format('--lam-lai {0}', inputs.lam_lai) || '' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ONI_MODEL: ${{ vars.ONI_MODEL }}
