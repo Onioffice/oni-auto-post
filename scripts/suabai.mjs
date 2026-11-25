@@ -1,6 +1,6 @@
 // CÔNG NHÂN SỬA BÀI (chị chốt 09/11/2026): bài chị bấm "Cần sửa" (hoặc máy kiểm chưa đạt) → bot đọc lý do,
 // viết lại cả chữ lẫn hình theo đúng lý do + luật, kiểm lỗi lại, ghi đè đúng bài cũ (giữ mã, giờ đăng) → về lại "Chờ BOSS".
-// Mỗi bài tối đa 2 lần tự sửa; quá 2 lần vẫn chưa đạt thì để nguyên chờ chị xem.
+// Mỗi bài tối đa 3 lần tự sửa (chị chốt 25/11/2026: Rà soát trả về đến khi đạt); quá 3 lần thì báo kẹt, chờ chị xem.
 // `node scripts/suabai.mjs --dem` chỉ đếm số bài cần sửa.
 import { layMK, homNay, ghiNhatKy, opMK, ghiLoi, layCaiDat } from './lib.mjs';
 const MOI_LAN = Number(process.env.SUA_MOI_LAN || 4);
@@ -8,7 +8,7 @@ const txt = h => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').t
 
 async function main() {
   const [M, cd] = await Promise.all([layMK(), layCaiDat()]);
-  const ds = (M.posts || []).filter(p => !p.del && p.tt === 'Cần sửa' && (p.lanSua || 0) < 2 && (p.at || '') >= homNay() && p.ma)
+  const ds = (M.posts || []).filter(p => !p.del && p.tt === 'Cần sửa' && (p.lanSua || 0) < 3 && (p.at || '') >= homNay() && p.ma)
     .sort((a, b) => (a.at + a.gio).localeCompare(b.at + b.gio));
   if (process.argv.includes('--dem')) { console.log(cd.suabai === false ? 0 : ds.length); return; }
   if (cd.suabai === false) { console.log('Công tắc sửa bài đang tắt'); return; }
@@ -30,7 +30,9 @@ Nội dung: ${txt(p.nd).slice(0, 2500)}`;
       ket.push(`${p.ma} ${p.kenh}: ${r.ra[0]?.tt || 'chưa ra bài'}`);
     } catch (e) { await ghiLoi('Sửa bài ' + p.ma, '1. Chạy hỏng', e.message, 'Chưa', p.at); ket.push(`${p.ma}: lỗi`); }
   }
-  const kq = `Làm lại ${ket.length}/${ds.length} bài cần sửa – ` + ket.join('; ');
+  const ket3 = (M.posts || []).filter(p => !p.del && p.tt === 'Cần sửa' && (p.lanSua || 0) >= 3 && (p.at || '') >= homNay());
+  if (ket3.length) await ghiLoi('Rà soát bài', '3. Kẹt sau 3 lần sửa', ket3.slice(0, 8).map(p => `${p.ma} ${p.kenh} ${p.at}`).join('; '), 'Chưa – cần Giám đốc xem');
+  const kq = `Làm lại ${ket.length}/${ds.length} bài cần sửa${ket3.length ? ` · ${ket3.length} bài kẹt quá 3 lần (báo Giám đốc)` : ''} – ` + ket.join('; ');
   await ghiNhatKy('Sửa bài', kq); await opMK({ op: 'nhatKy', viec: 'Bot sửa bài theo chị', ct: kq }); console.log(kq);
 }
 main().catch(e => { console.error(e); process.exit(1); });

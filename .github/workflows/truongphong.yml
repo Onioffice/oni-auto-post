@@ -1,0 +1,23 @@
+name: Agent Trưởng phòng Marketing (thứ Hai 8:17 + ngày 1 hằng tháng 8:23)
+on:
+  schedule:
+    - cron: '17 1 * * 1'
+    - cron: '23 1 1 * *'
+  workflow_dispatch:
+    inputs:
+      thang: { description: "Báo cáo tháng + đề xuất ngân sách (gõ 1)", required: false }
+concurrency: { group: oni-truongphong, cancel-in-progress: false }
+permissions: { contents: read, id-token: write }
+jobs:
+  chay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/truongphong.mjs ${{ inputs.thang == '1' && '--thang' || '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ONI_MODEL: ${{ vars.ONI_MODEL }}
+          SU_KIEN: ${{ github.event_name }}
