@@ -22,7 +22,7 @@ const LUAT_VIDEO = `LUẬT VIDEO ONI OFFICE (bắt buộc):
 
 async function vietKichBan(v, tin) {
   const t = await claude({
-    max_tokens: 7000, system: QUY_TAC + '\n\n' + LUAT_VIDEO,
+    max_tokens: 16000, system: QUY_TAC + '\n\n' + LUAT_VIDEO,
     messages: [{ role: 'user', content: `Hôm nay ${homNay()}. Em là Agent Editor video AI của Oni Office (cho thuê văn phòng trọn gói, văn phòng ảo, chỗ ngồi, phòng họp tại TP.HCM; hỗ trợ thủ tục thành lập doanh nghiệp, FDI).
 Viết kịch bản video ${v.kenh || 'TikTok'}:
 - Ý tưởng / tiêu đề: ${v.tieu_de}
@@ -50,7 +50,7 @@ async function raSoat(kb) {
   const n = (kb.phan_canh || []).length; if (n < 5 || n > 8) loi.push(`Cần 5–8 cảnh (đang ${n})`);
   if ((kb.phan_canh || []).some(c => !/^[\x00-\x7F\s]+$/.test(String(c.prompt || 'x').replace(/[–—’“”]/g, '')))) loi.push('Prompt cảnh phải viết tiếng Anh');
   const t = await claude({
-    model: MODEL_KIEM, max_tokens: 1500, system: LUAT_VIDEO,
+    model: MODEL_KIEM, max_tokens: 6000, system: LUAT_VIDEO,
     messages: [{ role: 'user', content: `Em là Agent Rà soát của phòng Marketing Oni Office. Kiểm kịch bản video sau theo LUẬT VIDEO. Chỉ nêu lỗi THẬT (vi phạm luật, sai địa chỉ, nhân vật AI đóng vai khách thật/lời chứng thực, hứa hẹn quá mức, sai chính tả tiếng Việt, câu móc 3 giây đầu yếu, cảnh không khớp lời thoại). Không bắt bẻ văn phong.
 ${JSON.stringify(kb).slice(0, 7000)}
 Trả lời DUY NHẤT: \`\`\`json
