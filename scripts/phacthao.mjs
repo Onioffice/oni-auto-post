@@ -128,11 +128,19 @@ async function vePhacThao(c, tk, i, n, logo) {
     x.font = F(400, 28); x.fillStyle = NAVY; const ds = xuongDong(x, val, 690).slice(0, 2);
     ds.forEach((d, m) => x.fillText(d, 300, y + m * 38)); y += ds.length * 38 + 14;
   }
-  x.font = F(500, 22); x.fillStyle = 'rgba(24,32,58,0.5)'; x.fillText(anh ? 'Ảnh AI minh họa – Nội dung do AI tạo' : 'Phác thảo khung dây – Editor dựng theo bố cục này', 90, H - 50);
+  x.font = F(500, 22); x.fillStyle = 'rgba(24,32,58,0.5)'; x.fillText('Bản phác thảo nội bộ – chỉ để Giám đốc duyệt bố cục, không đăng', 90, H - 50);
   return cv.toBuffer('image/png');
 }
 
 export { vePhacThao };
+function kiemYTuong(yt) {
+  const chu = JSON.stringify(yt);
+  const loi = [];
+  if (/Nội dung do AI tạo|ảnh minh họa/i.test(chu)) loi.push('Có nhãn AI – chị chốt không ghi trên hình');
+  for (const r of CAM) if (r.test(chu)) loi.push('Ý tưởng có từ cấm: ' + r.source);
+  if ((yt.canh || []).some(c => /text|logo|letters|words/i.test(c.prompt_anh || '') && !/no text|no logo|without text/i.test(c.prompt_anh || ''))) loi.push('Prompt ảnh phải ghi rõ no text, no logo');
+  return loi;
+}
 function tuKiem(v, ds) {
   const loi = [];
   const chu = ds.map(c => [c.chu_tren_hinh, c.loi_thoai].join(' ')).join('\n');
@@ -155,16 +163,20 @@ async function main() {
   for (const v of hang) {
     try {
       const veLai = lyDoVeLai(v);
-      const yt = await lenYTuong(v, veLai);
-      const canh = [];
-      for (let i = 0; i < v.phan_canh.length; i++) {
-        const c = v.phan_canh[i], tk = yt.canh[i];
-        const buf = await vePhacThao(c, tk, i, v.phan_canh.length, logo);
-        const up = await taiAnh(`v${v.id}/canh-${i + 1}-${Date.now()}.png`, buf);
-        canh.push({ ...c, anh: up.url, thiet_ke: tk, prompt_anh: tk.prompt_anh || c.prompt });
-      }
-      const loi = tuKiem(v, canh);
-      if (loi.length) throw new Error('Tự kiểm chưa đạt: ' + loi.join('; '));
+      let yt, canh, loi = [], lan = 0;
+      do {   // Agent Rà soát phác thảo: sai thì tự trả về vẽ lại kèm lỗi, tối đa 3 lần
+        lan++;
+        yt = await lenYTuong(v, [veLai, loi.length ? 'Lần trước tự kiểm chưa đạt: ' + loi.join('; ') : ''].filter(Boolean).join(' · '));
+        canh = [];
+        for (let i = 0; i < v.phan_canh.length; i++) {
+          const c = v.phan_canh[i], tk = yt.canh[i];
+          const buf = await vePhacThao(c, tk, i, v.phan_canh.length, logo);
+          const up = await taiAnh(`v${v.id}/canh-${i + 1}-${Date.now()}.png`, buf);
+          canh.push({ ...c, anh: up.url, thiet_ke: tk, prompt_anh: tk.prompt_anh || c.prompt });
+        }
+        loi = tuKiem(v, canh).concat(kiemYTuong(yt));
+      } while (loi.length && lan < 3);
+      if (loi.length) throw new Error(`Tự sửa ${lan} lần vẫn chưa đạt: ` + loi.join('; '));
       await ghiVideo({ id: v.id, phan_canh: canh, trang_thai: 'phac_xong', boi: 'Agent Thiết kế ý tưởng', viec: `Phác thảo xong ${canh.length} cảnh – chờ Giám đốc duyệt. Ý tưởng: ${yt.y_tuong_chung || ''}`.slice(0, 480) });
       kq.push(`#${v.id} "${v.tieu_de}": ${canh.length} cảnh${GEMINI ? ' (ảnh AI)' : ' (khung dây)'}`);
     } catch (e) {

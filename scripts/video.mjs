@@ -2,7 +2,7 @@
 // Mỗi ngày 9:07: 1) ý tưởng chị giao (Ý tưởng) và video bị trả sửa → viết lại kịch bản + chia cảnh;
 // 2) hàng đang ít thì tự lấy 1 tin trong Kho tin làm video mới; 3) Agent Rà soát kiểm từng kịch bản:
 // sai thì tự trả về Editor làm lại (tối đa 3 lần), đạt thì "Chờ Giám đốc duyệt". Agent KHÔNG tự duyệt, KHÔNG đăng.
-// Nhân vật và bối cảnh đều do AI tạo (chị chọn 25/11) → luôn gắn nhãn "Nội dung do AI tạo"; không đóng giả khách thật.
+// Nhân vật và bối cảnh đều do AI tạo; không đóng giả khách thật. Chị chốt 28/11: KHÔNG ghi nhãn AI trên video, hình hay caption – chỉ bật nút khai báo AI của nền tảng khi đăng.
 // Bước dựng ra file video cần nối công cụ tạo video AI; chưa nối thì dừng ở "Đã duyệt kịch bản" và ghi nhật ký.
 import fs from 'node:fs';
 import { crm, claude, layJSON, layCaiDat, layTin, dungTin, ghiLoi, ghiNhatKy, MODEL_KIEM, homNay } from './lib.mjs';
@@ -18,7 +18,7 @@ const LUAT_VIDEO = `LUẬT VIDEO ONI OFFICE (bắt buộc):
   · Có thể thêm Hook 3 trước lời kêu gọi cuối. Mỗi hook phải hiện cả ở lời thoại và chữ trên hình của cảnh đó.
   · Ghi rõ trong "hooks": [{"giay":"0–3","cau":"…","kieu":"câu hỏi|con số|bất ngờ|lật vấn đề|hứa hẹn"}] và đánh dấu "hook": true ở cảnh chứa hook.
 - Nhân vật và bối cảnh đều do AI tạo. Nhân vật chỉ là người dẫn hoặc nhân viên tư vấn minh họa; KHÔNG đóng vai khách hàng thật, KHÔNG nói lời khen/đánh giá như khách, KHÔNG dùng tên, mặt, logo người/công ty có thật.
-- Caption phải có dòng "Nội dung do AI tạo." và 3–5 hashtag; cuối video có logo Oni Office + Hotline/Zalo 0932 668 642 + onioffice.vn.
+- KHÔNG ghi nhãn AI ("Nội dung do AI tạo", "ảnh minh họa"…) trên hình, lời thoại hay caption – khi đăng bật nút khai báo AI (chị chốt 28/11). Caption có 3–5 hashtag; cuối video có logo Oni Office + Hotline/Zalo 0932 668 642 + onioffice.vn.
 - Cơ sở (chuẩn Oni Studio 22/11): chỉ ghi tên "Oni Office Tân Định – Trung tâm Quận 1 cũ" và "Oni Office Gò Vấp – KDC CityLand Park Hills"; KHÔNG ghi số nhà, tên đường trên video.
 - Không ghi giá, ưu đãi trên hình hay lời thoại (giá chỉ báo khi khách hỏi). Không hứa hẹn kiểu "đảm bảo 100%", "rẻ nhất", "số 1", "tốt nhất".
 - Không nói Oni "tư vấn pháp lý/luật/thuế"; chỉ nói "hỗ trợ thủ tục". Tin chính sách phải đúng nguồn, ghi rõ số hiệu nếu nêu.
@@ -34,7 +34,7 @@ Viết kịch bản video ${v.kenh || 'TikTok'}:
 ${v.muc_tieu ? '- Mục tiêu: ' + v.muc_tieu + '\n' : ''}${v.ghi_chu ? '- Ghi chú của Giám đốc: ' + v.ghi_chu + '\n' : ''}${tin ? `- Dựa trên tin (đã kiểm nguồn): ${tin.tieuDe} – ${tin.tomTat} (${tin.nguon || 'không có link'})\n` : ''}${v.loi_ra_soat ? `- BẢN TRƯỚC BỊ TRẢ LẠI vì: ${v.loi_ra_soat}\n  → Sửa đúng từng lỗi này.\n` : ''}${v.kich_ban ? '- Kịch bản cũ (không chép phần sai):\n' + String(v.kich_ban).slice(0, 2000) + '\n' : ''}
 Trả lời DUY NHẤT khối:
 \`\`\`json
-{"tieu_de":"…","muc_tieu":"…","doi_tuong":"…","kich_ban":"đoạn văn kể diễn biến video","hooks":[{"giay":"0–3","cau":"…","kieu":"…"},{"giay":"10–13","cau":"…","kieu":"…"}],"phan_canh":[{"giay":"0–3","canh":"…","hook":true,"nhan_vat_ai":"…","boi_canh_ai":"…","chu_tren_hinh":"…","loi_thoai":"…","prompt":"English prompt…"}],"caption":"… Nội dung do AI tạo. #…","nhac":"thể loại nhạc nền, nhịp"}
+{"tieu_de":"…","muc_tieu":"…","doi_tuong":"…","kich_ban":"đoạn văn kể diễn biến video","hooks":[{"giay":"0–3","cau":"…","kieu":"…"},{"giay":"10–13","cau":"…","kieu":"…"}],"phan_canh":[{"giay":"0–3","canh":"…","hook":true,"nhan_vat_ai":"…","boi_canh_ai":"…","chu_tren_hinh":"…","loi_thoai":"…","prompt":"English prompt…"}],"caption":"… #…","nhac":"thể loại nhạc nền, nhịp"}
 \`\`\`` }]
   });
   const j = layJSON(t);
@@ -50,7 +50,7 @@ async function raSoat(kb) {
   const chu = [kb.kich_ban, kb.caption, ...(kb.phan_canh || []).flatMap(c => [c.chu_tren_hinh, c.loi_thoai])].join('\n');
   for (const r of CAM) if (r.test(chu)) loi.push('Có từ cấm: ' + r.source);
   if (GIA.test(chu)) loi.push('Có giá/ưu đãi trong lời thoại, chữ trên hình hoặc caption');
-  if (!/Nội dung do AI tạo/i.test(kb.caption || '')) loi.push('Caption thiếu dòng "Nội dung do AI tạo."');
+  if (/Nội dung do AI tạo|ảnh minh họa|hình ảnh minh họa/i.test(chu)) loi.push('Có nhãn AI trên hình/caption – chị chốt không ghi, chỉ bật nút khai báo AI khi đăng');
   if (!/0932\s?668\s?642/.test(chu)) loi.push('Thiếu Hotline/Zalo 0932 668 642 ở cảnh cuối');
   const n = (kb.phan_canh || []).length; if (n < 5 || n > 8) loi.push(`Cần 5–8 cảnh (đang ${n})`);
   // Luật 2 hook (25/11): hook 1 bắt đầu ở giây 0, hook 2 từ giây 6 trở đi; mỗi hook phải có trong lời thoại hoặc chữ trên hình
@@ -105,7 +105,7 @@ async function main() {
   const iLL = process.argv.indexOf('--lam-lai');   // node scripts/video.mjs --lam-lai 12 → làm lại đúng video #12 (VD áp luật mới)
   if (iLL > 0) for (const id of String(process.argv[iLL + 1] || '').split(',').reverse()) {
     const v = ds.find(x => String(x.id) === id.trim());
-    if (v) { const i = viec.findIndex(x => x.id === v.id); if (i >= 0) viec.splice(i, 1); viec.unshift({ ...v, _lamLai: true, loi_ra_soat: 'Làm lại: đủ 5–8 cảnh, ≥2 hook (0–3 giây và giữa video), cảnh cuối có logo + Hotline/Zalo 0932 668 642 + onioffice.vn, caption có "Nội dung do AI tạo." và 3–5 hashtag.' }); }
+    if (v) { const i = viec.findIndex(x => x.id === v.id); if (i >= 0) viec.splice(i, 1); viec.unshift({ ...v, _lamLai: true, loi_ra_soat: 'Làm lại: đủ 5–8 cảnh, ≥2 hook (0–3 giây và giữa video), cảnh cuối có logo + Hotline/Zalo 0932 668 642 + onioffice.vn, caption 3–5 hashtag, không ghi nhãn AI.' }); }
   }
   const ket = [];
   // Hàng đang ít → tự lấy tin trong kho làm 1 video mới (hợp kênh TikTok/video ngắn)

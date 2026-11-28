@@ -1,0 +1,21 @@
+name: Agent Kỹ thuật – giám sát & sửa lỗi hệ thống (11:47, 20:47 giờ VN)
+on:
+  schedule:
+    - cron: '47 4 * * *'
+    - cron: '47 13 * * *'
+  workflow_dispatch:
+concurrency: { group: oni-giamsat, cancel-in-progress: false }
+permissions: { contents: read, id-token: write, actions: write }
+jobs:
+  chay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/giamsat.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ONI_MODEL: ${{ vars.ONI_MODEL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
