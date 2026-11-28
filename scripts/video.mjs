@@ -19,10 +19,10 @@ const LUAT_VIDEO = `LUẬT VIDEO ONI OFFICE (bắt buộc):
   · Ghi rõ trong "hooks": [{"giay":"0–3","cau":"…","kieu":"câu hỏi|con số|bất ngờ|lật vấn đề|hứa hẹn"}] và đánh dấu "hook": true ở cảnh chứa hook.
 - Nhân vật và bối cảnh đều do AI tạo. Nhân vật chỉ là người dẫn hoặc nhân viên tư vấn minh họa; KHÔNG đóng vai khách hàng thật, KHÔNG nói lời khen/đánh giá như khách, KHÔNG dùng tên, mặt, logo người/công ty có thật.
 - Caption phải có dòng "Nội dung do AI tạo." và 3–5 hashtag; cuối video có logo Oni Office + Hotline/Zalo 0932 668 642 + onioffice.vn.
-- Địa chỉ: CS1 01 Nguyễn Văn Nguyễn, P. Tân Định; CS2 70 Đường số 8, KDC CityLand Park Hills, P. Gò Vấp, TP.HCM. Không ghi "Quận".
+- Cơ sở (chuẩn Oni Studio 22/11): chỉ ghi tên "Oni Office Tân Định – Trung tâm Quận 1 cũ" và "Oni Office Gò Vấp – KDC CityLand Park Hills"; KHÔNG ghi số nhà, tên đường trên video.
 - Không ghi giá, ưu đãi trên hình hay lời thoại (giá chỉ báo khi khách hỏi). Không hứa hẹn kiểu "đảm bảo 100%", "rẻ nhất", "số 1", "tốt nhất".
 - Không nói Oni "tư vấn pháp lý/luật/thuế"; chỉ nói "hỗ trợ thủ tục". Tin chính sách phải đúng nguồn, ghi rõ số hiệu nếu nêu.
-- Màu nhận diện Oni: nâu #896441, vàng #FFE38A → #E9B83A, nền ngà #F7F3EC; phông Be Vietnam Pro.
+- Màu nhận diện Oni Studio: navy #0C1830, kem #F6EDDC, vàng đồng #C9A878, đồng ấm #7A5A1E; phông Be Vietnam Pro đậm. Clip người chuyển động (Veo), 24 khung/giây, không slow-motion.
 - "prompt" mỗi cảnh viết bằng tiếng Anh cho công cụ tạo video AI: mô tả nhân vật AI (tuổi, trang phục công sở Việt Nam), bối cảnh văn phòng hiện đại sáng, góc máy, ánh sáng, 9:16, không chữ, không logo trong ảnh AI.`;
 
 async function vietKichBan(v, tin) {
@@ -43,7 +43,7 @@ Trả lời DUY NHẤT khối:
 }
 
 // Rà soát = máy kiểm luật cứng + Agent Rà soát (Haiku) kiểm phần còn lại
-const CAM = [/tư vấn\s+(pháp lý|luật|thuế|kế toán)/i, /\bsố\s*1\b/i, /100\s*%/, /rẻ nhất/i, /tốt nhất/i, /hàng đầu/i, /uy tín nhất/i, /cam kết tuyệt đối/i, /Quận\s*\d/i];
+const CAM = [/tư vấn\s+(pháp lý|luật|thuế|kế toán)/i, /\bsố\s*1\b/i, /100\s*%/, /rẻ nhất/i, /tốt nhất/i, /hàng đầu/i, /uy tín nhất/i, /cam kết tuyệt đối/i, /Quận\s*\d(?!\s*cũ)/i, /\d+\s*(Nguyễn Văn Nguyễn|Đường số)/i];
 const GIA = /\d[\d.,]*\s*(đồng|đ(?![\p{L}])|vnđ|vnd|k(?![\p{L}])|nghìn|ngàn|triệu|usd|\$)/iu;
 async function raSoat(kb) {
   const loi = [];

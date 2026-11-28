@@ -14,11 +14,11 @@ const GEMINI = process.env.GEMINI_API_KEY || '';
 const ghiVideo = p => crm('/api/video', { method: 'POST', body: JSON.stringify(p) });
 const taiAnh = (ten, buf) => crm('/api/anh', { method: 'POST', body: JSON.stringify({ ten, b64: buf.toString('base64') }) });
 
-const CAM = [/tư vấn\s+(pháp lý|luật|thuế|kế toán)/i, /\bsố\s*1\b/i, /100\s*%/, /rẻ nhất/i, /tốt nhất/i, /hàng đầu/i, /Quận\s*\d/i];
+const CAM = [/tư vấn\s+(pháp lý|luật|thuế|kế toán)/i, /\bsố\s*1\b/i, /100\s*%/, /rẻ nhất/i, /tốt nhất/i, /hàng đầu/i, /Quận\s*\d(?!\s*cũ)/i, /\d+\s*(Nguyễn Văn Nguyễn|Đường số)/i];
 const GIA = /\d[\d.,]*\s*(đồng|đ(?![\p{L}])|vnđ|vnd|k(?![\p{L}])|nghìn|ngàn|triệu|usd|\$)/iu;
 
 const LUAT_THIET_KE = `LUẬT THIẾT KẾ PHÁC THẢO ONI OFFICE:
-- Khung dọc 9:16 (1080x1920). Màu Oni: nâu #896441, vàng #FFE38A → #E9B83A, nền ngà #F7F3EC, navy #18203A; phông Be Vietnam Pro.
+- Khung dọc 9:16 (1080x1920). Màu Oni Studio: navy #0C1830, kem #F6EDDC, vàng đồng #C9A878, đồng ấm #7A5A1E; phông Be Vietnam Pro đậm. Bố cục chuẩn Studio: logo slogan trên tấm navy góc trên trái, nhãn vàng dưới logo, tiêu đề phần trên (không che mặt nhân vật), phụ đề giữa–dưới, dải liên hệ bo tròn sát chân. Không ghi số nhà, tên đường; chỉ tên cơ sở Oni Office Tân Định / Oni Office Gò Vấp.
 - Văn phòng sáng, hiện đại, gọn; nhân vật AI mặc đồ công sở Việt Nam; KHÔNG đóng vai khách thật, không mặt/tên/logo người hay công ty có thật.
 - Chữ trên hình tối đa 2 dòng, 3–7 chữ/dòng, đặt ở vùng an toàn (không sát mép, tránh 1/5 dưới cùng vì nút TikTok che).
 - Cảnh hook: chữ to, tương phản mạnh, chuyển động nhanh. Cảnh cuối: logo Oni + Hotline/Zalo 0932 668 642 + onioffice.vn.
@@ -69,8 +69,8 @@ function xuongDong(x, chu, rong) {
 async function vePhacThao(c, tk, i, n, logo) {
   const W = 1080, H = 1920, cv = createCanvas(W, H), x = cv.getContext('2d');
   const F = (w, s) => `${w} ${s}px "Be Vietnam Pro"`;
-  const NAU = '#896441', NAVY = '#18203A', VANG = '#E9B83A';
-  x.fillStyle = '#F7F3EC'; x.fillRect(0, 0, W, H);
+  const NAU = '#7A5A1E', NAVY = '#0C1830', VANG = '#C9A878';
+  x.fillStyle = '#F6EDDC'; x.fillRect(0, 0, W, H);
   x.textBaseline = 'top';
   x.font = F(700, 34); x.fillStyle = NAU; x.fillText(`PHÁC THẢO · CẢNH ${i + 1}/${n} · ${c.giay || ''}s`, 60, 46);
   if (c.hook) { x.font = F(800, 30); const w = x.measureText('HOOK').width + 40; x.fillStyle = VANG; x.fillRect(W - 60 - w, 40, w, 50); x.fillStyle = NAVY; x.fillText('HOOK', W - 60 - w + 20, 48); }
