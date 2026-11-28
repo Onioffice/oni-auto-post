@@ -44,6 +44,7 @@ const chonPhongCach = (ds) => {
 const LUAT_VIDEO = `LUẬT VIDEO ONI OFFICE (bắt buộc):
 - Video dọc 9:16, dài 20–35 giây, 5–8 cảnh.
 - Hotline trong lời thoại và chữ trên hình luôn viết bằng số "0932 668 642" (bước giọng đọc mới đổi thành chữ). Giây của mỗi hook trong "hooks" phải TRÙNG ĐÚNG giây của cảnh chứa hook đó trong "phan_canh".
+- Nhân vật AI chỉ là người đang tìm giải pháp hoặc người dẫn: KHÔNG thể hiện cảm xúc đánh giá dịch vụ Oni (hài lòng, nhẹ nhõm, khen) – kết video bằng lời mời nhắn Oni, không bằng phản ứng của khách. Chỗ trống, lịch phòng họp luôn nói có điều kiện ("đặt trước", "tùy chỗ trống").
 - MỌI video phải dẫn về nhu cầu thuê văn phòng của Oni (văn phòng ảo, văn phòng trọn gói / phòng riêng, chỗ ngồi cố định, phòng họp, hỗ trợ thủ tục khi đặt trụ sở): nỗi đau → cú lật → giải pháp Oni → lời mời nhắn Oni.
 - Làm ĐÚNG phong cách được giao (trẻ trung, nhịp nhanh, chữ to đậm, màu navy – kem – vàng đồng). Phong cách "motion" thì mỗi cảnh mô tả đồ họa chuyển động (minh họa phẳng, chữ, bộ đếm…) – KHÔNG cần người thật; "prompt" khi đó mô tả hình minh họa phẳng tiếng Anh.
 - BẮT BUỘC ÍT NHẤT 2 HOOK (điểm móc giữ người xem) – chị chốt 25/11/2026:
