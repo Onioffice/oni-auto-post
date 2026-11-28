@@ -3,6 +3,7 @@
 // lỗi lần 2 thì báo Giám đốc; 2) đọc Sổ lỗi CRM 24 giờ qua, gom theo việc; 3) tìm việc bị kẹt (video quá 3 lần sửa, phác thảo/gói dựng lỗi);
 // 4) ghi nhật ký "Kỹ thuật" – dòng bắt đầu "CẦN GIÁM ĐỐC" là việc chị phải xem. Agent không sửa dữ liệu khách, không đăng, không duyệt.
 import { crm, ghiNhatKy } from './lib.mjs';
+import { layCaiDat } from './lib.mjs';
 const REPO = process.env.GITHUB_REPOSITORY || 'Onioffice/oni-auto-post';
 const TOKEN = process.env.GITHUB_TOKEN || '';
 const gh = async (duong, opt = {}) => {
@@ -17,7 +18,7 @@ async function mayChay() {
   const tu = new Date(Date.now() - 26 * 3600e3).toISOString().slice(0, 19);
   const runs = (await gh(`/actions/runs?per_page=100&created=>=${tu}`)).workflow_runs || [];
   const moiNhat = new Map();
-  for (const r of runs) { if (/giamsat/.test(r.path || '')) continue; if (!moiNhat.has(r.workflow_id)) moiNhat.set(r.workflow_id, r); }
+  for (const r of runs) { if (/giamsat|dieuphoi/.test(r.path || '')) continue; if (!moiNhat.has(r.workflow_id)) moiNhat.set(r.workflow_id, r); }
   const chayLai = [], baoChi = [];
   for (const r of moiNhat.values()) {
     if (r.status !== 'completed' || !['failure', 'timed_out', 'startup_failure'].includes(r.conclusion)) continue;
@@ -50,6 +51,7 @@ async function viecKet() {
 }
 
 async function main() {
+  if (process.env.SU_KIEN === 'schedule' && (await layCaiDat()).giamsat === false) { console.log('Chị đang tắt Agent Kỹ thuật.'); return; }
   const out = [];
   let may = { tong: 0, chayLai: [], baoChi: [] };
   try { may = await mayChay(); } catch (e) { out.push('Không đọc được GitHub: ' + e.message.slice(0, 120)); }

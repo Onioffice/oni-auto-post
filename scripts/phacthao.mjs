@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { crm, claude, layJSON, ghiLoi, ghiNhatKy, homNay } from './lib.mjs';
+import { layCaiDat } from './lib.mjs';
 import { chuanBi } from './khung.mjs';
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 const MOI_LAN = Number(process.env.PHAC_MOI_LAN || 3);
@@ -153,6 +154,7 @@ function tuKiem(v, ds) {
 }
 
 async function main() {
+  if (process.env.SU_KIEN === 'schedule' && (await layCaiDat()).phacthao === false) { console.log('Chị đang tắt Agent Thiết kế ý tưởng.'); return; }
   await chuanBi();
   let logo = null; try { const r = await fetch('https://onioffice.vn/wp-content/uploads/2026/01/LogoOnihub.png'); if (r.ok) logo = await loadImage(Buffer.from(await r.arrayBuffer())); } catch (e) {}
   const ds = (await crm('/api/video')).video || [];

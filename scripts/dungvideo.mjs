@@ -7,6 +7,7 @@
 // ưu tiên chất lượng). Agent KHÔNG duyệt, KHÔNG đăng. Không ghi nhãn AI trên video (chị chốt 22/11 và 28/11).
 import fs from 'node:fs';
 import { crm, claude, layJSON, ghiLoi, ghiNhatKy, homNay } from './lib.mjs';
+import { layCaiDat } from './lib.mjs';
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 const MOI_LAN = Number(process.env.DUNG_MOI_LAN || 2);
 
@@ -82,6 +83,7 @@ function raSoat(g, v) {
 }
 
 async function main() {
+  if (process.env.SU_KIEN === 'schedule' && (await layCaiDat()).dungvideo === false) { console.log('Chị đang tắt Agent Dựng video.'); return; }
   const ds = (await crm('/api/video')).video || [];
   const hang = ds.filter(v => v.trang_thai === 'dung' && !(v.goi_dung && v.goi_dung.kich_ban_studio)).slice(0, MOI_LAN);
   const kq = [];
