@@ -9,6 +9,7 @@ import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { crm, claude, layJSON, ghiLoi, ghiNhatKy, homNay } from './lib.mjs';
 import { layCaiDat } from './lib.mjs';
 import { chuanBi } from './khung.mjs';
+import { PHONG_CACH } from './video.mjs';
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 const MOI_LAN = Number(process.env.PHAC_MOI_LAN || 3);
 const GEMINI = process.env.GEMINI_API_KEY || '';
@@ -32,6 +33,7 @@ async function lenYTuong(v, veLai) {
     messages: [{ role: 'user', content: `Hôm nay ${homNay()}. Em là Agent Thiết kế ý tưởng của Oni Office. Kịch bản dưới đây Giám đốc ĐÃ DUYỆT – giữ nguyên lời thoại và chữ trên hình, chỉ thiết kế hình ảnh cho từng cảnh.
 Tiêu đề: ${v.tieu_de}
 Mục tiêu: ${v.muc_tieu || ''}
+Phong cách dựng: ${(() => { const p = PHONG_CACH.find(x => x.id === v.phong_cach); return p ? `${p.ten} (${p.loai === 'motion' ? 'đồ họa chuyển động, minh họa phẳng – không cần người thật' : 'clip người AI chuyển động'}) – ${p.mo}` : 'tự chọn, trẻ trung, nhịp nhanh'; })()}
 Diễn biến: ${String(v.kich_ban || '').slice(0, 3000)}
 Các cảnh:
 ${(v.phan_canh || []).map((c, i) => `${i + 1}. [${c.giay}s${c.hook ? ' · HOOK' : ''}] ${c.canh} | nhân vật: ${c.nhan_vat_ai || ''} | bối cảnh: ${c.boi_canh_ai || ''} | chữ: ${c.chu_tren_hinh || ''} | thoại: ${c.loi_thoai || ''}`).join('\n')}

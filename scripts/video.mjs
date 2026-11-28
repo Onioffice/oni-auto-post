@@ -10,8 +10,41 @@ const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url
 const TOI_DA_SUA = 3, MOI_LAN = Number(process.env.VIDEO_MOI_LAN || 3), HANG_TOI_THIEU = 3;
 const ghiVideo = p => crm('/api/video', { method: 'POST', body: JSON.stringify(p) });
 
+// THƯ VIỆN PHONG CÁCH (chị chốt 28/11/2026: video đa dạng, trẻ trung, chủ đề nào cũng dẫn về thuê văn phòng Oni).
+// "motion" = Oni Studio tự dựng bằng đồ họa chuyển động (không cần clip Veo) · "veo" = cần clip người thật AI (Veo).
+export const PHONG_CACH = [
+  { id: 'dem_tien', ten: 'Đồ họa phẳng + bộ đếm tiền', loai: 'motion', mo: 'Minh họa phẳng hoạt hình (văn phòng, ghế trống, đồng hồ), bộ đếm số tiền/thời gian chạy liên tục ở chân hình, chữ to đậm 2 màu, nhịp nhanh.' },
+  { id: 'chu_chay', ten: 'Chữ chạy theo nhịp (kinetic typography)', loai: 'motion', mo: 'Chỉ chữ: từ khóa bật lên theo nhịp nhạc, phóng to/xoay/gạch chân, nền màu Oni đổi theo ý, mỗi màn 1 ý ngắn.' },
+  { id: 'truoc_sau', ten: 'So sánh trước / sau chia đôi màn hình', loai: 'motion', mo: 'Màn hình chia đôi: bên trái cách cũ (tốn kém, rối) – bên phải với Oni (gọn, tiết kiệm), dấu ✗/✓ lần lượt hiện.' },
+  { id: 'checklist', ten: 'Checklist mẹo nhanh', loai: 'motion', mo: '"3 điều cần biết trước khi…": thẻ đánh số bay vào, dấu tích vàng đồng, cuối là lời mời nhắn Oni.' },
+  { id: 'hieu_lam', ten: 'Hiểu lầm vs Sự thật', loai: 'motion', mo: 'Thẻ "Hiểu lầm" đỏ bị gạch → lật sang thẻ "Sự thật" xanh, kèm căn cứ ngắn, giọng vui.' },
+  { id: 'pov', ten: 'POV tình huống nhân vật', loai: 'veo', mo: '"POV: bạn là founder vừa mở công ty…": nhân vật AI trẻ diễn tình huống đời thường, biểu cảm rõ, có cú lật ở giữa.' },
+  { id: 'mot_ngay', ten: 'Một ngày làm việc (vlog)', loai: 'veo', mo: 'Nhân vật AI đi qua các khoảnh khắc trong ngày ở văn phòng hiện đại: đến nơi, họp, cà phê, tập trung; chữ giờ ở góc.' },
+  { id: 'hoi_nhanh', ten: 'Hỏi nhanh – đáp gọn', loai: 'veo', mo: 'Người dẫn AI hỏi 1 câu khách hay hỏi, trả lời gọn trong 3 ý, chữ trên hình nhấn số và từ khóa.' },
+];
+export const CHU_DE_VP = [
+  'Trả tiền thuê văn phòng nhưng nhân viên làm từ xa – chuyển sang văn phòng ảo',
+  'Startup mới thành lập: chọn địa chỉ trụ sở sao cho chuyên nghiệp và tiết kiệm',
+  'Freelancer có công ty riêng cần chỗ họp khách mà không thuê cả văn phòng',
+  'Chi phí ẩn khi tự thuê văn phòng (điện, nước, lễ tân, dọn dẹp, nội thất)',
+  'Văn phòng trọn gói: dọn vào làm việc ngay, không phải sửa sang',
+  'Chỗ ngồi cố định cho người cần không gian yên tĩnh tập trung',
+  'Phòng họp theo giờ cho buổi gặp khách quan trọng',
+  'Nhà đầu tư nước ngoài cần địa chỉ trụ sở để làm thủ tục thành lập',
+  'Mở rộng đội ngũ từ 2 lên 6 người: linh hoạt đổi phòng không cần hợp đồng mới phức tạp',
+  'Đặt địa chỉ ở trung tâm Tân Định – Quận 1 cũ để nâng hình ảnh doanh nghiệp',
+];
+const chonPhongCach = (ds) => {
+  const gan = ds.slice().sort((a, b) => String(b.luc || b.cap_nhat || '').localeCompare(String(a.luc || a.cap_nhat || ''))).slice(0, 3).map(v => v.phong_cach).filter(Boolean);
+  const con = PHONG_CACH.filter(p => !gan.includes(p.id));
+  return (con.length ? con : PHONG_CACH)[Math.floor(Math.random() * (con.length || PHONG_CACH.length))];
+};
+
+
 const LUAT_VIDEO = `LUẬT VIDEO ONI OFFICE (bắt buộc):
 - Video dọc 9:16, dài 20–35 giây, 5–8 cảnh.
+- MỌI video phải dẫn về nhu cầu thuê văn phòng của Oni (văn phòng ảo, văn phòng trọn gói / phòng riêng, chỗ ngồi cố định, phòng họp, hỗ trợ thủ tục khi đặt trụ sở): nỗi đau → cú lật → giải pháp Oni → lời mời nhắn Oni.
+- Làm ĐÚNG phong cách được giao (trẻ trung, nhịp nhanh, chữ to đậm, màu navy – kem – vàng đồng). Phong cách "motion" thì mỗi cảnh mô tả đồ họa chuyển động (minh họa phẳng, chữ, bộ đếm…) – KHÔNG cần người thật; "prompt" khi đó mô tả hình minh họa phẳng tiếng Anh.
 - BẮT BUỘC ÍT NHẤT 2 HOOK (điểm móc giữ người xem) – chị chốt 25/11/2026:
   · Hook 1 ở giây 0–3: câu hỏi/khẳng định gây tò mò nói trúng nỗi lo người xem (không chào hỏi, không giới thiệu công ty trước).
   · Hook 2 (móc lại) ở khoảng giây 8–18: bất ngờ, con số, "nhưng…", lật vấn đề hoặc hứa hẹn điều sắp tiết lộ – để người xem không lướt qua giữa video.
@@ -30,6 +63,7 @@ async function vietKichBan(v, tin) {
     max_tokens: 16000, system: QUY_TAC + '\n\n' + LUAT_VIDEO,
     messages: [{ role: 'user', content: `Hôm nay ${homNay()}. Em là Agent Editor video AI của Oni Office (cho thuê văn phòng trọn gói, văn phòng ảo, chỗ ngồi, phòng họp tại TP.HCM; hỗ trợ thủ tục thành lập doanh nghiệp, FDI).
 Viết kịch bản video ${v.kenh || 'TikTok'}:
+- PHONG CÁCH BẮT BUỘC: ${(PHONG_CACH.find(p => p.id === v.phong_cach) || PHONG_CACH[0]).ten} (${(PHONG_CACH.find(p => p.id === v.phong_cach) || PHONG_CACH[0]).loai}) – ${(PHONG_CACH.find(p => p.id === v.phong_cach) || PHONG_CACH[0]).mo}
 - Ý tưởng / tiêu đề: ${v.tieu_de}
 ${v.muc_tieu ? '- Mục tiêu: ' + v.muc_tieu + '\n' : ''}${v.ghi_chu ? '- Ghi chú của Giám đốc: ' + v.ghi_chu + '\n' : ''}${tin ? `- Dựa trên tin (đã kiểm nguồn): ${tin.tieuDe} – ${tin.tomTat} (${tin.nguon || 'không có link'})\n` : ''}${v.loi_ra_soat ? `- BẢN TRƯỚC BỊ TRẢ LẠI vì: ${v.loi_ra_soat}\n  → Sửa đúng từng lỗi này.\n` : ''}${v.kich_ban ? '- Kịch bản cũ (không chép phần sai):\n' + String(v.kich_ban).slice(0, 2000) + '\n' : ''}
 Trả lời DUY NHẤT khối:
@@ -114,9 +148,13 @@ async function main() {
   if (viec.length < MOI_LAN && dangLam < HANG_TOI_THIEU) {
     const kho = await layTin(40).catch(() => []);
     tinMoi = kho.find(t => (t.kenh || []).includes('TikTok')) || kho.find(t => ['xu_huong', 'kinh_doanh', 'van_phong'].includes(t.loai)) || null;
-    const ytuong = tinMoi ? `Video ngắn từ tin: ${tinMoi.tieuDe}` : 'Video 30 giây: một ngày làm việc ở văn phòng Oni (người dẫn AI)';
-    const r = await ghiVideo({ tieu_de: ytuong.slice(0, 200), kenh: 'TikTok', muc_tieu: tinMoi?.yTuong || 'Nhận diện thương hiệu, kéo khách hỏi văn phòng ảo / phòng riêng', trang_thai: 'y_tuong', tin_id: tinMoi?.id || '', boi: 'Agent Editor', viec: 'Tự lên ý tưởng từ Kho tin' });
-    viec.push({ id: r.id, tieu_de: ytuong, kenh: 'TikTok', muc_tieu: tinMoi?.yTuong || '', _tin: tinMoi });
+    const pc = chonPhongCach(ds);
+    const daCo = ds.map(v => v.tieu_de || '');
+    const cd2 = CHU_DE_VP.filter(c => !daCo.some(t => t.includes(c.slice(0, 25))));
+    const chuDe = cd2[Math.floor(Math.random() * (cd2.length || 1))] || CHU_DE_VP[0];
+    const ytuong = tinMoi ? `${chuDe} (gắn với tin: ${tinMoi.tieuDe})` : chuDe;
+    const r = await ghiVideo({ tieu_de: ytuong.slice(0, 200), kenh: 'TikTok', phong_cach: pc.id, muc_tieu: 'Kéo khách hỏi thuê văn phòng Oni (văn phòng ảo / trọn gói / chỗ ngồi / phòng họp)', trang_thai: 'y_tuong', tin_id: tinMoi?.id || '', boi: 'Agent Editor', viec: `Tự lên ý tưởng – phong cách: ${pc.ten}` });
+    viec.push({ id: r.id, tieu_de: ytuong, kenh: 'TikTok', phong_cach: pc.id, muc_tieu: 'Kéo khách hỏi thuê văn phòng Oni', _tin: tinMoi });
   }
   for (const v of viec) {
     try { ket.push(await lamMot(v, v._tin || null)); }
@@ -127,4 +165,4 @@ async function main() {
   const kq = (ket.length ? `Làm ${ket.length} kịch bản – ${ket.join('; ')}` : 'Không có kịch bản cần làm') + (choDung ? ` · ${choDung} video đã duyệt kịch bản đang chờ công cụ dựng video AI` : '');
   await ghiNhatKy('Editor video', kq); console.log(kq);
 }
-main().catch(async e => { console.error(e); await ghiLoi('Agent Editor video', '1. Chạy hỏng', e.message, 'Chưa'); process.exit(1); });
+if (import.meta.url === `file://${process.argv[1]}`) main().catch(async e => { console.error(e); await ghiLoi('Agent Editor video', '1. Chạy hỏng', e.message, 'Chưa'); process.exit(1); });

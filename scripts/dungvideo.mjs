@@ -7,6 +7,7 @@
 // ưu tiên chất lượng). Agent KHÔNG duyệt, KHÔNG đăng. Không ghi nhãn AI trên video (chị chốt 22/11 và 28/11).
 import fs from 'node:fs';
 import { crm, claude, layJSON, ghiLoi, ghiNhatKy, homNay } from './lib.mjs';
+import { PHONG_CACH } from './video.mjs';
 import { layCaiDat } from './lib.mjs';
 const QUY_TAC = fs.readFileSync(new URL('../prompts/quy-tac.md', import.meta.url), 'utf8');
 const MOI_LAN = Number(process.env.DUNG_MOI_LAN || 2);
@@ -32,6 +33,7 @@ async function soanGoi(v, loiTruoc) {
     messages: [{ role: 'user', content: `Hôm nay ${homNay()}. Em là Agent Dựng video của Oni Office. Kịch bản và phác thảo dưới đây Giám đốc ĐÃ DUYỆT – giữ đúng ý, lời thoại, chữ trên hình; chỉ chuyển sang gói dựng Oni Studio.
 Tiêu đề: ${v.tieu_de}
 Mục tiêu: ${v.muc_tieu || ''}
+Phong cách: ${(() => { const p = PHONG_CACH.find(x => x.id === v.phong_cach); return p ? `${p.ten} – ${p.mo}. ${p.loai === 'motion' ? 'Cảnh đồ họa chuyển động: mediaType "motion", media để trống, thêm "motion":{mô tả hình minh họa phẳng, chữ chạy, bộ đếm…} – KHÔNG cần prompt Veo cho cảnh này.' : 'Cảnh có người: mediaType "video" + prompt Veo.'}` : 'clip người AI (Veo)'; })()}
 Ghi chú Giám đốc: ${v.ghi_chu || '(không có – KHÔNG ghi giá/ưu đãi)'}
 Các cảnh:
 ${canh}
@@ -65,11 +67,14 @@ function raSoat(g, v) {
   const tong = sc.reduce((a, s) => a + Number(s.durationSec || 0), 0);
   if (tong < 25 || tong > 40) loi.push(`Tổng thời lượng ${tong}s – cần 25–40s`);
   if (sc.length < 4) loi.push('Quá ít cảnh');
+  const pc = PHONG_CACH.find(x => x.id === v.phong_cach);
+  if (pc && pc.loai === 'veo' && !sc.some(s => s.mediaType === 'video')) loi.push('Phong cách cần clip người (Veo) nhưng không có cảnh video nào');
   sc.forEach(s => {
     if ((s.title || '').length > 50) loi.push(`Cảnh ${s.id}: tiêu đề quá 50 ký tự`);
     if ((s.body || '').length > 90) loi.push(`Cảnh ${s.id}: dòng phụ quá 90 ký tự`);
     if (s.kicker && s.kicker !== s.kicker.toUpperCase()) loi.push(`Cảnh ${s.id}: nhãn vàng phải IN HOA`);
-    if (!/^[a-z0-9-]+\.(mp4|jpg|png)$/.test(s.media || '')) loi.push(`Cảnh ${s.id}: tên file tư liệu phải chữ thường không dấu`);
+    if (s.mediaType === 'motion') { if (!s.motion) loi.push(`Cảnh ${s.id}: thiếu mô tả đồ họa chuyển động`); }
+    else if (!/^[a-z0-9-]+\.(mp4|jpg|png)$/.test(s.media || '')) loi.push(`Cảnh ${s.id}: tên file tư liệu phải chữ thường không dấu`);
   });
   if (!sc.length || !sc[sc.length - 1].isCta) loi.push('Cảnh cuối phải là thẻ liên hệ (isCta)');
   sub.forEach(s => { if (Number(s.to) > tong + 0.01 || Number(s.from) >= Number(s.to)) loi.push(`Phụ đề "${String(s.text).slice(0, 20)}…" lệch thời gian`); });
@@ -94,7 +99,7 @@ async function main() {
       if (loi.length) throw new Error(`Rà soát ${lan} lần vẫn chưa đạt: ` + loi.join('; '));
       const { veo, loi_doc, mo_ta_giong, ...studio } = g;
       await crm('/api/video/goi', { method: 'POST', body: JSON.stringify({ id: v.id, boi: 'Agent Dựng video',
-        viec: `Gói dựng xong (rà soát đạt lần ${lan}) – chờ làm ${veo.length} clip Veo + giọng đọc trong phiên có máy Giám đốc`,
+        viec: veo.length ? `Gói dựng xong (rà soát đạt lần ${lan}) – chờ làm ${veo.length} clip Veo + giọng đọc trong phiên có máy Giám đốc` : `Gói dựng xong (rà soát đạt lần ${lan}) – video đồ họa chuyển động, không cần clip Veo; chờ giọng đọc + xuất MP4`,
         goi_dung: { kich_ban_studio: studio, veo, loi_doc, mo_ta_giong, buoc: 'cho_lam_clip', clip_xong: [], luc: new Date().toISOString() } }) });
       kq.push(`#${v.id} "${v.tieu_de}": gói dựng ${studio.scenes.length} cảnh, ${veo.length} clip cần làm`);
     } catch (e) {
